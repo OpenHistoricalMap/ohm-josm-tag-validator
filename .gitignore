@@ -1,0 +1,22 @@
+# Build output
+build/
+build-test/
+dist/
+*.class
+*.jar
+
+# Test output
+test/results.txt
+
+# macOS
+.DS_Store
+._*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+Thumbs.db
+

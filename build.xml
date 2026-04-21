@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="ohm-tags" default="dist" basedir=".">
+
+    <!-- === Configuration =================================================== -->
+    <!-- Minimum JOSM version this plugin requires (svn revision). Bump as needed. -->
+    <property name="plugin.main.version" value="19000"/>
+    <property name="plugin.author"       value="Jeff Meyer"/>
+    <property name="plugin.class"        value="org.openstreetmap.josm.plugins.ohmtags.OhmTagsPlugin"/>
+    <property name="plugin.description"  value="Validator for OpenHistoricalMap: checks start_date/end_date formatting and EDTF normalization, name conventions, source tagging, and Wikidata/Wikipedia cross-references."/>
+    <property name="plugin.link"         value="https://github.com/jeffreyameyer/ohm-tags"/>
+    <property name="plugin.canloadatruntime" value="true"/>
+
+    <!-- === Paths =========================================================== -->
+    <property name="josm"             location="../../josm/core/dist/josm-custom.jar"/>
+    <property name="plugin.build.dir" value="build"/>
+    <property name="plugin.src.dir"   value="src"/>
+    <property name="plugin.dist.dir"  value="dist"/>
+    <property name="plugin.jar"       value="${plugin.dist.dir}/${ant.project.name}.jar"/>
+    <property name="test.src.dir"     value="test"/>
+    <property name="test.build.dir"   value="build-test"/>
+    <property name="test.data.file"   value="test/test_data.osm"/>
+
+    <property name="ant.build.javac.target" value="11"/>
+    <property name="ant.build.javac.source" value="11"/>
+
+    <!-- === Targets ========================================================= -->
+    <target name="init">
+        <mkdir dir="${plugin.build.dir}"/>
+        <mkdir dir="${plugin.dist.dir}"/>
+    </target>
+
+    <target name="compile" depends="init">
+        <javac srcdir="${plugin.src.dir}"
+               classpath="${josm}"
+               destdir="${plugin.build.dir}"
+               target="${ant.build.javac.target}"
+               source="${ant.build.javac.source}"
+               debug="true"
+               encoding="UTF-8"
+               includeantruntime="false">
+            <compilerarg value="-Xlint:all"/>
+            <compilerarg value="-Xlint:-serial"/>
+        </javac>
+    </target>
+
+    <target name="dist" depends="compile">
+        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
+            <arg value="describe"/>
+            <arg value="--always"/>
+            <arg value="--dirty"/>
+        </exec>
+        <condition property="plugin.revision" value="${git.revision}" else="dev">
+            <and>
+                <isset property="git.revision"/>
+                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+            </and>
+        </condition>
+        <jar destfile="${plugin.jar}" basedir="${plugin.build.dir}">
+            <manifest>
+                <attribute name="Author"             value="${plugin.author}"/>
+                <attribute name="Plugin-Class"       value="${plugin.class}"/>
+                <attribute name="Plugin-Description" value="${plugin.description}"/>
+                <attribute name="Plugin-Link"        value="${plugin.link}"/>
+                <attribute name="Plugin-Mainversion" value="${plugin.main.version}"/>
+                <attribute name="Plugin-Version"     value="${plugin.revision}"/>
+                <attribute name="Plugin-Canloadatruntime" value="${plugin.canloadatruntime}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="install" depends="dist">
+        <!-- JOSM's preference directory varies by OS. Order matters:
+             check macOS first (since its OS family "mac" is distinct from
+             "unix"), then Windows, otherwise fall back to the ~/.josm
+             convention used on Linux/other Unix. -->
+        <condition property="josm.plugins.dir"
+                   value="${user.home}/Library/JOSM/plugins">
+            <os family="mac"/>
+        </condition>
+        <condition property="josm.plugins.dir"
+                   value="${env.APPDATA}/JOSM/plugins">
+            <os family="windows"/>
+        </condition>
+        <property name="josm.plugins.dir" value="${user.home}/.josm/plugins"/>
+        <copy file="${plugin.jar}" todir="${josm.plugins.dir}"/>
+    </target>
+
+    <target name="test-compile" depends="compile">
+        <mkdir dir="${test.build.dir}"/>
+        <javac srcdir="${test.src.dir}"
+               destdir="${test.build.dir}"
+               debug="true"
+               encoding="UTF-8"
+               includeantruntime="false">
+            <classpath>
+                <pathelement location="${josm}"/>
+                <pathelement location="${plugin.build.dir}"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="test" depends="test-compile"
+            description="Run headless regression tests against test/test_data.osm">
+        <java classname="RunTests" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${josm}"/>
+                <pathelement location="${plugin.build.dir}"/>
+                <pathelement location="${test.build.dir}"/>
+            </classpath>
+            <arg value="${test.data.file}"/>
+            <sysproperty key="java.awt.headless" value="true"/>
+        </java>
+    </target>
+
+    <target name="clean">
+        <delete dir="${plugin.build.dir}"/>
+        <delete dir="${plugin.dist.dir}"/>
+        <delete dir="${test.build.dir}"/>
+    </target>
+
+</project>
