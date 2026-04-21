@@ -7,7 +7,7 @@
     <property name="plugin.author"       value="Jeff Meyer"/>
     <property name="plugin.class"        value="org.openstreetmap.josm.plugins.ohmtags.OhmTagsPlugin"/>
     <property name="plugin.description"  value="Validator for OpenHistoricalMap: checks start_date/end_date formatting and EDTF normalization, name conventions, source tagging, and Wikidata/Wikipedia cross-references."/>
-    <property name="plugin.link"         value="https://github.com/jeffreyameyer/ohm-tags"/>
+    <property name="plugin.link"         value="https://github.com/OpenHistoricalMap/ohm-josm-tag-validator"/>
     <property name="plugin.canloadatruntime" value="true"/>
 
     <!-- === Paths =========================================================== -->
