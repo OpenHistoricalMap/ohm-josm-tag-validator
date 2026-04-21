@@ -10,7 +10,29 @@ Validates and normalizes OHM-style date tags and source/name consistency for [Op
 
 See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messages, triggers, and autofixes.
 
-## Building
+## Installation
+
+### From a release (recommended)
+
+1. Download `ohm-tags.jar` from the
+   [latest release](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/releases/latest)
+2. Copy the jar into JOSM's plugins directory:
+   - **macOS:** `~/Library/JOSM/plugins/`
+   - **Linux:** `~/.local/share/JOSM/plugins/`
+   - **Windows:** `%APPDATA%\JOSM\plugins\`
+3. Restart JOSM
+4. Go to `Preferences → Plugins`, tick **ohm-tags**, click OK
+
+### From source
+
+```bash
+git clone https://github.com/OpenHistoricalMap/ohm-josm-tag-validator.git
+cd ohm-josm-tag-validator
+ant dist
+# jar is produced in dist/ohm-tags.jar
+```
+
+#### Building
 
 Assumes the JOSM source tree layout with the plugin directory at `josm/plugins/ohm-tags/` alongside a built `josm/core/dist/josm-custom.jar`. If your layout differs, override the `josm` property:
 
@@ -26,7 +48,7 @@ To run the regression test harness against `test/test_data.osm`:
 ant test
 ```
 
-## Installing
+#### Installing
 
 ```
 ant install
