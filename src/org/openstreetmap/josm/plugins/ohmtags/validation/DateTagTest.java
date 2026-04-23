@@ -6,9 +6,13 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +20,7 @@ import org.openstreetmap.josm.command.ChangePropertyCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.SequenceCommand;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.Test;
 import org.openstreetmap.josm.data.validation.TestError;
@@ -256,16 +261,20 @@ public class DateTagTest extends Test {
     }
 
     private void checkPrimitive(OsmPrimitive p) {
-        // Rule: man-made features should have start_date.
-        // Only flag features that have some other identifying tag — don't
-        // complain about every untagged node (those are covered by other
-        // validators and would create too much noise).
+        // Rule 4200: man-made features should have start_date.
         //
         // Severity is WARNING, not ERROR, matching iD's validator. The OHM
         // wiki says "should" (not "must") for this tag; speculative start
         // dates are worse than missing ones, so this is a nudge to research
         // rather than a blocker to save.
-        if (p.get("start_date") == null && !hasNaturalTag(p) && p.hasKeys()) {
+        //
+        // The trigger is a positive allowlist (see isManMade): the primitive
+        // must carry at least one tag that explicitly marks it as built or
+        // established. The previous negative test ("any tag except natural")
+        // misfired badly on boundary relations whose member ways carry
+        // boundary=* but no independent date — see issue #4 (forum: 3344
+        // warnings on r/2828412 / British Empire 1921-1922).
+        if (p.get("start_date") == null && isManMade(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_START_DATE)
                 .message(tr("[ohm] Suspicious date - man-made object without start_date; unfixable, please review"),
                          tr("Please make every effort to attempt a reasonable range "
@@ -288,9 +297,71 @@ public class DateTagTest extends Test {
         checkAllEdtfKeys(p);
     }
 
-    /** True if the primitive has any {@code natural=*} tag. */
-    private static boolean hasNaturalTag(OsmPrimitive p) {
-        return p.get("natural") != null;
+    /**
+     * Keys whose presence (any value) marks the primitive as built /
+     * established and therefore in scope for the missing-{@code start_date}
+     * warning. Curated to match OSM/OHM tagging conventions for features
+     * that have a discrete creation date.
+     */
+    private static final Set<String> MANMADE_KEYS = new HashSet<>(Arrays.asList(
+        "building", "building:part",
+        "highway", "railway", "aeroway", "aerialway",
+        "bridge", "tunnel",
+        "man_made", "power", "pipeline",
+        "amenity", "shop", "office", "craft",
+        "tourism", "historic", "military", "emergency",
+        "public_transport", "telecom",
+        "leisure", "barrier"
+    ));
+
+    /**
+     * Keys that mark the primitive as built / established <em>unless</em>
+     * the value is in the per-key denylist. Used for tags that span both
+     * man-made and natural domains (e.g. {@code waterway=canal} vs.
+     * {@code waterway=river}).
+     */
+    private static final Map<String, Set<String>> MANMADE_DENYLIST = makeDenylist();
+
+    private static Map<String, Set<String>> makeDenylist() {
+        Map<String, Set<String>> m = new HashMap<>();
+        m.put("landuse", new HashSet<>(Arrays.asList(
+            "forest", "meadow", "grass", "wood", "scrub", "heath")));
+        m.put("waterway", new HashSet<>(Arrays.asList(
+            "river", "stream", "brook", "riverbank", "tidal_channel", "wadi")));
+        m.put("place", new HashSet<>(Arrays.asList(
+            "island", "islet", "archipelago", "peninsula", "cape")));
+        return m;
+    }
+
+    /**
+     * True if the primitive carries at least one tag from the man-made
+     * allowlist. See {@link #MANMADE_KEYS} and {@link #MANMADE_DENYLIST}.
+     *
+     * <p>Two relation-only signals on top of the per-key sets:
+     * <ul>
+     *   <li>{@code boundary=*} on a {@link Relation} (the political entity
+     *       has a discrete date; member ways/nodes are excluded so we don't
+     *       fire on every line segment of a boundary).</li>
+     *   <li>{@code type=route} on a {@link Relation} (bus, train, hiking,
+     *       ferry routes have an operating-start date).</li>
+     * </ul>
+     *
+     * <p>An {@code addr:*} key (any value) is a positive signal too — an
+     * address implies a built / locatable feature.
+     */
+    private static boolean isManMade(OsmPrimitive p) {
+        boolean isRelation = p instanceof Relation;
+        for (String key : p.keySet()) {
+            if (MANMADE_KEYS.contains(key)) return true;
+            if (key.startsWith("addr:")) return true;
+            Set<String> deny = MANMADE_DENYLIST.get(key);
+            if (deny != null && !deny.contains(p.get(key))) return true;
+            if (isRelation) {
+                if ("boundary".equals(key)) return true;
+                if ("type".equals(key) && "route".equals(p.get(key))) return true;
+            }
+        }
+        return false;
     }
 
     /**
