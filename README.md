@@ -36,10 +36,13 @@ independently updatable.
 
 The plugin also depends on the
 [`edtf-java`](https://github.com/OpenHistoricalMap/edtf-java) library
-(`io.github.openhistoricalmap:edtf:0.2.0`) for canonical EDTF parsing.
-The library is fetched automatically from Maven Central by the
-`fetch-dependencies` Ant target and shaded into the plugin JAR at
-build time, so JOSM users don't need to install anything extra.
+(`io.github.openhistoricalmap:edtf:0.2.0`, BSD 2-Clause) for canonical
+EDTF parsing. The library is fetched automatically from Maven Central
+by the `fetch-dependencies` Ant target and shaded into the plugin JAR
+at build time, so JOSM users don't need to install anything extra.
+The shaded JAR preserves the upstream BSD notice in its `META-INF/`;
+see `ATTRIBUTION.md` and `LICENSES/edtf-java-BSD-2-Clause.txt` for the
+full attribution.
 
 ```bash
 git clone https://github.com/OpenHistoricalMap/ohm-josm-tag-validator.git
