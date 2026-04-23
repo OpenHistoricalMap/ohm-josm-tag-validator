@@ -387,19 +387,25 @@ After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=
 | 4300 | `[ohm] Missing tag - name=*; unfixable, please review` |
 | 4301 | `[ohm] Name warning - parentheses in name; unfixable, please review` |
 
-**4300 trigger:** Feature has language-variant name keys (e.g. `name:en`) but no plain `name` key.  
+**4300 trigger:** Feature has language-variant name keys (e.g. `name:en`) but no plain `name` key. **Skipped on `type=route` relations** — routes are conventionally identified by `ref` (route number / designation), so name-family-only routes are legitimate.  
 **4300 description:** _Feature has name-family keys ({key}, etc.) but no plain 'name' key. Please add a canonical name._
 
-**4301 trigger:** A `name` key contains parentheses, typically encoding dates — discouraged in OHM names.  
-**4301 description:** _{key}={value}: '(dates)' are discouraged in names; please review and remove any dates in name keys._
+**4301 trigger:** A `name` key contains parentheses **and** the parenthesised content includes a year-like number (3-4 consecutive digits). The rule is narrowed to date-bearing parens — `(Springfield)` or `(north section)` no longer fire; `(1880-1922)` and `(c. 1900)` do.  
+**4301 description:** _{key}={value}: dates in parentheses are discouraged in names; move the date to start_date / end_date instead._
 
-**4300 example:**  
-Trigger: feature with `name:en=Empire State Building`, `name:fr=Empire State Building`, no plain `name`.  
+**4300 example (fires):**  
+Trigger: way with `name:en=Empire State Building`, `name:fr=Empire State Building`, no plain `name`.  
 Suggested manual fix: add `name=Empire State Building` (or whichever language is canonical for the location).
 
-**4301 example:**  
+**4300 example (does not fire):**  
+A relation with `type=route`, `route=bus`, `name:en=Pacific Coast Highway`, `ref=1`. Routes can rely on `ref` for canonical identity.
+
+**4301 example (fires):**  
 Trigger: `name=Old Town Hall (1880-1922)`  
 Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_date`/`end_date` instead.
+
+**4301 example (does not fire):**  
+`name=City Park (Springfield)` — parenthesised disambiguator with no year-like content; left alone.
 
 ---
 

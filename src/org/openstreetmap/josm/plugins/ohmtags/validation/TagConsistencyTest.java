@@ -13,6 +13,7 @@ import org.openstreetmap.josm.command.ChangePropertyCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.SequenceCommand;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.Test;
 import org.openstreetmap.josm.data.validation.TestError;
@@ -190,11 +191,11 @@ public class TagConsistencyTest extends Test {
             if (NAME_FAMILY_KEY.matcher(key).matches()) {
                 hasAnyNameFamily = true;
                 String value = p.get(key);
-                if (value != null && (value.contains("(") || value.contains(")"))) {
+                if (value != null && containsDateInParens(value)) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
                         .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
-                                 tr("{0}={1}: ''(dates)'' are discouraged in names; "
-                                    + "please review and remove any dates in name keys.",
+                                 tr("{0}={1}: dates in parentheses are discouraged in names; "
+                                    + "move the date to start_date / end_date instead.",
                                     key, value))
                         .primitives(p)
                         .build());
@@ -236,8 +237,11 @@ public class TagConsistencyTest extends Test {
 
         if (!hasAnyNameFamily) return; // No name-related checks apply.
 
-        // Rule: any name-family keys but no plain name.
-        if (!hasPlainName) {
+        // Rule: any name-family keys but no plain name. Skip on type=route
+        // relations — routes are conventionally identified by ref (route
+        // number / designation) rather than a country-neutral name; a route
+        // legitimately may have only name:lang=* variants.
+        if (!hasPlainName && !isRouteRelation(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_PLAIN_NAME)
                 .message(tr("[ohm] Missing tag - name=*; unfixable, please review"),
                          tr("Feature has name-family keys ({0}, etc.) but no plain "
@@ -286,6 +290,39 @@ public class TagConsistencyTest extends Test {
             if (NAME_FAMILY_KEY.matcher(key).matches()) return key;
         }
         return "name:*"; // Shouldn't be reached — caller checked hasAnyNameFamily.
+    }
+
+    /** Matches a parenthesised group capturing its contents. */
+    private static final Pattern PARENS_GROUP =
+        Pattern.compile("\\(([^)]*)\\)");
+
+    /**
+     * Year-like pattern: 3 or 4 consecutive digits as a word. Catches
+     * {@code 1880}, {@code 500} (BCE), {@code 2024-03} (the 2024 part),
+     * range halves like {@code 1880-1922}.
+     */
+    private static final Pattern YEAR_LIKE =
+        Pattern.compile("\\b\\d{3,4}\\b");
+
+    /**
+     * True if {@code value} contains a parenthesised group whose contents
+     * include a year-like number sequence. Used to narrow rule 4301 to
+     * names that actually encode dates in parens, not non-date
+     * disambiguation like {@code (Springfield)} or {@code (north section)}.
+     */
+    private static boolean containsDateInParens(String value) {
+        Matcher m = PARENS_GROUP.matcher(value);
+        while (m.find()) {
+            if (YEAR_LIKE.matcher(m.group(1)).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** True if the primitive is a {@link Relation} with {@code type=route}. */
+    private static boolean isRouteRelation(OsmPrimitive p) {
+        return p instanceof Relation && "route".equals(p.get("type"));
     }
 
     /**
