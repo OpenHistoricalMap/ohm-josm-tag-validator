@@ -130,8 +130,9 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4221 fix:** Clears `end_date` and `end_date:edtf`; sets `end_date:raw=present`.  
 **4221 description:** _{key}={value} means an ongoing feature. Clear base and :edtf, mark with :raw={value}?_
 
-**4231 trigger:** `start_date=present`, which is semantically nonsensical.  
-**4231 fix:** Deletes `start_date` and `start_date:edtf`.
+**4231 trigger:** `start_date=present` — `present` describes an ongoing state, not a start point, so it isn't a meaningful start_date value (it's only valid as end_date).  
+**4231 fix:** Deletes `start_date` and `start_date:edtf`.  
+**4231 description:** _{key}={value}: 'present' describes an ongoing state, not a start point. 'present' is only valid as end_date. Delete {key} and {key}:edtf?_
 
 ---
 
