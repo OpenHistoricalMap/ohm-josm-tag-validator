@@ -179,7 +179,11 @@ public class DateTagTest extends Test {
     protected static final int CODE_FUTURE_DATE = 4216;
     protected static final int CODE_INVALID_MONTH = 4217;
     protected static final int CODE_INVALID_DAY = 4218;
-    protected static final int CODE_AMBIGUOUS_NEGATIVE = 4219;
+    // 4219 (CODE_AMBIGUOUS_NEGATIVE) retired: forum feedback (2026-04-21)
+    //   established that negative astronomical years are legitimate OHM
+    //   notation; the rule's false-positive rate outweighed signal value.
+    //   The BARE_NEGATIVE_YEAR pattern is retained — checkDateFamily still
+    //   uses it to suppress the unparseable-warning path on bare negatives.
     protected static final int CODE_AMBIGUOUS_TRAILING_HYPHEN = 4220;
     protected static final int CODE_PRESENT_MARKER = 4221;
     // New error codes for this revision.
@@ -272,7 +276,6 @@ public class DateTagTest extends Test {
         }
 
         for (String baseKey : BASE_KEYS) {
-            checkAmbiguousNegativeYear(p, baseKey);
             checkAmbiguousTrailingHyphen(p, baseKey);
             checkDateFamily(p, baseKey);
             checkMoreSpecificBase(p, baseKey);
@@ -320,48 +323,6 @@ public class DateTagTest extends Test {
             .build());
     }
 
-
-    /**
-     * Flag bare negative-year values like {@code -1920} as ambiguous.
-     *
-     * <p>Technically {@code -1920} is valid EDTF / astronomical ISO for
-     * "1921 BCE" — but when a human types it into a base tag, the intent
-     * is usually one of:
-     * <ul>
-     *   <li>BCE year N (astronomical 1-N)</li>
-     *   <li>A typo: they meant {@code 1920} and a stray {@code -} crept in</li>
-     *   <li>Open-ended range: they meant {@code before 1920} or {@code /1920}</li>
-     *   <li>Part of a range that's missing the other side</li>
-     * </ul>
-     *
-     * <p>We can't guess which, so we warn without an autofix. The user
-     * resolves manually.
-     *
-     * <p>Not flagged if there's a corroborating sibling tag ({@code :raw}
-     * or {@code :edtf}) — presence of those implies the author or a prior
-     * tool intentionally set this as BCE.
-     */
-    private void checkAmbiguousNegativeYear(OsmPrimitive p, String baseKey) {
-        String value = p.get(baseKey);
-        if (value == null) return;
-        if (!BARE_NEGATIVE_YEAR.matcher(value).matches()) return;
-
-        // If there's a :raw or :edtf sibling, the BCE intent is presumably
-        // corroborated — don't flag.
-        if (p.get(baseKey + ":raw") != null) return;
-        if (p.get(baseKey + ":edtf") != null) return;
-
-        errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_NEGATIVE)
-            .message(tr("[ohm] Ambiguous date - negative-year date; unfixable, please review"),
-                     tr("{0}={1}: could be astronomical BCE, a typo for {2}, "
-                        + "a range like {3}, or part of a range missing its other side. "
-                        + "Manual review needed.",
-                        baseKey, value,
-                        value.substring(1),   // suggested positive
-                        "/" + value.substring(1))) // suggested open-ended
-            .primitives(p)
-            .build());
-    }
 
     /**
      * Detect values like {@code YYYY-01-01} and {@code YYYY-12-31}, which are

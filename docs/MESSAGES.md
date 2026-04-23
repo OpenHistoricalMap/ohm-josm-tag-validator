@@ -29,11 +29,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 | Code | Title |
 |------|-------|
-| 4219 | `[ohm] Ambiguous date - negative-year date; unfixable, please review` |
 | 4220 | `[ohm] Ambiguous date - trailing hyphen in date; unfixable, please review` |
-
-**4219 trigger:** `start_date` or `end_date` looks like a negative year but could be BCE, a typo, a range, or a range fragment.  
-**4219 description:** _{key}={value}: could be BCE; a typo: {suggestion}; a range: {range}; or range fragment. Manual review needed._
 
 **4220 trigger:** Value ends with a trailing hyphen (e.g., `2021-`), which is ambiguous between a typo and an open-ended range.  
 **4220 description:** _{key}={value}: could be a typo: {suggestion}; an incomplete input; or an open-ended range {suggestion}/. Manual review needed._
@@ -388,6 +384,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 | Code | Reason |
 |------|--------|
 | 4209 | Merged into `CODE_EDTF_INVALID_NO_BASE` (4208) — invalid `:edtf` with base now fires 4208 alone |
+| 4219 | Retired — negative astronomical years are legitimate OHM notation; the rule's false-positive rate outweighed its signal value (forum feedback 2026-04-21) |
 | 4227 | Rule D2 now fires the unified "Invalid *_date:edtf" fixable/unfixable messages (4228) |
 | 4229 | Merged with `CODE_EDTF_INVALID_NO_BASE` (4208) under the unified unfixable message |
 | 4230 | Retired as redundant — invalid `:edtf` with a base tag now fires only the unified `:edtf` message (4208/4228) |
