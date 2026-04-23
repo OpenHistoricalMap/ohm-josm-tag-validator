@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.github.openhistoricalmap.edtf.Edtf;
+import io.github.openhistoricalmap.edtf.EdtfParseException;
+
 /**
  * Converts OHM/OSM-style approximate date strings into EDTF (ISO 8601-2).
  * Pure string-in / string-out; no JOSM dependencies.
@@ -1029,50 +1032,25 @@ public final class DateNormalizer {
      * strings a strict parser would reject) but false negatives — rejecting
      * output we emitted ourselves — should not occur.
      */
+    /**
+     * Returns true if {@code value} is canonical EDTF, as judged by the
+     * upstream {@code edtf-java} library (single source of truth for the
+     * EDTF grammar; tracks ISO 8601-2:2019 + amendments).
+     *
+     * <p>Empty / null input returns false. The library is tolerant of all
+     * EDTF Level 0/1/2 forms relevant to OHM (plain ISO dates, BCE
+     * negatives, X-digit decade forms like {@code 18XX} / {@code 185X},
+     * qualifiers {@code ~?%}, slash and bracket-set intervals, season
+     * codes 21–41, exponential-year notation, datetime with timezones).
+     */
     public static boolean looksLikeValidEdtf(String value) {
         if (value == null || value.isEmpty()) return false;
-        // Plain ISO date
-        if (isIsoCalendarDate(value)) return true;
-        // Unspecified-digit forms (e.g. 18XX, 185X) with optional qualifier
-        if (value.matches("^-?\\d{2,3}X{1,2}[~?%]?$")) return true;
-        // Bracket interval: [A..B], [..B], [A..]
-        if (value.startsWith("[") && value.endsWith("]")) {
-            String inner = value.substring(1, value.length() - 1);
-            int dotdot = inner.indexOf("..");
-            if (dotdot >= 0) {
-                String left = inner.substring(0, dotdot);
-                String right = inner.substring(dotdot + 2);
-                boolean leftOk = left.isEmpty() || looksLikeValidEdtfPart(left);
-                boolean rightOk = right.isEmpty() || looksLikeValidEdtfPart(right);
-                return leftOk && rightOk;
-            }
+        try {
+            Edtf.parse(value);
+            return true;
+        } catch (EdtfParseException e) {
             return false;
         }
-        // Slash interval — recurse on the pieces (empty side is OK for open-ended)
-        int slash = value.indexOf('/');
-        if (slash >= 0) {
-            String left = value.substring(0, slash);
-            String right = value.substring(slash + 1);
-            boolean leftOk = left.isEmpty() || looksLikeValidEdtfPart(left);
-            boolean rightOk = right.isEmpty() || looksLikeValidEdtfPart(right);
-            return leftOk && rightOk;
-        }
-        // Qualified single values (e.g. 1850~, 1850-03-15?)
-        if (value.endsWith("~") || value.endsWith("?") || value.endsWith("%")) {
-            return looksLikeValidEdtfPart(value.substring(0, value.length() - 1));
-        }
-        return false;
-    }
-
-    private static boolean looksLikeValidEdtfPart(String value) {
-        if (isIsoCalendarDate(value)) return true;
-        if (value.matches("^-?\\d{2,3}X{1,2}[~?%]?$")) return true;
-        // EDTF season / sub-year code: YYYY-NN where NN in {21..41}
-        if (EDTF_SEASON_CODE.matcher(value).matches()) return true;
-        if (value.endsWith("~") || value.endsWith("?") || value.endsWith("%")) {
-            return isIsoCalendarDate(value.substring(0, value.length() - 1));
-        }
-        return false;
     }
 
     /**
