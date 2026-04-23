@@ -169,8 +169,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_RAW_UNPARSEABLE = 4207;
     protected static final int CODE_EDTF_INVALID_NO_BASE = 4208;
     // 4209 (CODE_EDTF_INVALID_WITH_BASE) retired: invalid-:edtf with base now
-    //   fires CODE_EDTF_INVALID_NO_BASE (unified unfixable message) plus
-    //   CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE as companions.
+    //   fires CODE_EDTF_INVALID_NO_BASE (unified unfixable message).
     protected static final int CODE_EDTF_BASE_MISMATCH = 4210;
     protected static final int CODE_EDTF_MISSING_BASE = 4211;
     protected static final int CODE_SUSPICIOUS_YEAR_START = 4212;
@@ -194,7 +193,9 @@ public class DateTagTest extends Test {
     protected static final int CODE_ANY_EDTF_INVALID_FIXABLE = 4228;
     // 4229 (CODE_ANY_EDTF_INVALID_UNFIXABLE) retired: merged with
     //   CODE_EDTF_INVALID_NO_BASE under the unified unfixable message.
-    protected static final int CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE = 4230;
+    // 4230 (CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE) retired: redundant
+    //   companion to the unified invalid-:edtf messages (4208/4228); user
+    //   already gets an actionable warning without it.
     protected static final int CODE_PRESENT_START_DATE = 4231;
     protected static final int CODE_MORE_SPECIFIC_BASE = 4232;
     protected static final int CODE_JULIAN_CONVERSION = 4233;
@@ -894,8 +895,6 @@ public class DateTagTest extends Test {
             // no such rule exists — we still catch them here.
             if (value.startsWith("\\") && key.equals("start_date:edtf")) continue;
 
-            String baseKey = key.substring(0, key.length() - ":edtf".length());
-            String baseValue = p.get(baseKey);
             String rawSibling = key + ":raw";
 
             // Try to normalize the invalid :edtf value.
@@ -927,21 +926,6 @@ public class DateTagTest extends Test {
                              tr("{0}={1} is not valid EDTF and cannot be normalized. "
                               + "Manual review needed.",
                                 key, value))
-                    .primitives(p)
-                    .build());
-            }
-
-            // If base tag is also present, emit a separate mismatch warning —
-            // we can't reconcile base with an invalid :edtf, so the user needs
-            // to decide which one is authoritative.
-            if (baseValue != null && !baseValue.isEmpty()) {
-                errors.add(TestError.builder(this, Severity.WARNING,
-                                             CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE)
-                    .message(tr("[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review"),
-                             tr("{0}={1} is invalid, so it cannot be compared to "
-                              + "{2}={3}. After normalizing {0}, verify that {2} "
-                              + "still agrees.",
-                                key, value, baseKey, baseValue))
                     .primitives(p)
                     .build());
             }

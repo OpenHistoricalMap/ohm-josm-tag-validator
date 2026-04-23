@@ -22,3 +22,6 @@ Thumbs.db
 
 # AI
 CLAUDE.md
+
+# Local JOSM core checkout (developer-supplied; not part of the plugin)
+core/

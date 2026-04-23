@@ -182,7 +182,6 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 |------|-------|
 | 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` |
 | 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf` |
-| 4230 | `[ohm] Date mismatch - *_date:edtf does not match *_date; unfixable, please review` |
 | 4232 | `[ohm] Date mismatch - *_date more precise than *_date:edtf; autofix *_date:edtf=*_date` |
 
 **4210 trigger:** `*_date` is present and valid, but disagrees with the bound implied by `*_date:edtf`.  
@@ -191,9 +190,6 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4211 trigger:** `*_date:edtf` is valid but no `*_date` base tag exists.  
 **4211 fix:** Derives and sets `*_date` from `*_date:edtf`.  
 **4211 description:** _{key}:edtf={edtf} implies {key}={derived}._
-
-**4230 trigger:** Companion to a fixable `:edtf` error when a base tag also exists — the two cannot be reconciled without manual review.  
-**4230 description:** _{key}={value} is invalid, so it cannot be compared to {key}:edtf._
 
 **4232 trigger:** `*_date` is more specific (e.g. full ISO date) than `*_date:edtf` (e.g. year only).  
 **4232 fix:** Replaces `*_date:edtf` with the value from `*_date`.
@@ -384,6 +380,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 | Code | Reason |
 |------|--------|
-| 4209 | Merged into `CODE_EDTF_INVALID_NO_BASE` (4208) — invalid `:edtf` with base now fires 4208 + 4230 as companions |
+| 4209 | Merged into `CODE_EDTF_INVALID_NO_BASE` (4208) — invalid `:edtf` with base now fires 4208 alone |
 | 4227 | Rule D2 now fires the unified "Invalid *_date:edtf" fixable/unfixable messages (4228) |
 | 4229 | Merged with `CODE_EDTF_INVALID_NO_BASE` (4208) under the unified unfixable message |
+| 4230 | Retired as redundant — invalid `:edtf` with a base tag now fires only the unified `:edtf` message (4208/4228) |
