@@ -1,6 +1,10 @@
 # OHM Tags Validator — Message Reference
 
-All messages use `WARNING` severity. Titles follow the pattern:
+Most messages use `WARNING` severity. The following codes are `ERROR`
+severity (malformed dates that data consumers cannot interpret):
+**4201**, **4208**, **4217**, **4218**, **4222**.
+
+Titles follow the pattern:
 `[ohm] <Category> - <what>; <fixable|unfixable>, please review [<action>]`
 
 References to "rules" below are defined in the javadoc in DateTagTest.java.

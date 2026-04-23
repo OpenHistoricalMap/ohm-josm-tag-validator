@@ -490,7 +490,7 @@ public class DateTagTest extends Test {
             if (month < 1 || month > 12) {
                 String trimmed = m.group(1);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_INVALID_MONTH)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_MONTH)
                     .message(tr("[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY"),
                              tr("{0}={1}: month {2} is out of range. Trim to {3}?",
                                 baseKey, value, month, trimmed))
@@ -502,7 +502,7 @@ public class DateTagTest extends Test {
             if (day < 1 || day > 31) {
                 String trimmed = m.group(1) + "-" + m.group(2);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_INVALID_DAY)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_DAY)
                     .message(tr("[ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM"),
                              tr("{0}={1}: day {2} is out of range. Trim to {3}?",
                                 baseKey, value, day, trimmed))
@@ -516,7 +516,7 @@ public class DateTagTest extends Test {
             // and year? Use Java's LocalDate to do the leap-year arithmetic.
             // LocalDate.of throws DateTimeException on invalid dates.
             if (!isValidDayForMonth(year, month, day)) {
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_CALENDAR_INVALID)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
                     .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month in start_date or end_date; unfixable, please review"),
                              tr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
                               + "(e.g. Feb 30, June 31, or Feb 29 on a non-leap year). "
@@ -537,7 +537,7 @@ public class DateTagTest extends Test {
             if (month < 1 || month > 12) {
                 String trimmed = m.group(1);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_INVALID_MONTH)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_MONTH)
                     .message(tr("[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY"),
                              tr("{0}={1}: month {2} is out of range. Trim to {3}?",
                                 baseKey, value, month, trimmed))
@@ -827,7 +827,7 @@ public class DateTagTest extends Test {
                     .build());
             } else {
                 // Can't even salvage. Fire the unified unfixable warning.
-                errors.add(TestError.builder(this, Severity.WARNING,
+                errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; unfixable, please review"),
                              tr("start_date:edtf={0}: leading backslash is invalid "
@@ -920,7 +920,7 @@ public class DateTagTest extends Test {
                     .fix(() -> fix)
                     .build());
             } else {
-                errors.add(TestError.builder(this, Severity.WARNING,
+                errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; unfixable, please review"),
                              tr("{0}={1} is not valid EDTF and cannot be normalized. "
@@ -1491,7 +1491,7 @@ public class DateTagTest extends Test {
         }
 
         // Path 1-false: unparseable by any route.
-        errors.add(TestError.builder(this, Severity.WARNING, CODE_UNPARSEABLE)
+        errors.add(TestError.builder(this, Severity.ERROR, CODE_UNPARSEABLE)
             .message(tr("[ohm] Invalid date - *_date cannot be read; unfixable, please review"),
                      tr("{0}={1} cannot be normalized.", baseKey, base))
             .primitives(p)
