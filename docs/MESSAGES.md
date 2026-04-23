@@ -57,15 +57,18 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 | Code | Title |
 |------|-------|
-| 4212 | `[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01` |
-| 4213 | `[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31` |
+| 4212 | `[ohm] Suspicious date - 01-01 start_date; unfixable, please review` |
+| 4213 | `[ohm] Suspicious date - 12-31 end_date; unfixable, please review` |
 | 4214 | `[ohm] Suspicious date - 12-31 start_date; autofix by removing -12-31` |
 | 4214 | `[ohm] Suspicious date - 01-01 end_date; autofix by removing -01-01` |
 
-**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — likely an overly precise encoding of a bare year.  
-**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — likely an off-by-one (next/previous year intended).  
-**Fix:** Trims to bare year (4212/4213) or shifts year by ±1 (4214).  
-**Description:** _{key}={value} → {key}={year}_
+**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — _possibly_ an overly precise encoding of a bare year, but Jan 1 and Dec 31 are also legitimate dates for many real events (laws taking effect, fiscal-year boundaries, etc.). Forum feedback (2026-04-21) flagged the previous auto-removal as too aggressive, so these are now no-fix warnings.  
+**4212/4213 fix:** None — the user manually trims to the bare year if appropriate.  
+**4212/4213 description:** _{key}={value}: if the exact day is unknown, change to {key}={year}._
+
+**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — likely an off-by-one (next/previous year intended). This is a clearer typo signal than 4212/4213, so the autofix stays.  
+**4214 fix:** Shifts year by ±1.  
+**4214 description:** _{key}={value} likely means the {start|end} of year {shifted}. → {key}={shifted}_
 
 ---
 
