@@ -25,16 +25,27 @@ See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messag
 
 ### From source
 
+This plugin compiles against JOSM core. You need a built
+`josm-custom.jar` somewhere on disk; the easiest source is a checkout of
+[JOSM](https://josm.openstreetmap.de/wiki/Source) built with `ant dist`
+in its `core/` subdirectory. The plugin does **not** vendor JOSM core
+— keep your JOSM checkout outside this repository so it stays
+independently updatable.
+
 ```bash
 git clone https://github.com/OpenHistoricalMap/ohm-josm-tag-validator.git
 cd ohm-josm-tag-validator
-ant dist
+ant -Djosm=/path/to/josm-custom.jar dist
 # jar is produced in dist/ohm-tags.jar
 ```
 
 #### Building
 
-Assumes the JOSM source tree layout with the plugin directory at `josm/plugins/ohm-tags/` alongside a built `josm/core/dist/josm-custom.jar`. If your layout differs, override the `josm` property:
+The default value of the `josm` property in `build.xml` is
+`../../josm/core/dist/josm-custom.jar`, which assumes your plugin
+checkout lives at `josm-dev/plugins/ohm-josm-tag-validator/` next to a
+sibling `josm-dev/josm/` JOSM checkout. If your layout differs, override
+on the command line:
 
 ```
 ant -Djosm=/path/to/josm-custom.jar dist
@@ -45,8 +56,12 @@ Output: `dist/ohm-tags.jar`.
 To run the regression test harness against `test/test_data.osm`:
 
 ```
-ant test
+ant -Djosm=/path/to/josm-custom.jar test
 ```
+
+If you'd rather drop a copy of `josm-custom.jar` directly inside this
+repo (e.g. for sandboxed development), put it under `core/dist/` —
+that path is gitignored, so it won't accidentally end up in commits.
 
 #### Installing
 
