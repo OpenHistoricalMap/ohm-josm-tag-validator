@@ -25,19 +25,30 @@ See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messag
 
 ### From source
 
-This plugin compiles against JOSM core. You need a built
+This plugin compiles against JOSM core (Java 17+). You need a built
 `josm-custom.jar` somewhere on disk; the easiest source is a checkout of
 [JOSM](https://josm.openstreetmap.de/wiki/Source) built with `ant dist`
 in its `core/` subdirectory. The plugin does **not** vendor JOSM core
 — keep your JOSM checkout outside this repository so it stays
 independently updatable.
 
+The plugin also depends on the
+[`edtf-java`](https://github.com/OpenHistoricalMap/edtf-java) library
+(`io.github.openhistoricalmap:edtf:0.2.0`) for canonical EDTF parsing.
+The library is fetched automatically from Maven Central by the
+`fetch-dependencies` Ant target and shaded into the plugin JAR at
+build time, so JOSM users don't need to install anything extra.
+
 ```bash
 git clone https://github.com/OpenHistoricalMap/ohm-josm-tag-validator.git
 cd ohm-josm-tag-validator
 ant -Djosm=/path/to/josm-custom.jar dist
-# jar is produced in dist/ohm-tags.jar
+# jar is produced in dist/ohm-tags.jar (with edtf-java shaded in)
 ```
+
+The first build downloads `edtf-0.2.0.jar` to `lib/` from Maven
+Central. Subsequent builds reuse that JAR. The `lib/` directory is
+gitignored — JARs are not checked in.
 
 #### Building
 
@@ -50,6 +61,9 @@ on the command line:
 ```
 ant -Djosm=/path/to/josm-custom.jar dist
 ```
+
+Java 17+ is required (a constraint of the `edtf-java` dependency;
+recent JOSM versions already require Java 17).
 
 Output: `dist/ohm-tags.jar`.
 
