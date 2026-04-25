@@ -19,13 +19,24 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 |------|-------|
 | 4200 | `[ohm] Suspicious date - man-made object without start_date; unfixable, please review` |
 
-**Trigger:** Feature has a recognisable man-made tag (building, highway, amenity, etc.) but no `start_date`.  
+**Trigger:** Feature carries at least one tag from a curated **man-made allowlist** but has no `start_date`. The allowlist (see `DateTagTest.MANMADE_KEYS` and `MANMADE_DENYLIST`) covers buildings, highways, railways, amenities, leisure, barriers, addressed features, and other tags that mark a primitive as built / established with a discrete creation date.  
 **Fix:** None.  
 **Description:** _Please make every effort to attempt a reasonable range for the `start_date:edtf` tag and provide an explanation in the `start_date:source` tag._
 
-**Example:**  
-Trigger: `building=yes` with no `start_date` and no `natural=*` tag.  
+The trigger is a positive allowlist (since 2026-04). Earlier versions used a negative test ("any tag except `natural=*`") which over-fired badly on member ways of large boundary relations — see issue #4 (3344 warnings on the British Empire 1921-1922 relation, forum post 2026-04-21). A primitive with only `name=*`, `wikidata=*`, `boundary=*` (on a way), `addr:*`-free metadata, etc. no longer triggers; it must carry a positively man-made key.
+
+Notable allowlist entries:
+
+- **Always trigger (any value):** `building`, `building:part`, `highway`, `railway`, `aeroway`, `aerialway`, `bridge`, `tunnel`, `man_made`, `power`, `pipeline`, `amenity`, `shop`, `office`, `craft`, `tourism`, `historic`, `military`, `emergency`, `public_transport`, `telecom`, `leisure`, `barrier`, plus any `addr:*` key.
+- **Trigger unless value is in denylist:** `landuse` (skip `forest`/`meadow`/`grass`/`wood`/`scrub`/`heath`); `waterway` (skip `river`/`stream`/`brook`/`riverbank`/`tidal_channel`/`wadi`); `place` (skip `island`/`islet`/`archipelago`/`peninsula`/`cape`).
+- **Relation-only triggers:** `boundary=*` (the political entity has a date; member ways/nodes carrying `boundary=*` do **not** trigger because their date lives on the parent), and `type=route`.
+
+**Example (fires):**  
+Trigger: `building=yes` with no `start_date`.  
 Suggested manual fix: add `start_date:edtf=1920~/1940~` (or whatever bracket fits) plus `start_date:source=USGS topo 1925`.
+
+**Example (does not fire):**  
+A way tagged `boundary=administrative` with no other keys. The line segment's date is implicit from the parent relation; only the relation itself fires.
 
 ---
 
