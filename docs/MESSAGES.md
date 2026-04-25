@@ -1,6 +1,10 @@
 # OHM Tags Validator — Message Reference
 
-All messages use `WARNING` severity. Titles follow the pattern:
+Most messages use `WARNING` severity. The following codes are `ERROR`
+severity (malformed dates that data consumers cannot interpret):
+**4201**, **4208**, **4217**, **4218**, **4222**.
+
+Titles follow the pattern:
 `[ohm] <Category> - <what>; <fixable|unfixable>, please review [<action>]`
 
 References to "rules" below are defined in the javadoc in DateTagTest.java.
@@ -19,20 +23,24 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **Fix:** None.  
 **Description:** _Please make every effort to attempt a reasonable range for the `start_date:edtf` tag and provide an explanation in the `start_date:source` tag._
 
+**Example:**  
+Trigger: `building=yes` with no `start_date` and no `natural=*` tag.  
+Suggested manual fix: add `start_date:edtf=1920~/1940~` (or whatever bracket fits) plus `start_date:source=USGS topo 1925`.
+
 ---
 
 ### Ambiguous date
 
 | Code | Title |
 |------|-------|
-| 4219 | `[ohm] Ambiguous date - negative-year date; unfixable, please review` |
 | 4220 | `[ohm] Ambiguous date - trailing hyphen in date; unfixable, please review` |
-
-**4219 trigger:** `start_date` or `end_date` looks like a negative year but could be BCE, a typo, a range, or a range fragment.  
-**4219 description:** _{key}={value}: could be BCE; a typo: {suggestion}; a range: {range}; or range fragment. Manual review needed._
 
 **4220 trigger:** Value ends with a trailing hyphen (e.g., `2021-`), which is ambiguous between a typo and an open-ended range.  
 **4220 description:** _{key}={value}: could be a typo: {suggestion}; an incomplete input; or an open-ended range {suggestion}/. Manual review needed._
+
+**Example:**  
+Trigger: `start_date=2021-`  
+Suggested manual fix: choose one of `start_date=2021` (typo), `start_date=2021-03-15` (incomplete input), or `start_date:edtf=2021/` (open-ended range).
 
 ---
 
@@ -47,21 +55,37 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **Fix:** Applies the chosen interpretation to `*_date` and `*_date:edtf`.  
 **Description:** _{key}={value} as a decade/century: {key}={normalized}, :edtf={edtf}_
 
+**Example:**  
+Before: `start_date=1800s`  
+After autofix as decade (4203): `start_date=1800`, `start_date:edtf=180X`, `start_date:raw=1800s` — bounds 1800–1809.  
+After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start_date:raw=1800s` — bounds 1800–1899.
+
 ---
 
 ### Suspicious date — year-boundary
 
 | Code | Title |
 |------|-------|
-| 4212 | `[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01` |
-| 4213 | `[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31` |
+| 4212 | `[ohm] Suspicious date - 01-01 start_date; unfixable, please review` |
+| 4213 | `[ohm] Suspicious date - 12-31 end_date; unfixable, please review` |
 | 4214 | `[ohm] Suspicious date - 12-31 start_date; autofix by removing -12-31` |
 | 4214 | `[ohm] Suspicious date - 01-01 end_date; autofix by removing -01-01` |
 
-**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — likely an overly precise encoding of a bare year.  
-**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — likely an off-by-one (next/previous year intended).  
-**Fix:** Trims to bare year (4212/4213) or shifts year by ±1 (4214).  
-**Description:** _{key}={value} → {key}={year}_
+**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — _possibly_ an overly precise encoding of a bare year, but Jan 1 and Dec 31 are also legitimate dates for many real events (laws taking effect, fiscal-year boundaries, etc.). Forum feedback (2026-04-21) flagged the previous auto-removal as too aggressive, so these are now no-fix warnings.  
+**4212/4213 fix:** None — the user manually trims to the bare year if appropriate.  
+**4212/4213 description:** _{key}={value}: if the exact day is unknown, change to {key}={year}._
+
+**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — likely an off-by-one (next/previous year intended). This is a clearer typo signal than 4212/4213, so the autofix stays.  
+**4214 fix:** Shifts year by ±1.  
+**4214 description:** _{key}={value} likely means the {start|end} of year {shifted}. → {key}={shifted}_
+
+**4212/4213 example:**  
+Trigger: `start_date=1875-01-01` (4212) or `end_date=1900-12-31` (4213).  
+Suggested manual fix: if the precise day is real, leave alone; otherwise change to `start_date=1875` or `end_date=1900`.
+
+**4214 example:**  
+Before: `start_date=1875-12-31`  
+After autofix: `start_date=1876` (interpreting Dec 31 of year N as the start of year N+1).
 
 ---
 
@@ -82,6 +106,18 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4224 fix (backslash):** Deletes `start_date:edtf`.
 **4224 description (backslash):** _start_date:edtf=/{end} → null_
 
+**4215 example:**  
+Before: `start_date=1950`, `end_date=1900`  
+After autofix: `start_date=1900`, `end_date=1950`.
+
+**4224 example (no backslash):**  
+Trigger: `start_date=1969-07-20`, `end_date=1969-07-20`.  
+Suggested manual fix: if this is a single-day event (Apollo 11 landing) leave it; otherwise correct one side.
+
+**4224 example (backslash):**  
+Before: `start_date:edtf=\1900`, `end_date=1900`  
+After autofix: `start_date:edtf` removed; `end_date=1900` retained as the canonical date.
+
 ---
 
 ### Suspicious date — future date
@@ -93,6 +129,10 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **Trigger:** A date tag value is more than 10 years beyond today.  
 **Fix:** Deletes the offending key.  
 **Description:** _{key}={value} is more than ten years in the future. Likely a typo; delete the key?_
+
+**Example:**  
+Before: `end_date=2099` on a feature edited in 2026  
+After autofix: `end_date` removed (treated as a typo / data-import artifact).
 
 ---
 
@@ -114,6 +154,18 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4222 fix:** None.  
 **4222 description:** _{key}={value}: {YYYY}-{MM}-{DD} is not a valid date (e.g. 2/30, 6/31, or 2/29 in non-leap year)._
 
+**4217 example:**  
+Before: `start_date=1900-13-15`  
+After autofix: `start_date=1900` (month 13 is invalid; trim to year).
+
+**4218 example:**  
+Before: `start_date=1900-06-32`  
+After autofix: `start_date=1900-06` (day 32 is invalid; trim to year-month).
+
+**4222 example:**  
+Trigger: `start_date=1900-02-29` (1900 was not a leap year).  
+Suggested manual fix: change to a real date such as `1900-02-28` or `1900-03-01`.
+
 ---
 
 ### Invalid date — present used incorrectly
@@ -127,8 +179,17 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4221 fix:** Clears `end_date` and `end_date:edtf`; sets `end_date:raw=present`.  
 **4221 description:** _{key}={value} means an ongoing feature. Clear base and :edtf, mark with :raw={value}?_
 
-**4231 trigger:** `start_date=present`, which is semantically nonsensical.  
-**4231 fix:** Deletes `start_date` and `start_date:edtf`.
+**4231 trigger:** `start_date=present` — `present` describes an ongoing state, not a start point, so it isn't a meaningful start_date value (it's only valid as end_date).  
+**4231 fix:** Deletes `start_date` and `start_date:edtf`.  
+**4231 description:** _{key}={value}: 'present' describes an ongoing state, not a start point. 'present' is only valid as end_date. Delete {key} and {key}:edtf?_
+
+**4221 example:**  
+Before: `end_date=present`  
+After autofix: `end_date` cleared, `end_date:edtf` cleared, `end_date:raw=present` (signals ongoing intent without breaking date consumers).
+
+**4231 example:**  
+Before: `start_date=present`, `end_date=2010`  
+After autofix: `start_date` and `start_date:edtf` deleted; `end_date=2010` retained.
 
 ---
 
@@ -141,6 +202,10 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **Trigger:** `start_date` or `end_date` contains a value that looks like EDTF (slashes, ranges, uncertainty markers) rather than a plain ISO date.  
 **Fix:** Moves value to `*_date:edtf`, derives plain ISO base, stores original in `*_date:raw`.  
 **Description:** _{key}={value} → {key}={normalized}, :edtf={edtf}, :raw={value}_
+
+**Example:**  
+Before: `start_date=2003-03/2016`  
+After autofix: `start_date=2003-03`, `start_date:edtf=2003-03/2016`, `start_date:raw=2003-03/2016`.
 
 ---
 
@@ -158,6 +223,14 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4202 trigger:** Value can be normalized; see also "EDTF in base tag" above.  
 **4202 description:** _{key}={value} → {key}={normalized}, :edtf={edtf}, :raw={value}_
 
+**4201 example:**  
+Trigger: `start_date=romain` (unparseable text).  
+Suggested manual fix: replace with a real date or remove the tag.
+
+**4202 example:**  
+Before: `start_date=fall of 1814`  
+After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23 = fall), `start_date:raw=fall of 1814`.
+
 ---
 
 ### Invalid date — *_date:edtf invalid
@@ -174,6 +247,22 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4228 fixable trigger:** `*_date:edtf` is invalid EDTF but can be auto-corrected.  
 **4228 unfixable trigger:** `*_date:edtf` is invalid EDTF and cannot be corrected automatically.
 
+**4208 example:**  
+Trigger: `start_date:edtf=garbage`, no `start_date` present.  
+Suggested manual fix: replace `:edtf` with valid EDTF, or delete the tag.
+
+**4226 example:**  
+Before: `start_date:edtf=\1900`, with `start_date=1900`  
+After autofix: `start_date:edtf=1900` (backslash prefix stripped, remainder is valid).
+
+**4228 example (fixable):**  
+Before: `start_date:edtf=199x` (lowercase X)  
+After autofix: `start_date:edtf=199X` (canonical form), `start_date:edtf:raw=199x` preserves the original.
+
+**4228 example (unfixable):**  
+Trigger: `start_date:edtf=2020-13-99` — invalid and not normalizable.  
+Suggested manual fix: replace with a valid EDTF expression.
+
 ---
 
 ### Date mismatch — base vs. :edtf disagreement
@@ -182,7 +271,6 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 |------|-------|
 | 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` |
 | 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf` |
-| 4230 | `[ohm] Date mismatch - *_date:edtf does not match *_date; unfixable, please review` |
 | 4232 | `[ohm] Date mismatch - *_date more precise than *_date:edtf; autofix *_date:edtf=*_date` |
 
 **4210 trigger:** `*_date` is present and valid, but disagrees with the bound implied by `*_date:edtf`.  
@@ -192,11 +280,20 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4211 fix:** Derives and sets `*_date` from `*_date:edtf`.  
 **4211 description:** _{key}:edtf={edtf} implies {key}={derived}._
 
-**4230 trigger:** Companion to a fixable `:edtf` error when a base tag also exists — the two cannot be reconciled without manual review.  
-**4230 description:** _{key}={value} is invalid, so it cannot be compared to {key}:edtf._
-
 **4232 trigger:** `*_date` is more specific (e.g. full ISO date) than `*_date:edtf` (e.g. year only).  
 **4232 fix:** Replaces `*_date:edtf` with the value from `*_date`.
+
+**4210 example:**  
+Trigger: `start_date=2020`, `start_date:edtf=1900/1950` (base year is well outside the EDTF range).  
+Suggested manual fix: pick the authoritative value and update the other to match.
+
+**4211 example:**  
+Before: `start_date:edtf=1900/1950`, no `start_date`  
+After autofix: `start_date=1900` derived as the lower bound.
+
+**4232 example:**  
+Before: `start_date=1900-03-15`, `start_date:edtf=1900`  
+After autofix: `start_date:edtf=1900-03-15` (lifts to match the more specific base).
 
 ---
 
@@ -219,6 +316,18 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4207 trigger:** `*_date:raw` is set but `*_date:edtf` and `*_date` are absent or unparseable.  
 **4207 fix:** None.
 
+**4205 example:**  
+Before: `start_date:raw=ca. 1900` (last editor: `tagcleanupbot`), no `start_date` or `:edtf`  
+After autofix: `start_date=1900`, `start_date:edtf=1900~`, `start_date:raw=ca. 1900` (triple reconstructed from the bot-authored :raw).
+
+**4206 example:**  
+Before: `start_date=1950`, `start_date:edtf=1950`, `start_date:raw=ca. 1900` (last editor was a human, who edited base/edtf away from the bot's :raw)  
+After autofix: `start_date:raw` deleted (the human edit is canonical; the stale :raw is removed).
+
+**4207 example:**  
+Trigger: `start_date:raw=garbage`, no valid `start_date` or `:edtf`.  
+Suggested manual fix: hand-correct the date based on whatever source produced the :raw value.
+
 ---
 
 ### Backslash patterns (Rules A and C)
@@ -232,6 +341,14 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 **4225 trigger (Rule C):** `start_date:edtf` is a slash-range that extends past `end_date`.
 
+**4223 example:**  
+Before: `start_date=1900`, `start_date:edtf=\1900`, `end_date=1900` (last editor `tagcleanupbot`)  
+After autofix: `start_date` and `start_date:edtf` deleted (bot-induced rollback).
+
+**4225 example:**  
+Trigger: `start_date:edtf=1900/1960`, `end_date=1950` (range extends past end).  
+Suggested manual fix: pick the authoritative end and tighten one or the other.
+
 ---
 
 ### Julian calendar conversion
@@ -243,6 +360,10 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **Trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation.  
 **Fix:** Converts to Gregorian, stores converted value in base tag, preserves original in `*_date:note`.  
 **Description:** _{key}={julian} → {key}={gregorian} (Gregorian), {key}:note added_
+
+**Example:**  
+Before: `start_date=j:1582-10-04` (Julian calendar)  
+After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=j:1582-10-04` (original preserved).
 
 ---
 
@@ -261,6 +382,14 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4301 trigger:** A `name` key contains parentheses, typically encoding dates — discouraged in OHM names.  
 **4301 description:** _{key}={value}: '(dates)' are discouraged in names; please review and remove any dates in name keys._
 
+**4300 example:**  
+Trigger: feature with `name:en=Empire State Building`, `name:fr=Empire State Building`, no plain `name`.  
+Suggested manual fix: add `name=Empire State Building` (or whichever language is canonical for the location).
+
+**4301 example:**  
+Trigger: `name=Old Town Hall (1880-1922)`  
+Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_date`/`end_date` instead.
+
 ---
 
 ### Missing attribution
@@ -276,6 +405,14 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4303 trigger:** Named feature has no `source*` tag of any kind.  
 **4303 description:** _This named feature has no 'source' tag. Please document the provenance of this feature._
 
+**4302 example:**  
+Trigger: `name=Eiffel Tower` with no `wikidata` tag.  
+Suggested manual fix: add `wikidata=Q243`.
+
+**4303 example:**  
+Trigger: `name=Old Mill` with no `source*` tags.  
+Suggested manual fix: add `source=https://www.usgs.gov/...` or `source:name=USGS topo 1925`.
+
 ---
 
 ### Suspicious source values
@@ -287,6 +424,10 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 **4304/4305 trigger:** `source` (or numbered variant) is set to `wikipedia` or `wikidata` — not valid sources for geometry.  
 **Description:** _{key}={value}: Wikipedia/Wikidata is not a reasonable source for geometry claims. Please link to an actual map, image, or survey._
+
+**4304/4305 example:**  
+Trigger: `source=wikipedia` (or `source=wikidata`).  
+Suggested manual fix: replace with a primary source — a map URL, aerial imagery, or survey reference. Use `:source` keys (e.g. `name:source=wikipedia`) for *attribute* sourcing, not geometry.
 
 ---
 
@@ -309,6 +450,18 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4310 trigger:** `source:name` (or `source:N:name`) is present but the corresponding `source` (or `source:N`) URL is absent.  
 **4310 fix:** None — prompts user to add the URL.  
 **4310 description:** _{key}={value} is set, but {source_key} is empty. Would you like to add a URL for the source?_
+
+**4306 example:**  
+Before: `source=USGS topo map 1925`  
+After autofix: `source=` (blank), `source:name=USGS topo map 1925`. The user can later fill in a URL for `source`.
+
+**4307 example:**  
+Before: `source=usgs.gov/maps/topo1925`  
+After autofix: `source=https://usgs.gov/maps/topo1925`.
+
+**4310 example:**  
+Trigger: `source:name=USGS topo 1925`, no `source` URL.  
+Suggested manual fix: add `source=https://...` pointing at the actual scanned map.
 
 ---
 
@@ -335,6 +488,22 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4313 trigger:** `source` holds a name string while `source:url` holds a URL — they are in the wrong keys.  
 **4313 fix:** Swaps values: URL → `source`, name → `source:name`.  
 **4313 description:** _Consolidate: source:url → source, source → source:name?_
+
+**4311 example:**  
+Before: `source=https://example.org/map`, `source:url=https://example.org/map`  
+After autofix: `source:url` deleted; `source` retained.
+
+**4312 example (no source):**  
+Before: `source:url=https://example.org/map`, no `source`  
+After autofix: `source=https://example.org/map`, `source:url` deleted.
+
+**4312 example (different URLs):**  
+Before: `source=https://a.example/map`, `source:url=https://b.example/map`  
+After autofix: `source=https://a.example/map` (unchanged), `source:1=https://b.example/map`, `source:url` deleted.
+
+**4313 example:**  
+Before: `source=USGS topo 1925`, `source:url=https://usgs.gov/topo1925`  
+After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`, `source:url` deleted.
 
 ---
 
@@ -363,6 +532,22 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4317 fix:** None — too ambiguous to autofix.  
 **4317 description:** _{key}={value}: 3 or more items mixing URLs and text. Manual review needed — split into source, source:N, source:name, source:N:name as appropriate._
 
+**4314 example:**  
+Before: `source=https://usgs.gov/topo1925; USGS topo 1925`  
+After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`.
+
+**4315 example:**  
+Before: `source=https://a.example; https://b.example`  
+After autofix: `source=https://a.example`, `source:1=https://b.example`.
+
+**4316 example:**  
+Before: `source=USGS topo 1925; Sanborn 1933`  
+After autofix: `source:name=USGS topo 1925`, `source:1:name=Sanborn 1933`.
+
+**4317 example:**  
+Trigger: `source=https://a.example; USGS topo; https://b.example` (mixed types, 3+ items).  
+Suggested manual fix: split by hand into `source`, `source:1`, `source:name`, `source:N:name` slots as appropriate.
+
 ---
 
 ### Attribute-source references
@@ -378,12 +563,22 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 **4309 trigger:** A `*:source` tag references Wikidata but no `wikidata` tag exists on the feature.  
 **4309 description:** _{key}={value}: please add an appropriate 'wikidata' tag._
 
+**4308 example:**  
+Trigger: `name:source=wikipedia` but no `wikipedia=*` on the feature.  
+Suggested manual fix: add `wikipedia=en:Some Article Title`.
+
+**4309 example:**  
+Trigger: `name:source=wikidata` but no `wikidata=*` on the feature.  
+Suggested manual fix: add `wikidata=Q12345`.
+
 ---
 
 ## Retired codes
 
 | Code | Reason |
 |------|--------|
-| 4209 | Merged into `CODE_EDTF_INVALID_NO_BASE` (4208) — invalid `:edtf` with base now fires 4208 + 4230 as companions |
+| 4209 | Merged into `CODE_EDTF_INVALID_NO_BASE` (4208) — invalid `:edtf` with base now fires 4208 alone |
+| 4219 | Retired — negative astronomical years are legitimate OHM notation; the rule's false-positive rate outweighed its signal value (forum feedback 2026-04-21) |
 | 4227 | Rule D2 now fires the unified "Invalid *_date:edtf" fixable/unfixable messages (4228) |
 | 4229 | Merged with `CODE_EDTF_INVALID_NO_BASE` (4208) under the unified unfixable message |
+| 4230 | Retired as redundant — invalid `:edtf` with a base tag now fires only the unified `:edtf` message (4208/4228) |

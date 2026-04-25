@@ -169,8 +169,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_RAW_UNPARSEABLE = 4207;
     protected static final int CODE_EDTF_INVALID_NO_BASE = 4208;
     // 4209 (CODE_EDTF_INVALID_WITH_BASE) retired: invalid-:edtf with base now
-    //   fires CODE_EDTF_INVALID_NO_BASE (unified unfixable message) plus
-    //   CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE as companions.
+    //   fires CODE_EDTF_INVALID_NO_BASE (unified unfixable message).
     protected static final int CODE_EDTF_BASE_MISMATCH = 4210;
     protected static final int CODE_EDTF_MISSING_BASE = 4211;
     protected static final int CODE_SUSPICIOUS_YEAR_START = 4212;
@@ -180,7 +179,11 @@ public class DateTagTest extends Test {
     protected static final int CODE_FUTURE_DATE = 4216;
     protected static final int CODE_INVALID_MONTH = 4217;
     protected static final int CODE_INVALID_DAY = 4218;
-    protected static final int CODE_AMBIGUOUS_NEGATIVE = 4219;
+    // 4219 (CODE_AMBIGUOUS_NEGATIVE) retired: forum feedback (2026-04-21)
+    //   established that negative astronomical years are legitimate OHM
+    //   notation; the rule's false-positive rate outweighed signal value.
+    //   The BARE_NEGATIVE_YEAR pattern is retained — checkDateFamily still
+    //   uses it to suppress the unparseable-warning path on bare negatives.
     protected static final int CODE_AMBIGUOUS_TRAILING_HYPHEN = 4220;
     protected static final int CODE_PRESENT_MARKER = 4221;
     // New error codes for this revision.
@@ -194,7 +197,9 @@ public class DateTagTest extends Test {
     protected static final int CODE_ANY_EDTF_INVALID_FIXABLE = 4228;
     // 4229 (CODE_ANY_EDTF_INVALID_UNFIXABLE) retired: merged with
     //   CODE_EDTF_INVALID_NO_BASE under the unified unfixable message.
-    protected static final int CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE = 4230;
+    // 4230 (CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE) retired: redundant
+    //   companion to the unified invalid-:edtf messages (4208/4228); user
+    //   already gets an actionable warning without it.
     protected static final int CODE_PRESENT_START_DATE = 4231;
     protected static final int CODE_MORE_SPECIFIC_BASE = 4232;
     protected static final int CODE_JULIAN_CONVERSION = 4233;
@@ -271,7 +276,6 @@ public class DateTagTest extends Test {
         }
 
         for (String baseKey : BASE_KEYS) {
-            checkAmbiguousNegativeYear(p, baseKey);
             checkAmbiguousTrailingHyphen(p, baseKey);
             checkDateFamily(p, baseKey);
             checkMoreSpecificBase(p, baseKey);
@@ -321,66 +325,25 @@ public class DateTagTest extends Test {
 
 
     /**
-     * Flag bare negative-year values like {@code -1920} as ambiguous.
-     *
-     * <p>Technically {@code -1920} is valid EDTF / astronomical ISO for
-     * "1921 BCE" — but when a human types it into a base tag, the intent
-     * is usually one of:
-     * <ul>
-     *   <li>BCE year N (astronomical 1-N)</li>
-     *   <li>A typo: they meant {@code 1920} and a stray {@code -} crept in</li>
-     *   <li>Open-ended range: they meant {@code before 1920} or {@code /1920}</li>
-     *   <li>Part of a range that's missing the other side</li>
-     * </ul>
-     *
-     * <p>We can't guess which, so we warn without an autofix. The user
-     * resolves manually.
-     *
-     * <p>Not flagged if there's a corroborating sibling tag ({@code :raw}
-     * or {@code :edtf}) — presence of those implies the author or a prior
-     * tool intentionally set this as BCE.
-     */
-    private void checkAmbiguousNegativeYear(OsmPrimitive p, String baseKey) {
-        String value = p.get(baseKey);
-        if (value == null) return;
-        if (!BARE_NEGATIVE_YEAR.matcher(value).matches()) return;
-
-        // If there's a :raw or :edtf sibling, the BCE intent is presumably
-        // corroborated — don't flag.
-        if (p.get(baseKey + ":raw") != null) return;
-        if (p.get(baseKey + ":edtf") != null) return;
-
-        errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_NEGATIVE)
-            .message(tr("[ohm] Ambiguous date - negative-year date; unfixable, please review"),
-                     tr("{0}={1}: could be astronomical BCE, a typo for {2}, "
-                        + "a range like {3}, or part of a range missing its other side. "
-                        + "Manual review needed.",
-                        baseKey, value,
-                        value.substring(1),   // suggested positive
-                        "/" + value.substring(1))) // suggested open-ended
-            .primitives(p)
-            .build());
-    }
-
-    /**
      * Detect values like {@code YYYY-01-01} and {@code YYYY-12-31}, which are
      * commonly artifacts of data imports that forced a precise date where
      * only the year was known. Two kinds of suspicion:
      *
      * <p><b>False precision at year boundaries.</b> A {@code start_date}
      * of {@code YYYY-01-01} or {@code end_date} of {@code YYYY-12-31} is
-     * suspicious because the exact day of year-start / year-end is almost
-     * always an artifact. Offers to trim to {@code YYYY}.
+     * <i>possibly</i> an artifact, but Jan 1 / Dec 31 are also legitimate
+     * dates for laws taking effect, fiscal-year boundaries, and many other
+     * real events. Forum feedback (2026-04-21) flagged auto-removal as too
+     * aggressive, so these are now no-fix warnings — the user must apply
+     * any year-trim manually if it's appropriate.
      *
      * <p><b>Off-by-one at year boundaries.</b> A {@code start_date} of
      * {@code YYYY-12-31} likely means "started at the beginning of year
      * {@code YYYY+1}" and should probably be {@code YYYY+1}. Similarly an
      * {@code end_date} of {@code YYYY-01-01} likely means "ended at the
-     * end of year {@code YYYY-1}". Offers the shifted year.
-     *
-     * <p>This especially applies to BCE dates (astronomical negative years),
-     * where the false precision is obvious — nobody knows the exact day a
-     * feature was built in antiquity.
+     * end of year {@code YYYY-1}". This is a clearer typo signal than the
+     * false-precision case, so it keeps its autofix (offers the shifted
+     * year).
      *
      * <p>Only the base tag is checked; {@code :edtf} and {@code :raw} carry
      * different semantics and aren't subject to this suspicion.
@@ -402,24 +365,26 @@ public class DateTagTest extends Test {
         boolean isDec31 = month == 12 && day == 31;
 
         if (isStart && isJan1) {
-            // False precision: start of year.
+            // Possible false precision: start of year. We do not autofix
+            // because Jan 1 is also a legitimate date for many real
+            // events (laws taking effect, fiscal year boundaries, etc.);
+            // forum feedback flagged the auto-removal as too aggressive.
             String yearStr = padAstronomicalYear(year);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_START)
-                .message(tr("[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01"),
-                         tr("{0}={1} \u2192 {0}={2}", baseKey, value, yearStr))
+                .message(tr("[ohm] Suspicious date - 01-01 start_date; unfixable, please review"),
+                         tr("{0}={1}: if the exact day is unknown, change to {0}={2}.",
+                            baseKey, value, yearStr))
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isEnd && isDec31) {
-            // False precision: end of year.
+            // Possible false precision: end of year. Same reasoning as
+            // above — Dec 31 is a real date too often to autofix.
             String yearStr = padAstronomicalYear(year);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_END)
-                .message(tr("[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31"),
-                         tr("{0}={1} \u2192 {0}={2}", baseKey, value, yearStr))
+                .message(tr("[ohm] Suspicious date - 12-31 end_date; unfixable, please review"),
+                         tr("{0}={1}: if the exact day is unknown, change to {0}={2}.",
+                            baseKey, value, yearStr))
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isStart && isDec31) {
             // Off-by-one: start on last day of year N almost certainly means year N+1.
@@ -489,7 +454,7 @@ public class DateTagTest extends Test {
             if (month < 1 || month > 12) {
                 String trimmed = m.group(1);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_INVALID_MONTH)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_MONTH)
                     .message(tr("[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY"),
                              tr("{0}={1}: month {2} is out of range. Trim to {3}?",
                                 baseKey, value, month, trimmed))
@@ -501,7 +466,7 @@ public class DateTagTest extends Test {
             if (day < 1 || day > 31) {
                 String trimmed = m.group(1) + "-" + m.group(2);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_INVALID_DAY)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_DAY)
                     .message(tr("[ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM"),
                              tr("{0}={1}: day {2} is out of range. Trim to {3}?",
                                 baseKey, value, day, trimmed))
@@ -515,7 +480,7 @@ public class DateTagTest extends Test {
             // and year? Use Java's LocalDate to do the leap-year arithmetic.
             // LocalDate.of throws DateTimeException on invalid dates.
             if (!isValidDayForMonth(year, month, day)) {
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_CALENDAR_INVALID)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
                     .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month in start_date or end_date; unfixable, please review"),
                              tr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
                               + "(e.g. Feb 30, June 31, or Feb 29 on a non-leap year). "
@@ -536,7 +501,7 @@ public class DateTagTest extends Test {
             if (month < 1 || month > 12) {
                 String trimmed = m.group(1);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_INVALID_MONTH)
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_MONTH)
                     .message(tr("[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY"),
                              tr("{0}={1}: month {2} is out of range. Trim to {3}?",
                                 baseKey, value, month, trimmed))
@@ -826,7 +791,7 @@ public class DateTagTest extends Test {
                     .build());
             } else {
                 // Can't even salvage. Fire the unified unfixable warning.
-                errors.add(TestError.builder(this, Severity.WARNING,
+                errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; unfixable, please review"),
                              tr("start_date:edtf={0}: leading backslash is invalid "
@@ -894,8 +859,6 @@ public class DateTagTest extends Test {
             // no such rule exists — we still catch them here.
             if (value.startsWith("\\") && key.equals("start_date:edtf")) continue;
 
-            String baseKey = key.substring(0, key.length() - ":edtf".length());
-            String baseValue = p.get(baseKey);
             String rawSibling = key + ":raw";
 
             // Try to normalize the invalid :edtf value.
@@ -921,27 +884,12 @@ public class DateTagTest extends Test {
                     .fix(() -> fix)
                     .build());
             } else {
-                errors.add(TestError.builder(this, Severity.WARNING,
+                errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; unfixable, please review"),
                              tr("{0}={1} is not valid EDTF and cannot be normalized. "
                               + "Manual review needed.",
                                 key, value))
-                    .primitives(p)
-                    .build());
-            }
-
-            // If base tag is also present, emit a separate mismatch warning —
-            // we can't reconcile base with an invalid :edtf, so the user needs
-            // to decide which one is authoritative.
-            if (baseValue != null && !baseValue.isEmpty()) {
-                errors.add(TestError.builder(this, Severity.WARNING,
-                                             CODE_ANY_EDTF_BASE_MISMATCH_UNRESOLVABLE)
-                    .message(tr("[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review"),
-                             tr("{0}={1} is invalid, so it cannot be compared to "
-                              + "{2}={3}. After normalizing {0}, verify that {2} "
-                              + "still agrees.",
-                                key, value, baseKey, baseValue))
                     .primitives(p)
                     .build());
             }
@@ -1507,7 +1455,7 @@ public class DateTagTest extends Test {
         }
 
         // Path 1-false: unparseable by any route.
-        errors.add(TestError.builder(this, Severity.WARNING, CODE_UNPARSEABLE)
+        errors.add(TestError.builder(this, Severity.ERROR, CODE_UNPARSEABLE)
             .message(tr("[ohm] Invalid date - *_date cannot be read; unfixable, please review"),
                      tr("{0}={1} cannot be normalized.", baseKey, base))
             .primitives(p)

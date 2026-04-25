@@ -16,28 +16,54 @@
     <property name="plugin.src.dir"   value="src"/>
     <property name="plugin.dist.dir"  value="dist"/>
     <property name="plugin.jar"       value="${plugin.dist.dir}/${ant.project.name}.jar"/>
+    <property name="plugin.lib.dir"   value="lib"/>
     <property name="test.src.dir"     value="test"/>
     <property name="test.build.dir"   value="build-test"/>
     <property name="test.data.file"   value="test/test_data.osm"/>
 
-    <property name="ant.build.javac.target" value="11"/>
-    <property name="ant.build.javac.source" value="11"/>
+    <!-- === Third-party dependency: edtf-java =============================== -->
+    <!-- Resolved from Maven Central. The pom.xml is the source of truth for
+         tooling that understands Maven; this Ant target is a lightweight
+         fetcher that downloads only the JAR we need. -->
+    <property name="edtf.version"     value="0.2.0"/>
+    <property name="edtf.jar"         value="${plugin.lib.dir}/edtf-${edtf.version}.jar"/>
+    <property name="edtf.url"
+              value="https://repo.maven.apache.org/maven2/io/github/openhistoricalmap/edtf/${edtf.version}/edtf-${edtf.version}.jar"/>
+
+    <!-- edtf-java requires JDK 17. -->
+    <property name="ant.build.javac.target" value="17"/>
+    <property name="ant.build.javac.source" value="17"/>
+
+    <!-- Compile/test classpath: JOSM core + everything in lib/. -->
+    <path id="compile.classpath">
+        <pathelement location="${josm}"/>
+        <fileset dir="${plugin.lib.dir}" erroronmissingdir="false">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
 
     <!-- === Targets ========================================================= -->
     <target name="init">
         <mkdir dir="${plugin.build.dir}"/>
         <mkdir dir="${plugin.dist.dir}"/>
+        <mkdir dir="${plugin.lib.dir}"/>
     </target>
 
-    <target name="compile" depends="init">
+    <target name="fetch-dependencies" depends="init"
+            description="Download third-party JARs declared in pom.xml into lib/">
+        <get src="${edtf.url}" dest="${edtf.jar}"
+             skipexisting="true" verbose="false"/>
+    </target>
+
+    <target name="compile" depends="fetch-dependencies">
         <javac srcdir="${plugin.src.dir}"
-               classpath="${josm}"
                destdir="${plugin.build.dir}"
                target="${ant.build.javac.target}"
                source="${ant.build.javac.source}"
                debug="true"
                encoding="UTF-8"
                includeantruntime="false">
+            <classpath refid="compile.classpath"/>
             <compilerarg value="-Xlint:all"/>
             <compilerarg value="-Xlint:-serial"/>
         </javac>
@@ -55,7 +81,13 @@
                 <length string="${git.revision}" trim="yes" length="0" when="greater"/>
             </and>
         </condition>
-        <jar destfile="${plugin.jar}" basedir="${plugin.build.dir}">
+        <!-- Bundle edtf-java into the plugin JAR so JOSM's plugin loader has
+             it on the classpath at runtime. The library is small (~75 KB) and
+             has no transitive dependencies, so shading is the simplest path
+             until edtf-java itself is published as a JOSM library plugin. -->
+        <jar destfile="${plugin.jar}">
+            <fileset dir="${plugin.build.dir}"/>
+            <zipgroupfileset dir="${plugin.lib.dir}" includes="edtf-*.jar"/>
             <manifest>
                 <attribute name="Author"             value="${plugin.author}"/>
                 <attribute name="Plugin-Class"       value="${plugin.class}"/>
@@ -89,11 +121,13 @@
         <mkdir dir="${test.build.dir}"/>
         <javac srcdir="${test.src.dir}"
                destdir="${test.build.dir}"
+               target="${ant.build.javac.target}"
+               source="${ant.build.javac.source}"
                debug="true"
                encoding="UTF-8"
                includeantruntime="false">
             <classpath>
-                <pathelement location="${josm}"/>
+                <path refid="compile.classpath"/>
                 <pathelement location="${plugin.build.dir}"/>
             </classpath>
         </javac>
@@ -103,7 +137,7 @@
             description="Run headless regression tests against test/test_data.osm">
         <java classname="RunTests" fork="true" failonerror="true">
             <classpath>
-                <pathelement location="${josm}"/>
+                <path refid="compile.classpath"/>
                 <pathelement location="${plugin.build.dir}"/>
                 <pathelement location="${test.build.dir}"/>
             </classpath>

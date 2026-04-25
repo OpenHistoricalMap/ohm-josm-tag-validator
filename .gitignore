@@ -2,6 +2,7 @@
 build/
 build-test/
 dist/
+lib/
 *.class
 *.jar
 
@@ -22,3 +23,6 @@ Thumbs.db
 
 # AI
 CLAUDE.md
+
+# Local JOSM core checkout (developer-supplied; not part of the plugin)
+core/
