@@ -13,6 +13,16 @@ import java.util.regex.Pattern;
 
 import io.github.openhistoricalmap.edtf.Edtf;
 import io.github.openhistoricalmap.edtf.EdtfParseException;
+import io.github.openhistoricalmap.edtf.EdtfTemporal;
+import io.github.openhistoricalmap.edtf.types.EdtfCentury;
+import io.github.openhistoricalmap.edtf.types.EdtfDate;
+import io.github.openhistoricalmap.edtf.types.EdtfDecade;
+import io.github.openhistoricalmap.edtf.types.EdtfInterval;
+import io.github.openhistoricalmap.edtf.types.EdtfList;
+import io.github.openhistoricalmap.edtf.types.EdtfSeason;
+import io.github.openhistoricalmap.edtf.types.EdtfSet;
+import io.github.openhistoricalmap.edtf.types.Endpoint;
+import io.github.openhistoricalmap.edtf.types.ListMember;
 
 /**
  * Converts OHM/OSM-style approximate date strings into EDTF (ISO 8601-2).
@@ -153,29 +163,6 @@ public final class DateNormalizer {
      */
     private static final Pattern JULIAN_DAY_NUMBER =
         Pattern.compile("^(?i)jd:(\\d{1,8})$");
-
-    /**
-     * EDTF sub-year "season" codes. EDTF Level 1 defines four season codes
-     * appended to a year with a hyphen:
-     * <ul>
-     *   <li>{@code -21} spring, {@code -22} summer, {@code -23} autumn/fall,
-     *       {@code -24} winter</li>
-     * </ul>
-     * EDTF Level 2 extends this to further sub-year groupings:
-     * <ul>
-     *   <li>{@code -25}-{@code -28}: hemisphere-qualified seasons (N spring,
-     *       N summer, N autumn, N winter)</li>
-     *   <li>{@code -29}-{@code -32}: additional hemisphere qualifiers</li>
-     *   <li>{@code -33}-{@code -36}: quarters (Q1, Q2, Q3, Q4)</li>
-     *   <li>{@code -37}-{@code -39}: quadrimesters (tertiles)</li>
-     *   <li>{@code -40}-{@code -41}: semesters (first/second half)</li>
-     * </ul>
-     *
-     * <p>Accepts an optional trailing qualifier ({@code ~}, {@code ?}, {@code %}).
-     * Accepts astronomical negative years.
-     */
-    private static final Pattern EDTF_SEASON_CODE =
-        Pattern.compile("^(-?\\d{4})-(2[1-9]|3[0-9]|4[01])([~?%])?$");
 
     /**
      * Natural-language season expression: optional "early/mid/late" (ignored
@@ -1065,41 +1052,19 @@ public final class DateNormalizer {
      * as infinite-past. A future tool pass can refine these once the slider
      * supports EDTF directly.
      *
+     * <p>EDTF qualifiers ({@code ~?%}) are stripped and season codes
+     * ({@code YYYY-NN} where {@code NN} ∈ 21..41) are reduced to the bare
+     * year, since the slider can't render either directly. The {@code :edtf}
+     * sibling keeps the full precision for consumers that understand it.
+     *
+     * <p>Parsing is delegated to upstream {@code edtf-java}; OHM-specific
+     * reductions (season → year, X-digit lower expansion) are applied on
+     * top of the parsed structure.
+     *
      * @return the bound, or empty if EDTF is empty / malformed
      */
     public static Optional<String> lowerBoundIso(String edtf) {
-        if (edtf == null || edtf.isEmpty()) return Optional.empty();
-        // Bracket interval: [A..B], [..B], [A..]
-        if (edtf.startsWith("[") && edtf.endsWith("]")) {
-            String inner = edtf.substring(1, edtf.length() - 1);
-            int dotdot = inner.indexOf("..");
-            if (dotdot >= 0) {
-                String left = inner.substring(0, dotdot);
-                String right = inner.substring(dotdot + 2);
-                if (!left.isEmpty()) {
-                    return stripQualifiersToIso(expandUnspecifiedLower(left));
-                }
-                // Open-left: preserve the one year present.
-                if (!right.isEmpty()) {
-                    return stripQualifiersToIso(expandUnspecifiedLower(right));
-                }
-            }
-            return Optional.empty();
-        }
-        int slash = edtf.indexOf('/');
-        if (slash >= 0) {
-            String left = edtf.substring(0, slash);
-            String right = edtf.substring(slash + 1);
-            if (!left.isEmpty()) {
-                return stripQualifiersToIso(expandUnspecifiedLower(left));
-            }
-            // Open-left interval like /1900: preserve the one year present.
-            if (!right.isEmpty()) {
-                return stripQualifiersToIso(expandUnspecifiedLower(right));
-            }
-            return Optional.empty();
-        }
-        return stripQualifiersToIso(expandUnspecifiedLower(edtf));
+        return boundIso(edtf, false);
     }
 
     /**
@@ -1108,78 +1073,134 @@ public final class DateNormalizer {
      * {@link #lowerBoundIso(String)}.
      */
     public static Optional<String> upperBoundIso(String edtf) {
+        return boundIso(edtf, true);
+    }
+
+    private static Optional<String> boundIso(String edtf, boolean upper) {
         if (edtf == null || edtf.isEmpty()) return Optional.empty();
-        // Bracket interval: [A..B], [..B], [A..]
-        if (edtf.startsWith("[") && edtf.endsWith("]")) {
-            String inner = edtf.substring(1, edtf.length() - 1);
-            int dotdot = inner.indexOf("..");
-            if (dotdot >= 0) {
-                String left = inner.substring(0, dotdot);
-                String right = inner.substring(dotdot + 2);
-                if (!right.isEmpty()) {
-                    return stripQualifiersToIso(expandUnspecifiedUpper(right));
-                }
-                // Open-right: preserve the one year present.
-                if (!left.isEmpty()) {
-                    return stripQualifiersToIso(expandUnspecifiedUpper(left));
-                }
+        EdtfTemporal parsed;
+        try {
+            parsed = Edtf.parse(edtf);
+        } catch (EdtfParseException e) {
+            // edtf-java rejects X-digit forms combined with qualifiers
+            // ({@code 18XX~}, {@code 18XX?}) — that's an EDTF Level 2 combo
+            // it doesn't accept. The qualifier doesn't change the bound
+            // semantics anyway, so strip a trailing qualifier and retry.
+            String stripped = edtf.replaceAll("[~?%]+$", "");
+            if (stripped.equals(edtf)) return Optional.empty();
+            try {
+                parsed = Edtf.parse(stripped);
+            } catch (EdtfParseException e2) {
+                return Optional.empty();
             }
-            return Optional.empty();
         }
-        int slash = edtf.indexOf('/');
-        if (slash >= 0) {
-            String left = edtf.substring(0, slash);
-            String right = edtf.substring(slash + 1);
-            if (!right.isEmpty()) {
-                return stripQualifiersToIso(expandUnspecifiedUpper(right));
-            }
-            // Open-right interval like 1850/: preserve the one year present.
-            if (!left.isEmpty()) {
-                return stripQualifiersToIso(expandUnspecifiedUpper(left));
-            }
-            return Optional.empty();
-        }
-        return stripQualifiersToIso(expandUnspecifiedUpper(edtf));
+        return boundOf(parsed, upper);
     }
 
-    /** Expand an X-digit EDTF form to its lowest concrete year (e.g. 18XX → 1800, 185X → 1850). */
-    private static String expandUnspecifiedLower(String edtf) {
-        String stripped = edtf.replaceAll("[~?%]$", "");
-        if (stripped.matches("^-?\\d{2,3}X{1,2}$")) {
-            return stripped.replace('X', '0');
+    /** Recursive bound extractor over a parsed {@link EdtfTemporal}. */
+    private static Optional<String> boundOf(EdtfTemporal t, boolean upper) {
+        if (t instanceof EdtfDate d) {
+            return formatDateBound(d, upper);
         }
-        return edtf;
+        if (t instanceof EdtfInterval iv) {
+            // For OHM's time-slider, an open endpoint falls back to the
+            // other (bounded) side — preserves the one year present rather
+            // than reporting infinite-past / infinite-future.
+            Endpoint primary = upper ? iv.upper() : iv.lower();
+            Endpoint fallback = upper ? iv.lower() : iv.upper();
+            if (primary instanceof Endpoint.Bounded b) return boundOf(b.value(), upper);
+            if (fallback instanceof Endpoint.Bounded b) return boundOf(b.value(), upper);
+            return Optional.empty();
+        }
+        if (t instanceof EdtfDecade dec) {
+            int year = dec.firstYear() + (upper ? 9 : 0);
+            return Optional.of(padAstronomicalYear(year));
+        }
+        if (t instanceof EdtfCentury c) {
+            int year = c.firstYear() + (upper ? 99 : 0);
+            return Optional.of(padAstronomicalYear(year));
+        }
+        if (t instanceof EdtfSeason s) {
+            // OHM convention: reduce season codes to the bare year for the
+            // base tag (the slider can't show seasons).
+            return Optional.of(padAstronomicalYear(s.year()));
+        }
+        if (t instanceof EdtfSet set) {
+            return setBound(set.members(), set.earlier(), set.later(), upper);
+        }
+        if (t instanceof EdtfList list) {
+            return setBound(list.members(), list.earlier(), list.later(), upper);
+        }
+        // EdtfYear (Y-prefixed exponential / very-large years): use the
+        // canonical string. Out of OHM time-slider's normal range; pass
+        // through unchanged so the caller can decide.
+        return Optional.of(t.toEdtfString());
     }
 
-    /** Expand an X-digit EDTF form to its highest concrete year (e.g. 18XX → 1899, 185X → 1859). */
-    private static String expandUnspecifiedUpper(String edtf) {
-        String stripped = edtf.replaceAll("[~?%]$", "");
-        if (stripped.matches("^-?\\d{2,3}X{1,2}$")) {
-            return stripped.replace('X', '9');
+    /** Bound extraction for set / list members; mirrors interval semantics. */
+    private static Optional<String> setBound(java.util.List<ListMember> members,
+                                             boolean earlier, boolean later,
+                                             boolean upper) {
+        // OHM convention treats {@code [A..B]} as a range, with the
+        // {@code earlier=true} ([..B]) and {@code later=true} ([A..])
+        // flags marking the open ends — same fallback semantics as
+        // EdtfInterval.
+        if (members.isEmpty()) return Optional.empty();
+        ListMember pick = upper ? members.get(members.size() - 1) : members.get(0);
+        EdtfTemporal pickedValue;
+        if (pick instanceof ListMember.Single single) {
+            pickedValue = single.value();
+        } else if (pick instanceof ListMember.Consecutive consec) {
+            pickedValue = upper ? consec.end() : consec.start();
+        } else {
+            return Optional.empty();
         }
-        return edtf;
+        // For open-set ends we can still produce a bound — the fallback
+        // logic doesn't differ from a fully bounded set since the only
+        // endpoint we have IS the one we want.
+        if (upper && later) {
+            // [A..]: upper bound falls back to A; pickedValue is already A.
+        } else if (!upper && earlier) {
+            // [..B]: lower bound falls back to B; pickedValue is already B.
+        }
+        return boundOf(pickedValue, upper);
     }
 
     /**
-     * Remove EDTF qualifiers and verify the result is a plain ISO calendar date.
-     *
-     * <p>EDTF season codes ({@code YYYY-NN} where {@code NN} is 21..41) are
-     * reduced to the bare year {@code YYYY}, since the OHM time-slider can't
-     * interpret season codes directly. This is intentionally lossy — the
-     * :edtf sibling keeps the full precision for consumers that understand
-     * seasons — but it gives the base tag a valid ISO date.
+     * Format an {@link EdtfDate} bound at its native precision, applying
+     * OHM-specific reductions: strip qualifiers ({@code ~?%}) and expand
+     * X-digit unspecified-digit forms ({@code 18XX} → 1800/1899,
+     * {@code 185X} → 1850/1859).
      */
-    private static Optional<String> stripQualifiersToIso(String edtf) {
-        String stripped = edtf.replaceAll("[~?%]$", "");
-        // Season code: reduce YYYY-NN to YYYY for the base tag.
-        Matcher seasonMatcher = EDTF_SEASON_CODE.matcher(stripped);
-        if (seasonMatcher.matches()) {
-            return Optional.of(seasonMatcher.group(1));
+    private static Optional<String> formatDateBound(EdtfDate d, boolean upper) {
+        // Detect X-digit unspecified form via the canonical string —
+        // EdtfDate normalises both lower and upper of an X-form to the
+        // start year, so we can't distinguish bound directions through
+        // the typed accessors alone.
+        String canon = d.toEdtfString();
+        String stripped = canon.replaceAll("[~?%]+$", "");
+        if (stripped.matches("^-?\\d{2,3}X{1,2}$")) {
+            return Optional.of(stripped.replace('X', upper ? '9' : '0'));
         }
-        if (isIsoCalendarDate(stripped)) {
-            return Optional.of(stripped);
+        // Otherwise format from the typed fields, preserving precision.
+        int year = d.year();
+        switch (d.precision()) {
+            case YEAR:
+                return Optional.of(padAstronomicalYear(year));
+            case MONTH:
+                return Optional.of(padAstronomicalYear(year) + "-" + pad2int(d.month()));
+            case DAY:
+            case MINUTE:
+            case SECOND:
+            case MILLISECOND:
+            default:
+                return Optional.of(padAstronomicalYear(year) + "-" + pad2int(d.month())
+                                   + "-" + pad2int(d.day()));
         }
-        return Optional.empty();
+    }
+
+    private static String pad2int(int n) {
+        return String.format("%02d", n);
     }
 
     // --- Range-bound helpers (internal) -------------------------------------
