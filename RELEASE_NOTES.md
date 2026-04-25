@@ -85,13 +85,3 @@ thread](https://community.openhistoricalmap.org/t/133):
 - Added wrong → fixed examples to every rule in the docs (#8)
 - Migrated to the off-the-shelf `edtf-java` parser instead of
   in-tree regex (#1)
-
-## Known follow-ups
-
-- **Rule 4200 (man-made object without `start_date`) over-fires on
-  large boundary relations** — see [#4](../../issues/4). Reproducing
-  the original report (3344 warnings on r/2828412 / British Empire
-  1921-1922) requires data not yet captured; investigation deferred.
-- **`lowerBoundIso` / `upperBoundIso` migration** — these still use
-  in-tree regex. Sub-task on [#1](../../issues/1).
-
