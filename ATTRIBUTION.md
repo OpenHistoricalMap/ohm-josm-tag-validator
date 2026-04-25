@@ -18,6 +18,26 @@ port author's responsibility, not the original author's.
 - Originating commit: https://github.com/OpenHistoricalMap/iD/commit/4d5cb19
 - Original license: ISC (see `LICENSES/iD-ISC.txt`)
 
+## Bundled third-party library: edtf-java
+
+The plugin's distributed JAR (`dist/ohm-tags.jar`) shades in the
+[`edtf-java`](https://github.com/OpenHistoricalMap/edtf-java) library
+(`io.github.openhistoricalmap:edtf:0.2.0`), used as the source of
+truth for EDTF parsing, validation, and bound extraction. The
+library's BSD 2-Clause license requires that the copyright notice
+accompany binary redistributions; the upstream `META-INF/LICENSE`,
+`META-INF/NOTICE`, and `META-INF/LICENSE-edtf.js.txt` files are
+preserved inside the shaded JAR.
+
+`edtf-java` itself derives from
+[`edtf.js`](https://github.com/inukshuk/edtf.js) (also BSD 2-Clause).
+
+- Library source: https://github.com/OpenHistoricalMap/edtf-java
+- Maven Central: `io.github.openhistoricalmap:edtf:0.2.0`
+- Library license: BSD 2-Clause (see `LICENSES/edtf-java-BSD-2-Clause.txt`)
+- Upstream JS library license: BSD 2-Clause (preserved in the shaded
+  JAR's `META-INF/LICENSE-edtf.js.txt`)
+
 ## AI-assisted development
 
 This project was developed with substantial assistance from Claude
