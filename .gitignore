@@ -9,6 +9,10 @@ lib/
 # Test output
 test/results.txt
 
+# Large local regression fixtures (OHM relation extracts, fetched on demand;
+# kept out of the repo to avoid bloating clones — naming convention r<id>_*.osm)
+test/r*.osm
+
 # macOS
 .DS_Store
 ._*

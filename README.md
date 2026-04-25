@@ -27,60 +27,56 @@ See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messag
 
 ### From source
 
-This plugin compiles against JOSM core (Java 17+). You need a built
-`josm-custom.jar` somewhere on disk; the easiest source is a checkout of
-[JOSM](https://josm.openstreetmap.de/wiki/Source) built with `ant dist`
-in its `core/` subdirectory. The plugin does **not** vendor JOSM core
-— keep your JOSM checkout outside this repository so it stays
-independently updatable.
-
-The plugin also depends on the
-[`edtf-java`](https://github.com/OpenHistoricalMap/edtf-java) library
-(`io.github.openhistoricalmap:edtf:0.2.0`, BSD 2-Clause) for canonical
-EDTF parsing. The library is fetched automatically from Maven Central
-by the `fetch-dependencies` Ant target and shaded into the plugin JAR
-at build time, so JOSM users don't need to install anything extra.
-The shaded JAR preserves the upstream BSD notice in its `META-INF/`;
-see `ATTRIBUTION.md` and `LICENSES/edtf-java-BSD-2-Clause.txt` for the
-full attribution.
+Java 17+ is required (a constraint of the `edtf-java` dependency;
+recent JOSM versions already require Java 17). The plugin does **not**
+vendor JOSM core or `edtf-java`; both are fetched on first build.
 
 ```bash
 git clone https://github.com/OpenHistoricalMap/ohm-josm-tag-validator.git
 cd ohm-josm-tag-validator
-ant -Djosm=/path/to/josm-custom.jar dist
+ant dist
 # jar is produced in dist/ohm-tags.jar (with edtf-java shaded in)
 ```
 
-The first build downloads `edtf-0.2.0.jar` to `lib/` from Maven
-Central. Subsequent builds reuse that JAR. The `lib/` directory is
+The first build downloads two JARs into `lib/`:
+
+- `edtf-0.2.0.jar` from Maven Central — the
+  [`edtf-java`](https://github.com/OpenHistoricalMap/edtf-java) library
+  (`io.github.openhistoricalmap:edtf:0.2.0`, BSD 2-Clause), used for
+  canonical EDTF parsing. It is shaded into the plugin JAR at build
+  time, so JOSM users don't need to install anything extra. The shaded
+  JAR preserves the upstream BSD notice under `META-INF/edtf-java/`;
+  see `ATTRIBUTION.md` and `LICENSES/edtf-java-BSD-2-Clause.txt` for
+  the full attribution.
+- `josm-19555.jar` from josm.openstreetmap.de — the JOSM core JAR
+  the plugin compiles against. Pinned to a specific revision so
+  builds are reproducible. Bumping the pinned revision is a one-line
+  change to `josm.version` in `build.xml`.
+
+Subsequent builds reuse the cached JARs. The `lib/` directory is
 gitignored — JARs are not checked in.
-
-#### Building
-
-The default value of the `josm` property in `build.xml` is
-`../../josm/core/dist/josm-custom.jar`, which assumes your plugin
-checkout lives at `josm-dev/plugins/ohm-josm-tag-validator/` next to a
-sibling `josm-dev/josm/` JOSM checkout. If your layout differs, override
-on the command line:
-
-```
-ant -Djosm=/path/to/josm-custom.jar dist
-```
-
-Java 17+ is required (a constraint of the `edtf-java` dependency;
-recent JOSM versions already require Java 17).
 
 Output: `dist/ohm-tags.jar`.
 
 To run the regression test harness against `test/test_data.osm`:
 
 ```
-ant -Djosm=/path/to/josm-custom.jar test
+ant test
 ```
 
-If you'd rather drop a copy of `josm-custom.jar` directly inside this
-repo (e.g. for sandboxed development), put it under `core/dist/` —
-that path is gitignored, so it won't accidentally end up in commits.
+#### Using a local JOSM source checkout
+
+If you already have JOSM built from source (or want to compile against
+a different revision), override the auto-fetch with `-Djosm=...`:
+
+```
+ant -Djosm=/absolute/path/to/josm-custom.jar dist
+```
+
+When `-Djosm=...` is set, the build skips the JOSM download entirely
+and uses your file. If the path you supply doesn't exist, the build
+fails fast with an explanatory message rather than silently fetching
+the snapshot to your custom path.
 
 #### Installing
 

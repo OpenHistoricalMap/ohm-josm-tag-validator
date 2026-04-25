@@ -11,7 +11,6 @@
     <property name="plugin.canloadatruntime" value="true"/>
 
     <!-- === Paths =========================================================== -->
-    <property name="josm"             location="../../josm/core/dist/josm-custom.jar"/>
     <property name="plugin.build.dir" value="build"/>
     <property name="plugin.src.dir"   value="src"/>
     <property name="plugin.dist.dir"  value="dist"/>
@@ -29,6 +28,17 @@
     <property name="edtf.jar"         value="${plugin.lib.dir}/edtf-${edtf.version}.jar"/>
     <property name="edtf.url"
               value="https://repo.maven.apache.org/maven2/io/github/openhistoricalmap/edtf/${edtf.version}/edtf-${edtf.version}.jar"/>
+
+    <!-- === JOSM core ======================================================= -->
+    <!-- Compiled against JOSM r19555. The plugin does not vendor JOSM core;
+         fetch-dependencies downloads the matching snapshot to lib/ on first
+         build. To use a local JOSM source checkout instead, override on the
+         command line: -Djosm=/absolute/path/to/josm-custom.jar -->
+    <property name="josm.version"     value="19555"/>
+    <property name="josm.default"     location="${plugin.lib.dir}/josm-${josm.version}.jar"/>
+    <property name="josm"             location="${josm.default}"/>
+    <property name="josm.url"
+              value="https://josm.openstreetmap.de/download/josm-snapshot-${josm.version}.jar"/>
 
     <!-- edtf-java requires JDK 17. -->
     <property name="ant.build.javac.target" value="17"/>
@@ -49,8 +59,34 @@
         <mkdir dir="${plugin.lib.dir}"/>
     </target>
 
-    <target name="fetch-dependencies" depends="init"
-            description="Download third-party JARs declared in pom.xml into lib/">
+    <target name="-josm-precheck" depends="init">
+        <!-- If the user passed -Djosm=... pointing at a missing file, fail
+             loudly rather than silently downloading the snapshot to their
+             custom path. -->
+        <fail>
+            <condition>
+                <and>
+                    <not><available file="${josm}"/></not>
+                    <not><equals arg1="${josm}" arg2="${josm.default}"/></not>
+                </and>
+            </condition>
+Configured -Djosm=${josm} does not exist. Either remove the override to use
+the auto-fetched snapshot at ${josm.default}, or supply a path that points
+to an existing josm-custom.jar.
+        </fail>
+        <!-- Only auto-fetch when no override is in effect. -->
+        <condition property="josm.fetch.needed">
+            <equals arg1="${josm}" arg2="${josm.default}"/>
+        </condition>
+    </target>
+
+    <target name="-fetch-josm" depends="-josm-precheck" if="josm.fetch.needed">
+        <get src="${josm.url}" dest="${josm.default}"
+             skipexisting="true" verbose="true"/>
+    </target>
+
+    <target name="fetch-dependencies" depends="-fetch-josm"
+            description="Download third-party JARs (edtf-java, JOSM core) into lib/">
         <get src="${edtf.url}" dest="${edtf.jar}"
              skipexisting="true" verbose="false"/>
     </target>
@@ -84,10 +120,28 @@
         <!-- Bundle edtf-java into the plugin JAR so JOSM's plugin loader has
              it on the classpath at runtime. The library is small (~75 KB) and
              has no transitive dependencies, so shading is the simplest path
-             until edtf-java itself is published as a JOSM library plugin. -->
+             until edtf-java itself is published as a JOSM library plugin.
+
+             The library's loose META-INF files (LICENSE, NOTICE, ATTRIBUTION.md,
+             LICENSE-edtf.js.txt) are relocated under META-INF/edtf-java/ so they
+             are clearly identifiable as vendored content rather than belonging
+             to this plugin. The pom metadata under META-INF/maven/... is already
+             self-namespaced and stays in place. The upstream MANIFEST.MF is
+             dropped — the <jar> task writes our own. -->
         <jar destfile="${plugin.jar}">
             <fileset dir="${plugin.build.dir}"/>
-            <zipgroupfileset dir="${plugin.lib.dir}" includes="edtf-*.jar"/>
+            <zipfileset src="${edtf.jar}">
+                <exclude name="META-INF/*"/>
+            </zipfileset>
+            <mappedresources>
+                <zipfileset src="${edtf.jar}">
+                    <include name="META-INF/LICENSE"/>
+                    <include name="META-INF/LICENSE-edtf.js.txt"/>
+                    <include name="META-INF/NOTICE"/>
+                    <include name="META-INF/ATTRIBUTION.md"/>
+                </zipfileset>
+                <globmapper from="META-INF/*" to="META-INF/edtf-java/*"/>
+            </mappedresources>
             <manifest>
                 <attribute name="Author"             value="${plugin.author}"/>
                 <attribute name="Plugin-Class"       value="${plugin.class}"/>

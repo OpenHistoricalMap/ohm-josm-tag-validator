@@ -25,9 +25,9 @@ The plugin's distributed JAR (`dist/ohm-tags.jar`) shades in the
 (`io.github.openhistoricalmap:edtf:0.2.0`), used as the source of
 truth for EDTF parsing, validation, and bound extraction. The
 library's BSD 2-Clause license requires that the copyright notice
-accompany binary redistributions; the upstream `META-INF/LICENSE`,
-`META-INF/NOTICE`, and `META-INF/LICENSE-edtf.js.txt` files are
-preserved inside the shaded JAR.
+accompany binary redistributions; the upstream `LICENSE`, `NOTICE`,
+`ATTRIBUTION.md`, and `LICENSE-edtf.js.txt` files are preserved
+inside the shaded JAR under `META-INF/edtf-java/`.
 
 `edtf-java` itself derives from
 [`edtf.js`](https://github.com/inukshuk/edtf.js) (also BSD 2-Clause).
@@ -36,7 +36,7 @@ preserved inside the shaded JAR.
 - Maven Central: `io.github.openhistoricalmap:edtf:0.2.0`
 - Library license: BSD 2-Clause (see `LICENSES/edtf-java-BSD-2-Clause.txt`)
 - Upstream JS library license: BSD 2-Clause (preserved in the shaded
-  JAR's `META-INF/LICENSE-edtf.js.txt`)
+  JAR's `META-INF/edtf-java/LICENSE-edtf.js.txt`)
 
 ## AI-assisted development
 
