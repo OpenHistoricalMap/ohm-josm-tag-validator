@@ -6,6 +6,7 @@ Validates and normalizes OHM-style date tags and source/name consistency for [Op
 
 <img width="778" height="320" alt="Monosnap Java OpenStreetMap Editor 2026-04-25 19-37-13" src="https://github.com/user-attachments/assets/3b5029f9-8325-4c71-a705-45af67e1976d" />
 
+
 **Date validation (`DateTagTest`)** checks `start_date`, `end_date`, and their `:edtf` and `:raw` siblings. It normalizes values to EDTF (ISO 8601-2), detects ambiguous inputs (decades vs. centuries, negative years, trailing hyphens), flags suspicious dates (year-boundary padding, far-future values, inverted start/end), handles Julian-calendar conversion, and reconciles mismatches between base tags and their `:edtf` counterparts. Most checks offer an autofix; a few require manual review.
 
 **Tag consistency (`TagConsistencyTest`)** checks names, source tags, and external-identifier references. It warns on named features missing a plain `name` or `wikidata` tag, flags `source` values that are misformatted URLs or should be split into `source` / `source:name` / `source:N` keys, consolidates redundant `source:url` tags, and checks that `wikipedia` and `wikidata` tags are present when referenced by attribute-source keys.
