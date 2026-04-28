@@ -20,9 +20,11 @@ import java.util.regex.Pattern;
 import org.openstreetmap.josm.command.ChangePropertyCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.SequenceCommand;
+import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
+import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.Test;
 import org.openstreetmap.josm.data.validation.TestError;
@@ -1944,6 +1946,10 @@ public class DateTagTest extends Test {
             // No identifying info on either side — nothing to compare against.
             if (prevTags.isEmpty() && currTags.isEmpty()) continue;
             if (!prevTags.equals(currTags)) continue;
+            // Geometry must also match. Any geometric change (different node
+            // ids, moved coordinates, different relation member structure)
+            // means the chronology split was justified — skip.
+            if (!sameGeometry(prev.prim, curr.prim)) continue;
 
             errors.add(TestError.builder(this, Severity.ERROR, CODE_CHRONOLOGY_DUPLICATE)
                 .message(tr("[ohm] Chronology - member duplicate to its predecessor; unfixable, please review"),
@@ -1958,6 +1964,53 @@ public class DateTagTest extends Test {
                 .primitives(Arrays.asList(prev.prim, curr.prim))
                 .build());
         }
+    }
+
+    /**
+     * True iff {@code a} and {@code b} have identical geometry. Used by
+     * Rule 4238 to suppress the duplicate finding when an entity's shape
+     * legitimately changed between successive chronology members.
+     *
+     * <p>Comparison is recursive and coordinate-based, not identity-based:
+     * two ways with different node ids but identical node coordinates count
+     * as the same geometry. Incomplete primitives (no downloaded data)
+     * cannot be compared, so the function returns {@code false} for them —
+     * 4238 will not fire when we can't be sure the geometry matches.
+     */
+    private static boolean sameGeometry(OsmPrimitive a, OsmPrimitive b) {
+        if (a == null || b == null) return false;
+        if (a.isIncomplete() || b.isIncomplete()) return false;
+        if (a == b) return true;
+        if (a.getType() != b.getType()) return false;
+
+        if (a instanceof Node) {
+            Node na = (Node) a;
+            Node nb = (Node) b;
+            return na.getCoor() != null && nb.getCoor() != null
+                && na.getCoor().equals(nb.getCoor());
+        }
+        if (a instanceof Way) {
+            Way wa = (Way) a;
+            Way wb = (Way) b;
+            if (wa.getNodesCount() != wb.getNodesCount()) return false;
+            for (int i = 0; i < wa.getNodesCount(); i++) {
+                if (!sameGeometry(wa.getNode(i), wb.getNode(i))) return false;
+            }
+            return true;
+        }
+        if (a instanceof Relation) {
+            Relation ra = (Relation) a;
+            Relation rb = (Relation) b;
+            if (ra.getMembersCount() != rb.getMembersCount()) return false;
+            for (int i = 0; i < ra.getMembersCount(); i++) {
+                RelationMember ma = ra.getMember(i);
+                RelationMember mb = rb.getMember(i);
+                if (!ma.getRole().equals(mb.getRole())) return false;
+                if (!sameGeometry(ma.getMember(), mb.getMember())) return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

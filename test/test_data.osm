@@ -38721,4 +38721,29 @@
     <tag k='start_date' v='1700' />
     <tag k='end_date' v='2000' />
   </relation>
+  <!-- Fixture M: chronology with same-tagged members but different node
+       coordinates (geometry changed). Expected: 4238 does NOT fire. -->
+  <node id='9100401' visible='true' version='1' lat='10.0' lon='10.0'>
+    <tag k='name' v='Test Place' />
+    <tag k='building' v='yes' />
+    <tag k='wikidata' v='Q2' />
+    <tag k='source' v='https://example.com/m' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+  </node>
+  <node id='9100402' visible='true' version='1' lat='20.0' lon='20.0'>
+    <tag k='name' v='Test Place' />
+    <tag k='building' v='yes' />
+    <tag k='wikidata' v='Q2' />
+    <tag k='source' v='https://example.com/m' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <relation id='9100410' visible='true' version='1'>
+    <member type='node' ref='9100401' role='' />
+    <member type='node' ref='9100402' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </relation>
 </osm>

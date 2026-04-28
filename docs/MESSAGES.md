@@ -413,7 +413,11 @@ Sorted members: A `1800–1850`, B `1855–1900`. Five missing years between A's
 **4237 example:**  
 Chronology with three members. The youngest (start=1980) has no `end_date` (still in use — allowed). Another member has `start_date=1900` but no `end_date`. Fires for the second member.
 
-**4238 (ERROR) trigger:** A chronology member's non-date tags (everything except keys matching the OHM `_date` family — so `start_date`, `end_date`, `*_date:edtf`, `*_date:raw`, `*_date:source`, `*_date:note`, etc. are excluded) are exactly equal to its predecessor's. Predecessor is the previous member after sorting by `start_date`. Applies to all member types — nodes, ways, and relations. Skipped only when both members have no non-date tags at all (nothing to compare). The implication: if the entity didn't change in any meaningful way between successive time periods, it shouldn't be split into separate chronology members.
+**4238 (ERROR) trigger:** A chronology member's non-date tags (everything except keys matching the OHM `_date` family — so `start_date`, `end_date`, `*_date:edtf`, `*_date:raw`, `*_date:source`, `*_date:note`, etc. are excluded) are exactly equal to its predecessor's, **and** the two have identical geometry. Predecessor is the previous member after sorting by `start_date`. Applies to all member types — nodes, ways, and relations.
+
+Geometry comparison is coordinate-based and recursive: two nodes match only if their `lat`/`lon` are equal; two ways match only if they have the same number of nodes and each pair of corresponding nodes shares coordinates (different node ids are fine if they sit at the same position); two relations match only if their member lists agree on `(role, recursive geometry)` for each entry. Incomplete primitives (members not yet downloaded) cannot be compared and are treated as "not duplicate" to avoid false positives. The rule also skips when both members have no non-date tags at all (nothing to compare).
+
+The implication: if the entity didn't change in any meaningful way between successive time periods — neither tags nor shape — it shouldn't be split into separate chronology members.
 
 **4238 example:**  
 Member A: `name=Town Hall`, `building=yes`, `wikidata=Q12345`, `start_date=1850`, `end_date=1900`.  
