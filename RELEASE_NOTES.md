@@ -1,3 +1,33 @@
+# v0.3.2 — wikidata rule detune, new historic warning, icon polish
+
+## Less noise from the missing-`wikidata` rule (4302)
+
+`[ohm] Missing tag - wikidata` previously fired on every named feature without a `wikidata` tag, which over-fired on routine named buildings, local roads, and the like. It now fires only when the feature also carries a notability signal:
+
+- Any `wikipedia=*`, `historic=*`, or `boundary=administrative`
+- A notable value of `place` (city, town, village, hamlet, suburb, neighbourhood, county, state, country, region, island, archipelago, continent)
+- A notable value of `tourism` (museum, attraction, monument, artwork, gallery)
+- A notable value of `amenity` (place_of_worship, university, courthouse, townhall, library, theatre, hospital, school)
+- A notable value of `building` (castle, cathedral, church, chapel, mosque, synagogue, temple, palace)
+- A notable value of `military` (castle, fort, barracks)
+- Or the primitive is a relation (relations almost always represent compound named entities)
+
+In the bundled regression dataset, the rule's hit count drops from 268 to 73 — a 73% reduction.
+
+## Wikidata QID autofix when `wikipedia=*` is set
+
+If `wikipedia=*` is present but `wikidata` is missing, a fix is now offered that resolves the QID via the Wikidata API (`wbgetentities` against `<lang>wiki` site title) at fix-click time. The lookup is lazy — validation stays offline-fast. If the lookup fails (network error, missing article, no QID in response), the fix is a silent no-op.
+
+## New: `[ohm] Suspicious tag - historic` (4319, WARNING)
+
+OHM convention is that `historic=*` applies only to entities that have actually passed into history; using it on a still-current feature is premature. The rule fires once per feature carrying `historic=*` (any value), prompting the editor to confirm. Unfixable.
+
+## Icon polish
+
+The plugin icon's black background is now transparent. Same shield/checkmark glyph; cleaner blend with JOSM's plugin list.
+
+---
+
 # v0.3.1 — JOSM plugin registry submission prep
 
 Pre-submission housekeeping for getting the plugin into the JOSM

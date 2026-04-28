@@ -3,9 +3,18 @@ package org.openstreetmap.josm.plugins.ohmtags.validation;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,8 +49,24 @@ import org.openstreetmap.josm.data.validation.TestError;
  *
  * <p><b>Wikidata.</b>
  * <ul>
- *   <li>Named features without a {@code wikidata} tag are warned. Wikidata
- *       is the preferred identifier for cross-referencing.</li>
+ *   <li>Named features without a {@code wikidata} tag are flagged as
+ *       errors only when they also carry a notability signal: any
+ *       {@code wikipedia=*}, {@code historic=*},
+ *       {@code boundary=administrative}, a notable value of
+ *       {@code place} / {@code tourism} / {@code amenity} /
+ *       {@code building} / {@code military}, OR if the primitive is a
+ *       relation. Random named ways/nodes are no longer warned.</li>
+ *   <li>If {@code wikipedia=*} is present, an autofix is offered that
+ *       performs a runtime Wikidata API lookup to derive the QID. The
+ *       lookup happens lazily when the user clicks Fix; if it fails
+ *       (network error, missing article, no QID), the fix is a no-op.</li>
+ * </ul>
+ *
+ * <p><b>Historic.</b>
+ * <ul>
+ *   <li>Any feature carrying {@code historic=*} is warned, prompting
+ *       the editor to confirm the entity has actually passed into
+ *       history before applying the tag (4319). Unfixable.</li>
  * </ul>
  *
  * <p><b>Source.</b>
@@ -110,6 +135,46 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_SOURCE_SEMICOLON_MULTI_TEXT = 4316;
     protected static final int CODE_SOURCE_SEMICOLON_MIXED = 4317;
     protected static final int CODE_RELATION_LABEL_MEMBER = 4318;
+    protected static final int CODE_HISTORIC_SUSPICIOUS = 4319;
+
+    // --- Notability heuristics for the missing-wikidata rule (4302) ----------
+    // A named feature only triggers 4302 when it carries one of these signals
+    // OR is a relation. Designed to drop the noise from random named buildings,
+    // local roads, and similar ordinary features.
+
+    private static final Set<String> PLACE_NOTABLE = Set.of(
+        "city", "town", "village", "hamlet", "suburb", "neighbourhood",
+        "county", "state", "country", "region", "island", "archipelago",
+        "continent");
+
+    private static final Set<String> TOURISM_NOTABLE = Set.of(
+        "museum", "attraction", "monument", "artwork", "gallery");
+
+    private static final Set<String> AMENITY_NOTABLE = Set.of(
+        "place_of_worship", "university", "courthouse", "townhall",
+        "library", "theatre", "hospital", "school");
+
+    private static final Set<String> BUILDING_NOTABLE = Set.of(
+        "castle", "cathedral", "church", "chapel", "mosque",
+        "synagogue", "temple", "palace");
+
+    private static final Set<String> MILITARY_NOTABLE = Set.of(
+        "castle", "fort", "barracks");
+
+    /**
+     * Shared HTTP client for the runtime Wikipedia → Wikidata QID lookup
+     * (see {@link #lookupWikidataQid}). Static so we don't churn on every
+     * fix invocation.
+     */
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(5))
+        .build();
+
+    /** Matches the plain QID inside Wikidata API responses. */
+    private static final Pattern QID_PATTERN = Pattern.compile("\"id\":\"(Q\\d+)\"");
+
+    /** Validates the language-prefix portion of a wikipedia=lang:Title value. */
+    private static final Pattern WIKIPEDIA_LANG = Pattern.compile("[a-z]{2,10}");
 
     // --- Patterns ------------------------------------------------------------
 
@@ -214,6 +279,21 @@ public class TagConsistencyTest extends Test {
         // that if it fires, it does so against the un-processed state.
         checkSourceUrlConsolidation(p);
 
+        // Suspicious historic=*. OHM convention is that historic=* applies
+        // to entities that have actually passed into history; using it on
+        // a still-current feature is premature. We emit on every historic=*
+        // tag and let the editor confirm.
+        String historic = p.get("historic");
+        if (historic != null) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_HISTORIC_SUSPICIOUS)
+                .message(tr("[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic"),
+                         tr("historic={0}: confirm the entity has actually passed into "
+                            + "history before applying this tag.",
+                            historic))
+                .primitives(p)
+                .build());
+        }
+
         boolean hasAnyNameFamily = false;
         boolean hasPlainName = p.get("name") != null;
 
@@ -282,14 +362,27 @@ public class TagConsistencyTest extends Test {
                 .build());
         }
 
-        // Rule: named feature without wikidata.
-        if (p.get("wikidata") == null) {
-            errors.add(TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
+        // Rule: named feature without wikidata, gated by a notability signal
+        // (wikipedia=*, historic=*, place/tourism/amenity/building/military
+        // notable values) OR being a relation. Random named ways/nodes do
+        // not fire the rule. If wikipedia=* is present, an autofix is
+        // offered that performs a runtime Wikidata API lookup to derive
+        // the QID (lazy — runs only when the user clicks Fix).
+        if (p.get("wikidata") == null && hasNotabilitySignal(p)) {
+            TestError.Builder builder = TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
                 .message(tr("[ohm] Missing tag - wikidata; unfixable, please review and add a Wikidata QID"),
                          tr("This named feature has no ''wikidata'' tag. "
                             + "Wikidata is the preferred identifier for cross-referencing."))
-                .primitives(p)
-                .build());
+                .primitives(p);
+            String wikipediaValue = p.get("wikipedia");
+            if (wikipediaValue != null) {
+                builder.fix(() -> {
+                    Optional<String> qidOpt = lookupWikidataQid(wikipediaValue);
+                    if (qidOpt.isEmpty()) return null;
+                    return new ChangePropertyCommand(Arrays.asList(p), "wikidata", qidOpt.get());
+                });
+            }
+            errors.add(builder.build());
         }
 
         // Rule: named feature without any source*.
@@ -304,6 +397,97 @@ public class TagConsistencyTest extends Test {
     }
 
     // --- Helpers -------------------------------------------------------------
+
+    /**
+     * Notability heuristic for the missing-wikidata rule (4302). Returns
+     * true if the primitive is plausibly the kind of thing a Wikipedia
+     * editor would write about — relations always count; otherwise the
+     * primitive must carry one of: {@code wikipedia=*}, {@code historic=*},
+     * {@code boundary=administrative}, or a notable value of
+     * {@code place}, {@code tourism}, {@code amenity}, {@code building},
+     * or {@code military}. The notable-value sets are deliberately tight
+     * so the rule isn't tripped by random named buildings or local roads.
+     */
+    private static boolean hasNotabilitySignal(OsmPrimitive p) {
+        if (p instanceof Relation) return true;
+        if (p.get("wikipedia") != null) return true;
+        if (p.get("historic") != null) return true;
+        if ("administrative".equals(p.get("boundary"))) return true;
+
+        String place = p.get("place");
+        if (place != null && PLACE_NOTABLE.contains(place)) return true;
+
+        String tourism = p.get("tourism");
+        if (tourism != null && TOURISM_NOTABLE.contains(tourism)) return true;
+
+        String amenity = p.get("amenity");
+        if (amenity != null && AMENITY_NOTABLE.contains(amenity)) return true;
+
+        String building = p.get("building");
+        if (building != null && BUILDING_NOTABLE.contains(building)) return true;
+
+        String military = p.get("military");
+        if (military != null && MILITARY_NOTABLE.contains(military)) return true;
+
+        return false;
+    }
+
+    /**
+     * Resolve a {@code wikipedia=lang:Article Title} value to a Wikidata
+     * QID by calling the Wikidata API at fix time.
+     *
+     * <p>Returns {@code Optional.empty()} for any failure mode — unparseable
+     * value, network error, non-200 response, missing article, or no QID
+     * in the response. The autofix supplier in 4302 returns a no-op (null)
+     * Command on empty, so a Fix click that can't resolve the article does
+     * nothing rather than corrupting the data.
+     *
+     * <p>Performed lazily (only when the user clicks Fix) to keep
+     * validation fast and offline-friendly.
+     */
+    private static Optional<String> lookupWikidataQid(String wikipediaValue) {
+        if (wikipediaValue == null || wikipediaValue.isEmpty()) return Optional.empty();
+        int colon = wikipediaValue.indexOf(':');
+        String lang;
+        String title;
+        if (colon < 0) {
+            lang = "en";
+            title = wikipediaValue;
+        } else {
+            lang = wikipediaValue.substring(0, colon);
+            title = wikipediaValue.substring(colon + 1);
+        }
+        if (lang.isEmpty() || title.isEmpty()) return Optional.empty();
+        if (!WIKIPEDIA_LANG.matcher(lang).matches()) return Optional.empty();
+
+        try {
+            String url = "https://www.wikidata.org/w/api.php"
+                + "?action=wbgetentities"
+                + "&sites=" + lang + "wiki"
+                + "&titles=" + URLEncoder.encode(title, StandardCharsets.UTF_8)
+                + "&props=info&format=json";
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(5))
+                .header("User-Agent",
+                    "OHM_Tag_Validator (https://github.com/OpenHistoricalMap/ohm-josm-tag-validator)")
+                .GET()
+                .build();
+            HttpResponse<String> response = HTTP_CLIENT.send(request,
+                HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) return Optional.empty();
+            String body = response.body();
+            // wbgetentities returns "missing" when the article doesn't exist
+            // or has no Wikidata mapping — bail before regex-finding a QID.
+            if (body.contains("\"missing\"")) return Optional.empty();
+            Matcher m = QID_PATTERN.matcher(body);
+            if (m.find()) {
+                return Optional.of(m.group(1));
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
 
     /** True if any key on the primitive starts with "source". */
     private static boolean hasAnySourceTag(OsmPrimitive p) {

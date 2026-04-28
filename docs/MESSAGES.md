@@ -432,7 +432,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4318)
+## TagConsistencyTest (codes 4300–4319)
 
 ### Name consistency
 
@@ -470,15 +470,25 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 | 4302 | `[ohm] Missing tag - wikidata; unfixable, please review and add a Wikidata QID` |
 | 4303 | `[ohm] Missing tag - source; named feature without source; unfixable, please review` |
 
-**4302 trigger:** Named feature has no `wikidata` tag.  
+**4302 trigger:** Named feature has no `wikidata` tag **and** carries a notability signal: any `wikipedia=*`, `historic=*`, `boundary=administrative`, or a notable value of `place` (city/town/village/hamlet/suburb/neighbourhood/county/state/country/region/island/archipelago/continent), `tourism` (museum/attraction/monument/artwork/gallery), `amenity` (place_of_worship/university/courthouse/townhall/library/theatre/hospital/school), `building` (castle/cathedral/church/chapel/mosque/synagogue/temple/palace), or `military` (castle/fort/barracks). Relations always count.
+
+**4302 fix:** If `wikipedia=*` is present, an autofix is offered that resolves the QID via the Wikidata API (`wbgetentities` against `<lang>wiki` site title) at fix-click time. If the lookup fails (network error, missing article, no QID in response), the fix is a silent no-op. No autofix is offered when `wikipedia=*` is absent.
+
 **4302 description:** _This named feature has no 'wikidata' tag. Wikidata is the preferred identifier for cross-referencing._
 
 **4303 trigger:** Named feature has no `source*` tag of any kind.  
 **4303 description:** _This named feature has no 'source' tag. Please document the provenance of this feature._
 
-**4302 example:**  
-Trigger: `name=Eiffel Tower` with no `wikidata` tag.  
+**4302 example (no autofix):**  
+Trigger: `name=Eiffel Tower`, `tourism=attraction`, no `wikidata`, no `wikipedia`.  
 Suggested manual fix: add `wikidata=Q243`.
+
+**4302 example (with autofix):**  
+Trigger: `name=Eiffel Tower`, `wikipedia=en:Eiffel Tower`, no `wikidata`.  
+Click Fix → plugin queries `https://www.wikidata.org/w/api.php?action=wbgetentities&sites=enwiki&titles=Eiffel%20Tower&props=info&format=json`, extracts `Q243`, adds `wikidata=Q243`.
+
+**4302 example (does not fire):**  
+`name=Ordinary Building`, `building=residential`, no `wikidata`. No notability signal; rule is silent.
 
 **4303 example:**  
 Trigger: `name=Old Mill` with no `source*` tags.  
@@ -641,6 +651,21 @@ Suggested manual fix: add `wikipedia=en:Some Article Title`.
 **4309 example:**  
 Trigger: `name:source=wikidata` but no `wikidata=*` on the feature.  
 Suggested manual fix: add `wikidata=Q12345`.
+
+---
+
+### Suspicious tag — historic
+
+| Code | Title |
+|------|-------|
+| 4319 | `[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic` |
+
+**4319 trigger:** Any feature carrying a `historic=*` tag (any value). OHM convention is that `historic=*` applies to entities that have actually passed into history; using it on a still-current feature is premature.
+
+**4319 description:** _historic={value}: confirm the entity has actually passed into history before applying this tag._
+
+**4319 example:**  
+Trigger: a node tagged `historic=castle` representing a castle that is still standing as a tourist attraction. The warning prompts the editor to consider whether the tag is appropriate or whether it should be removed (or paired with an `end_date` indicating the historical scope).
 
 ---
 
