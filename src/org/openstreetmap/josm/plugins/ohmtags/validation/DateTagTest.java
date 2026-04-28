@@ -310,9 +310,8 @@ public class DateTagTest extends Test {
         if (p.get("start_date") == null && isManMade(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_START_DATE)
                 .message(tr("[ohm] Suspicious date - man-made object without start_date; unfixable, please review"),
-                         tr("Please make every effort to attempt a reasonable range "
-                          + "for the `start_date:edtf` tag and provide an explanation "
-                          + "in the `start_date:source` tag."))
+                         tr("Please add a reasonable `start_date:edtf` range & "
+                          + "explain it in `start_date:source`."))
                 .primitives(p)
                 .build());
         }

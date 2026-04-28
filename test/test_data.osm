@@ -38793,8 +38793,9 @@
     <tag k='source' v='https://example.com/s' />
     <tag k='start_date' v='1900' />
   </node>
-  <!-- Fixture T: "Prehistoric" does NOT fire (no word boundary before
-       "historic"). Negative case. -->
+  <!-- Fixture T: "Prehistoric" also fires 4320 — "historic" appears as
+       a substring and any historicizing frame is suspect in OHM,
+       however constructed. -->
   <node id='9100603' visible='true' version='1' lat='0.0' lon='0.0'>
     <tag k='name' v='Prehistoric Cave' />
     <tag k='wikidata' v='Q5' />

@@ -462,14 +462,11 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 **4301 example (does not fire):**  
 `name=City Park (Springfield)` — parenthesised disambiguator with no year-like content; left alone.
 
-**4320 trigger:** Any name-family value contains the word "historic" at a word boundary (so `historic`, `Historic`, `historical`, `Historical`, etc. — but not `prehistoric` since the "h" sits between word characters, no boundary). The reasoning: "historic" framing usually reflects a present-day vantage; in OHM's time-aware data model, the entity at the time it existed wouldn't have called itself "historic". The Forum in Rome was just a Forum, not "historic", in 50 BCE.  
+**4320 trigger:** Any name-family value contains the substring "historic" (case-insensitive). Matches `Historic`, `historical`, `Prehistoric`, `Ahistorical`, etc. — any historicizing frame, however constructed. The reasoning: "historic" framing reflects a present-day vantage; in OHM's time-aware data model, the entity at the time it existed wouldn't have called itself "historic". The Forum in Rome was just a Forum, not "historic", in 50 BCE.  
 **4320 description:** _{key}={value}: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed._
 
 **4320 example (fires):**  
-`name=Historic Town Hall` or `name=Historical Society` — both trip the rule. Confirm whether the actual entity at its time was so named, or whether the qualifier is being added retrospectively.
-
-**4320 example (does not fire):**  
-`name=Prehistoric Cave` — "historic" sits inside "Prehistoric" with no preceding word boundary, so the regex doesn't match.
+`name=Historic Town Hall`, `name=Historical Society`, `name=Prehistoric Cave` — all trip the rule. Confirm whether the actual entity at its time was so named, or whether the qualifier is being added retrospectively.
 
 ---
 

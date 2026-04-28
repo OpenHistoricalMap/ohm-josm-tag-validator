@@ -178,13 +178,13 @@ public class TagConsistencyTest extends Test {
     private static final Pattern WIKIPEDIA_LANG = Pattern.compile("[a-z]{2,10}");
 
     /**
-     * Matches the word "historic" (also "Historic", "historical", "HISTORIC",
-     * etc.) at a word boundary inside a name-family value. The boundary anchor
-     * keeps "prehistoric" or other compound forms from firing — only the
-     * "historic*" stem at a real word edge counts.
+     * Matches the substring "historic" anywhere in a name-family value
+     * (case-insensitive). Catches "historic", "Historic", "historical",
+     * "Prehistoric", "ahistorical", etc. — any present-day historicizing
+     * frame in the name, however constructed.
      */
     private static final Pattern HISTORIC_IN_NAME =
-        Pattern.compile("\\bhistoric", Pattern.CASE_INSENSITIVE);
+        Pattern.compile("historic", Pattern.CASE_INSENSITIVE);
 
     // --- Patterns ------------------------------------------------------------
 
@@ -410,8 +410,8 @@ public class TagConsistencyTest extends Test {
         if (!hasAnySourceTag(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_SOURCE)
                 .message(tr("[ohm] Missing tag - source; named feature without source; unfixable, please review"),
-                         tr("This named feature has no ''source'' tag. "
-                            + "Please document the provenance of this feature."))
+                         tr("Named feature with no ''source''. Please review & add; "
+                            + "other mappers are lost without it."))
                 .primitives(p)
                 .build());
         }
