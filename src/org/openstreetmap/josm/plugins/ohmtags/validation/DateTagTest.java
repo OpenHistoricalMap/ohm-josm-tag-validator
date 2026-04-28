@@ -919,8 +919,7 @@ public class DateTagTest extends Test {
         if (start != null && end != null && start.equals(end) && !botIsLastEditor) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_START_END_EQUAL)
                 .message(tr("[ohm] Suspicious date - start_date = end_date; unfixable, please review"),
-                         tr("The start_date and end_date values are equal and should "
-                          + "only be that way for an object that existed only for a day."))
+                         tr("did this feature exist for just 1 day/month/year?"))
                 .primitives(p)
                 .build());
         }
