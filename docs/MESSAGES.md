@@ -479,6 +479,8 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 
 **4302 trigger:** Named feature has no `wikidata` tag **and** carries a notability signal: any `wikipedia=*`, `historic=*`, `boundary=administrative`, or a notable value of `place` (city/town/village/hamlet/suburb/neighbourhood/county/state/country/region/island/archipelago/continent), `tourism` (museum/attraction/monument/artwork/gallery), `amenity` (place_of_worship/university/courthouse/townhall/library/theatre/hospital/school), `building` (castle/cathedral/church/chapel/mosque/synagogue/temple/palace), or `military` (castle/fort/barracks). Relations always count.
 
+**4302 exception:** Ways with `maritime=yes` that are members of a `type=boundary` relation are skipped — they're segments of a larger boundary entity and don't have their own Wikidata identity. The parent boundary relation still fires the rule.
+
 **4302 fix:** If `wikipedia=*` is present, an autofix is offered that resolves the QID via the Wikidata API (`wbgetentities` against `<lang>wiki` site title) at fix-click time. If the lookup fails (network error, missing article, no QID in response), the fix is a silent no-op. No autofix is offered when `wikipedia=*` is absent.
 
 **4302 description:** _This named feature has no 'wikidata' tag. Wikidata is the preferred identifier for cross-referencing._

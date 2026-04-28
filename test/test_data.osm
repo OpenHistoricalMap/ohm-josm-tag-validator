@@ -38802,4 +38802,27 @@
     <tag k='source' v='https://example.com/t' />
     <tag k='start_date' v='1900' />
   </node>
+  <!-- Fixture U: maritime boundary-segment way. Member of a
+       type=boundary relation, carries maritime=yes. The 4302 rule
+       must NOT fire on the way (segments don't have their own QID),
+       though it will still fire on the parent relation. -->
+  <node id='9100701' visible='true' version='1' lat='0.0' lon='0.0' />
+  <node id='9100702' visible='true' version='1' lat='0.1' lon='0.1' />
+  <way id='9100710' visible='true' version='1'>
+    <nd ref='9100701' />
+    <nd ref='9100702' />
+    <tag k='name' v='Maritime Boundary Segment' />
+    <tag k='boundary' v='administrative' />
+    <tag k='maritime' v='yes' />
+    <tag k='source' v='https://example.com/u' />
+    <tag k='start_date' v='1900' />
+  </way>
+  <relation id='9100720' visible='true' version='1'>
+    <member type='way' ref='9100710' role='outer' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='name' v='Maritime Boundary Parent' />
+    <tag k='source' v='https://example.com/u-parent' />
+    <tag k='start_date' v='1900' />
+  </relation>
 </osm>

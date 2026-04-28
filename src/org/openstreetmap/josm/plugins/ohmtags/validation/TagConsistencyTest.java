@@ -24,6 +24,7 @@ import org.openstreetmap.josm.command.SequenceCommand;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
+import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.Test;
 import org.openstreetmap.josm.data.validation.TestError;
@@ -428,6 +429,20 @@ public class TagConsistencyTest extends Test {
      * so the rule isn't tripped by random named buildings or local roads.
      */
     private static boolean hasNotabilitySignal(OsmPrimitive p) {
+        // Maritime boundary-segment ways: members of a type=boundary
+        // relation that carry maritime=yes are segments of a larger
+        // boundary entity; they don't have their own Wikidata identity.
+        // The parent boundary relation does, and the rule still fires
+        // on the relation itself.
+        if (p instanceof Way && "yes".equals(p.get("maritime"))) {
+            for (OsmPrimitive parent : p.getReferrers()) {
+                if (parent instanceof Relation
+                    && "boundary".equals(parent.get("type"))) {
+                    return false;
+                }
+            }
+        }
+
         if (p instanceof Relation) return true;
         if (p.get("wikipedia") != null) return true;
         if (p.get("historic") != null) return true;
