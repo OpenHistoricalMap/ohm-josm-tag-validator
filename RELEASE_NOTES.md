@@ -1,3 +1,19 @@
+# v0.3.1 — manifest polish for JOSM plugin registry submission
+
+Pre-submission housekeeping for getting `ohm-tags` into the JOSM
+plugin directory (so it appears in every JOSM user's *Available
+plugins* list by default). No validator behavior changes.
+
+- **Plugin-Minimum-Java-Version: 17** added to the manifest. The
+  plugin already required JDK 17 because of the bundled `edtf-java`
+  dependency; this just declares that requirement explicitly so JOSM
+  doesn't try to load the plugin on older Java versions.
+- **Plugin-Icon** added. The icon ships as `images/preferences/ohm-tags.png`
+  inside the jar and is what JOSM displays next to the plugin name in
+  the plugin list.
+
+---
+
 # v0.3.0 — chronology rules, severity elevations, role=label warning
 
 This release adds structural validation for OHM `type=chronology`

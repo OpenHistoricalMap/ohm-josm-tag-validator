@@ -9,6 +9,8 @@
     <property name="plugin.description"  value="Validator for OpenHistoricalMap: checks start_date/end_date formatting and EDTF normalization, name conventions, source tagging, and Wikidata/Wikipedia cross-references."/>
     <property name="plugin.link"         value="https://github.com/OpenHistoricalMap/ohm-josm-tag-validator"/>
     <property name="plugin.canloadatruntime" value="true"/>
+    <property name="plugin.icon"         value="images/preferences/ohm-tags.png"/>
+    <property name="plugin.minimum.java.version" value="17"/>
 
     <!-- === Paths =========================================================== -->
     <property name="plugin.build.dir" value="build"/>
@@ -130,6 +132,7 @@ to an existing josm-custom.jar.
              dropped — the <jar> task writes our own. -->
         <jar destfile="${plugin.jar}">
             <fileset dir="${plugin.build.dir}"/>
+            <fileset dir="." includes="images/**/*"/>
             <zipfileset src="${edtf.jar}">
                 <exclude name="META-INF/*"/>
             </zipfileset>
@@ -146,8 +149,10 @@ to an existing josm-custom.jar.
                 <attribute name="Author"             value="${plugin.author}"/>
                 <attribute name="Plugin-Class"       value="${plugin.class}"/>
                 <attribute name="Plugin-Description" value="${plugin.description}"/>
+                <attribute name="Plugin-Icon"        value="${plugin.icon}"/>
                 <attribute name="Plugin-Link"        value="${plugin.link}"/>
                 <attribute name="Plugin-Mainversion" value="${plugin.main.version}"/>
+                <attribute name="Plugin-Minimum-Java-Version" value="${plugin.minimum.java.version}"/>
                 <attribute name="Plugin-Version"     value="${plugin.revision}"/>
                 <attribute name="Plugin-Canloadatruntime" value="${plugin.canloadatruntime}"/>
             </manifest>
