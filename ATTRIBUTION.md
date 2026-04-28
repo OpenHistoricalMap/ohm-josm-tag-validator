@@ -20,7 +20,7 @@ port author's responsibility, not the original author's.
 
 ## Bundled third-party library: edtf-java
 
-The plugin's distributed JAR (`dist/ohm-tags.jar`) shades in the
+The plugin's distributed JAR (`dist/OHM_Tag_Validator.jar`) shades in the
 [`edtf-java`](https://github.com/OpenHistoricalMap/edtf-java) library
 (`io.github.openhistoricalmap:edtf:0.2.0`), used as the source of
 truth for EDTF parsing, validation, and bound extraction. The

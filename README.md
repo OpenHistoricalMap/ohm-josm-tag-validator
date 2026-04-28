@@ -17,14 +17,14 @@ See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messag
 
 ### From a release (recommended)
 
-1. Download `ohm-tags.jar` from the
+1. Download `OHM_Tag_Validator.jar` from the
    [latest release](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/releases/latest)
 2. Copy the jar into JOSM's plugins directory:
    - **macOS:** `~/Library/JOSM/plugins/`
    - **Linux:** `~/.local/share/JOSM/plugins/`
    - **Windows:** `%APPDATA%\JOSM\plugins\`
 3. Restart JOSM
-4. Go to `Preferences → Plugins`, tick **ohm-tags**, click OK
+4. Go to `Preferences → Plugins`, tick **OHM_Tag_Validator**, click OK
 
 ### From source
 
@@ -36,7 +36,7 @@ vendor JOSM core or `edtf-java`; both are fetched on first build.
 git clone https://github.com/OpenHistoricalMap/ohm-josm-tag-validator.git
 cd ohm-josm-tag-validator
 ant dist
-# jar is produced in dist/ohm-tags.jar (with edtf-java shaded in)
+# jar is produced in dist/OHM_Tag_Validator.jar (with edtf-java shaded in)
 ```
 
 The first build downloads two JARs into `lib/`:
@@ -57,7 +57,7 @@ The first build downloads two JARs into `lib/`:
 Subsequent builds reuse the cached JARs. The `lib/` directory is
 gitignored — JARs are not checked in.
 
-Output: `dist/ohm-tags.jar`.
+Output: `dist/OHM_Tag_Validator.jar`.
 
 To run the regression test harness against `test/test_data.osm`:
 
