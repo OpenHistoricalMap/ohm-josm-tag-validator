@@ -1,3 +1,65 @@
+# v0.3.0 — chronology rules, severity elevations, role=label warning
+
+This release adds structural validation for OHM `type=chronology`
+relations, elevates several malformed-date warnings to errors, and
+adds a discoverability warning for relations carrying a `role=label`
+member.
+
+## New: chronology consistency rules (4234–4239)
+
+`DateTagTest` now validates `type=chronology` relations as structural
+units, not just their members in isolation. All comparisons use strict
+`start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`
+form (no EDTF, no `:raw`, no Julian). Touching boundaries at matching
+precision (`A.end_date=1850` next to `B.start_date=1850`) are treated
+as adjacency — the canonical OHM successor pattern — and never fire
+overlap or gap.
+
+- **4234 ERROR** — member date range outside parent chronology range
+- **4235 WARNING** — member date range overlap (non-adjacent)
+- **4236 WARNING** — gap between member date ranges (>1 unit at the
+  coarser shared precision)
+- **4237 WARNING** — member missing required date tag (the youngest
+  member may legitimately omit `end_date`)
+- **4238 ERROR** — member duplicate to its predecessor (identical in
+  both non-date tags **and** geometry — recursive coordinate-based
+  check, so different node ids at the same position still count as a
+  duplicate; incomplete proxies treated as non-duplicate to avoid
+  false positives)
+- **4239 WARNING** — member without dates (neither tag present;
+  takes precedence over 4237 on incomplete proxies to avoid double-
+  reporting)
+
+Findings select only the offending member(s); 4234 additionally
+selects the parent relation since it represents a parent-↔-member
+relationship.
+
+## Severity elevations
+
+The following codes are now `ERROR` (red) rather than `WARNING`:
+
+- All `[ohm] Invalid date - …` titles previously at WARNING:
+  **4202**, **4207**, **4221**, **4228**, **4231**, **4233**
+- **4302** — basic missing `wikidata` tag on a named feature (the
+  source-key-referenced variant **4309** stays at WARNING)
+
+Plus the new chronology codes **4234** and **4238**.
+
+## New: role=label warning (4318)
+
+`TagConsistencyTest` flags any relation containing a `role=label`
+member. OHM renderers generate label points server-side, so editor-
+supplied labels are usually unnecessary; the warning directs the
+editor to download all parent relations of the shared label object
+(*File ▸ Download parent relations / ways*) before making changes.
+
+## See also
+
+`docs/MESSAGES.md` carries the full per-rule reference, including
+triggers and examples for each new code.
+
+---
+
 # v0.2.1 — first public release
 
 First public cut of **ohm-tags**, a JOSM validator plugin for
