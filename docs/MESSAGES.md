@@ -1,8 +1,10 @@
 # OHM Tags Validator — Message Reference
 
 Most messages use `WARNING` severity. The following codes are `ERROR`
-severity (malformed dates that data consumers cannot interpret):
-**4201**, **4208**, **4217**, **4218**, **4222**.
+severity (malformed or structurally-invalid data that consumers cannot
+interpret, plus the missing-`wikidata` rule):
+**4201**, **4202**, **4207**, **4208**, **4217**, **4218**, **4221**,
+**4222**, **4228**, **4231**, **4233**, **4234**, **4238**, **4302**.
 
 Titles follow the pattern:
 `[ohm] <Category> - <what>; <fixable|unfixable>, please review [<action>]`
@@ -11,7 +13,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 ---
 
-## DateTagTest (codes 4200–4232)
+## DateTagTest (codes 4200–4239)
 
 ### Suspicious date — missing start_date
 
@@ -378,7 +380,55 @@ After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=
 
 ---
 
-## TagConsistencyTest (codes 4300–4317)
+### Chronology — relation structural checks
+
+| Code | Title |
+|------|-------|
+| 4234 | `[ohm] Chronology - member date range outside parent chronology range; unfixable, please review` |
+| 4235 | `[ohm] Chronology - member date range overlap; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between member date ranges; unfixable, please review` |
+| 4237 | `[ohm] Chronology - member missing required date tag; unfixable, please review` |
+| 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
+| 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
+
+These four rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings always attach to the parent chronology relation; offending member ids appear in the description text.
+
+**4234 (ERROR) trigger:** Any member's `start_date` falls before the parent chronology relation's own `start_date`, or any member's `end_date` falls after the parent's `end_date`. Skipped if neither parent date is strictly parseable.
+
+**4235 (WARNING) trigger:** Any pair of members has overlapping date ranges. Touching boundaries at matching precision (e.g. member A `end_date=1850`, member B `start_date=1850`) are treated as adjacency and **don't** fire — this is the canonical OHM successor pattern. Day-level expansion is used for the strict intersection test otherwise (year-only `1850` expands to Jan 1 – Dec 31). A member with `start_date == end_date` (instantaneous event) only collides if another member's range strictly contains the instant.
+
+**4236 (WARNING) trigger:** After sorting members by `start_date`, any consecutive pair has more than one unit of gap at the coarser of the two boundary precisions. `end=1850 → start=1851` (year precision) is no gap; `end=1850 → start=1852` is a one-year gap (acceptable); `end=1850 → start=1853` fires. Same logic applies at month and day precision.
+
+**4237 (WARNING) trigger:** Any member is missing a strictly-parseable `start_date`, OR any non-youngest member is missing a strictly-parseable `end_date`. The youngest member (highest parseable `start_date`, ties broken by latest `end_date` then by absent `end_date`) may legitimately lack `end_date` — it is the still-current successor.
+
+**4234 example:**  
+Parent chronology has `start_date=1800`, `end_date=2000`. Member relation has `start_date=1750`. Fires: member's start before parent's start.
+
+**4235 example:**  
+Member A: `start_date=1800`, `end_date=1850`. Member B: `start_date=1840`, `end_date=1900`. Fires: ranges overlap from 1840 to 1850.
+
+**4236 example:**  
+Sorted members: A `1800–1850`, B `1855–1900`. Five missing years between A's end and B's start. Fires.
+
+**4237 example:**  
+Chronology with three members. The youngest (start=1980) has no `end_date` (still in use — allowed). Another member has `start_date=1900` but no `end_date`. Fires for the second member.
+
+**4238 (ERROR) trigger:** A chronology member's non-date tags (everything except keys matching the OHM `_date` family — so `start_date`, `end_date`, `*_date:edtf`, `*_date:raw`, `*_date:source`, `*_date:note`, etc. are excluded) are exactly equal to its predecessor's. Predecessor is the previous member after sorting by `start_date`. Applies to all member types — nodes, ways, and relations. Skipped only when both members have no non-date tags at all (nothing to compare). The implication: if the entity didn't change in any meaningful way between successive time periods, it shouldn't be split into separate chronology members.
+
+**4238 example:**  
+Member A: `name=Town Hall`, `building=yes`, `wikidata=Q12345`, `start_date=1850`, `end_date=1900`.  
+Member B: `name=Town Hall`, `building=yes`, `wikidata=Q12345`, `start_date=1900`, `end_date=1950`.  
+Same name, building tag, and wikidata QID — the only differences are date fields. Fires.
+
+**4239 (WARNING) trigger:** A chronology member has neither a `start_date` tag nor an `end_date` tag (both completely absent — not just unparseable). Fires once per such member. Takes precedence over 4237 to avoid noisy double-reporting on members with no date info at all (the typical case being a member primitive that is referenced by the relation but hasn't been downloaded into the dataset yet — JOSM exposes it as an incomplete proxy with no tags). Members with at least one of the two date tags present, even if unparseable, still go through 4237.
+
+**4239 example:**  
+Trigger: chronology relation references member ways that haven't been downloaded; each appears as an incomplete proxy with no tags. Fires once per missing member.  
+Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronology relation) and re-run the validator.
+
+---
+
+## TagConsistencyTest (codes 4300–4318)
 
 ### Name consistency
 
@@ -587,6 +637,22 @@ Suggested manual fix: add `wikipedia=en:Some Article Title`.
 **4309 example:**  
 Trigger: `name:source=wikidata` but no `wikidata=*` on the feature.  
 Suggested manual fix: add `wikidata=Q12345`.
+
+---
+
+### Suspicious member — role=label
+
+| Code | Title |
+|------|-------|
+| 4318 | `[ohm] Suspicious member - role=label; unfixable, please review and download parent relations` |
+
+**4318 trigger:** A relation has at least one member with `role=label`. OHM renderers automatically generate label points server-side, so editor-supplied labels are usually unnecessary. The warning fires once per relation regardless of how many `role=label` members it has.
+
+**4318 description:** _OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ▸ Download parent relations / ways). role=label members on this relation: {ids}._
+
+**4318 example:**  
+Trigger: a `boundary=administrative` relation contains `<member type="node" role="label" ref="123"/>`.  
+Suggested manual fix: confirm the label object is genuinely needed; if it is shared across multiple parent relations, download those parents (Ctrl+Alt+Down in JOSM) before editing.
 
 ---
 

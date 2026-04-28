@@ -38519,4 +38519,206 @@
     <tag k='start_date' v='/1963' />
     <tag k='type' v='chronology' />
   </relation>
+  <!-- ====================================================================
+       Synthetic fixtures for chronology consistency rules (4234-4237)
+       and role=label warning (4318). IDs use 9100xxx range to avoid
+       collision with real-data IDs in this fixture file.
+       ==================================================================== -->
+  <!-- Fixture A: chronology with all members within parent range, touching
+       boundaries. Expected: no chronology findings (negative case). -->
+  <node id='9100001' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='1800' />
+  </node>
+  <node id='9100002' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <node id='9100003' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2000' />
+  </node>
+  <relation id='9100010' visible='true' version='1'>
+    <member type='node' ref='9100001' role='' />
+    <member type='node' ref='9100002' role='' />
+    <member type='node' ref='9100003' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='2000' />
+  </relation>
+  <!-- Fixture B: single member outside parent range. Expected: fires 4234. -->
+  <node id='9100011' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <relation id='9100020' visible='true' version='1'>
+    <member type='node' ref='9100011' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2000' />
+  </relation>
+  <!-- Fixture C: two members with overlapping ranges. Expected: fires 4235. -->
+  <node id='9100021' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+  </node>
+  <node id='9100022' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1840' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <relation id='9100030' visible='true' version='1'>
+    <member type='node' ref='9100021' role='' />
+    <member type='node' ref='9100022' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='2000' />
+  </relation>
+  <!-- Fixture D: 4-year gap between consecutive members. Expected: fires 4236. -->
+  <node id='9100031' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+  </node>
+  <node id='9100032' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1855' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <relation id='9100040' visible='true' version='1'>
+    <member type='node' ref='9100031' role='' />
+    <member type='node' ref='9100032' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='2000' />
+  </relation>
+  <!-- Fixture E: 1-year gap between consecutive year-precision members.
+       Expected: no findings (1-unit gap acceptable at year precision). -->
+  <node id='9100041' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+  </node>
+  <node id='9100042' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1852' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <relation id='9100050' visible='true' version='1'>
+    <member type='node' ref='9100041' role='' />
+    <member type='node' ref='9100042' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='2000' />
+  </relation>
+  <!-- Fixture F: instantaneous event inside another member's range.
+       Expected: fires 4235 (the instant overlaps the surrounding range). -->
+  <node id='9100061' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <node id='9100062' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1850' />
+  </node>
+  <relation id='9100070' visible='true' version='1'>
+    <member type='node' ref='9100061' role='' />
+    <member type='node' ref='9100062' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='2000' />
+  </relation>
+  <!-- Fixture G: youngest member legitimately lacks end_date.
+       Expected: no findings. -->
+  <node id='9100081' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9100082' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1950' />
+    <tag k='end_date' v='2000' />
+  </node>
+  <node id='9100083' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='2000' />
+  </node>
+  <relation id='9100090' visible='true' version='1'>
+    <member type='node' ref='9100081' role='' />
+    <member type='node' ref='9100082' role='' />
+    <member type='node' ref='9100083' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2050' />
+  </relation>
+  <!-- Fixture H: non-youngest member missing end_date. Expected: fires 4237. -->
+  <node id='9100091' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1900' />
+  </node>
+  <node id='9100092' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='2000' />
+    <tag k='end_date' v='2050' />
+  </node>
+  <relation id='9100100' visible='true' version='1'>
+    <member type='node' ref='9100091' role='' />
+    <member type='node' ref='9100092' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2050' />
+  </relation>
+  <!-- Fixture I: member missing start_date entirely. Expected: fires 4237. -->
+  <node id='9100101' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='end_date' v='1900' />
+  </node>
+  <node id='9100102' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='2000' />
+    <tag k='end_date' v='2050' />
+  </node>
+  <relation id='9100110' visible='true' version='1'>
+    <member type='node' ref='9100101' role='' />
+    <member type='node' ref='9100102' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2050' />
+  </relation>
+  <!-- Fixture J: relation containing a role=label member. Expected: fires 4318. -->
+  <node id='9100201' visible='true' version='1' lat='0.0' lon='0.0' />
+  <node id='9100202' visible='true' version='1' lat='0.0' lon='0.0' />
+  <relation id='9100210' visible='true' version='1'>
+    <member type='node' ref='9100201' role='label' />
+    <member type='node' ref='9100202' role='outer' />
+    <tag k='type' v='multipolygon' />
+  </relation>
+  <!-- Fixture K: two chronology members with identical non-date tags.
+       Expected: fires 4238 (duplicate predecessor). -->
+  <node id='9100221' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Hall' />
+    <tag k='building' v='yes' />
+    <tag k='wikidata' v='Q1' />
+    <tag k='source' v='https://example.com/test' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+  </node>
+  <node id='9100222' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Hall' />
+    <tag k='building' v='yes' />
+    <tag k='wikidata' v='Q1' />
+    <tag k='source' v='https://example.com/test' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <relation id='9100230' visible='true' version='1'>
+    <member type='node' ref='9100221' role='' />
+    <member type='node' ref='9100222' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </relation>
+  <!-- Fixture L: chronology member with neither start_date nor end_date.
+       Expected: fires 4239 once on n/9100301; no 4237 findings on it. -->
+  <node id='9100301' visible='true' version='1' lat='0.0' lon='0.0' />
+  <node id='9100302' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2000' />
+  </node>
+  <relation id='9100310' visible='true' version='1'>
+    <member type='node' ref='9100301' role='' />
+    <member type='node' ref='9100302' role='' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='2000' />
+  </relation>
 </osm>
