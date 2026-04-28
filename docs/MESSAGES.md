@@ -210,7 +210,7 @@ After autofix: `start_date` and `start_date:edtf` deleted; `end_date=2010` retai
 
 | Code | Title |
 |------|-------|
-| 4202 | `[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review suggestion` |
+| 4202 | `[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review` |
 
 **Trigger:** `start_date` or `end_date` contains a value that looks like EDTF (slashes, ranges, uncertainty markers) rather than a plain ISO date.  
 **Fix:** Moves value to `*_date:edtf`, derives plain ISO base, stores original in `*_date:raw`.  
@@ -227,7 +227,7 @@ After autofix: `start_date=2003-03`, `start_date:edtf=2003-03/2016`, `start_date
 | Code | Title |
 |------|-------|
 | 4201 | `[ohm] Invalid date - *_date cannot be read; unfixable, please review` |
-| 4202 | `[ohm] Invalid date - *_date; fixable, please review suggestion` |
+| 4202 | `[ohm] Invalid date - *_date; fixable, please review` |
 
 **4201 trigger:** `start_date` or `end_date` cannot be parsed or normalized to EDTF.  
 **4201 fix:** None.  
@@ -251,8 +251,8 @@ After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23
 | Code | Title |
 |------|-------|
 | 4208 | `[ohm] Invalid date - *_date:edtf; unfixable, please review` |
-| 4226 | `[ohm] Invalid date - *_date:edtf; fixable, please review suggestion` _(backslash truncated — Rule D1)_ |
-| 4228 | `[ohm] Invalid date - *_date:edtf; fixable, please review suggestion` |
+| 4226 | `[ohm] Invalid date - *_date:edtf; fixable, please review` _(backslash truncated — Rule D1)_ |
+| 4228 | `[ohm] Invalid date - *_date:edtf; fixable, please review` |
 | 4228 | `[ohm] Invalid date - *_date:edtf; unfixable, please review` |
 
 **4208 trigger:** `*_date:edtf` is invalid EDTF and there is no corresponding base tag to fall back on.  
@@ -368,7 +368,7 @@ Suggested manual fix: pick the authoritative end and tighten one or the other.
 
 | Code | Title |
 |------|-------|
-| 4233 | `[ohm] Invalid date - Julian date; fixable, please review Gregorian conversion` |
+| 4233 | `[ohm] Invalid date - Julian date; fixable, please review` |
 
 **Trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation.  
 **Fix:** Converts to Gregorian, stores converted value in base tag, preserves original in `*_date:note`.  
@@ -467,7 +467,7 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 
 | Code | Title |
 |------|-------|
-| 4302 | `[ohm] Missing tag - wikidata; unfixable, please review and add a Wikidata QID` |
+| 4302 | `[ohm] Missing tag - wikidata; unfixable, please review` |
 | 4303 | `[ohm] Missing tag - source; named feature without source; unfixable, please review` |
 
 **4302 trigger:** Named feature has no `wikidata` tag **and** carries a notability signal: any `wikipedia=*`, `historic=*`, `boundary=administrative`, or a notable value of `place` (city/town/village/hamlet/suburb/neighbourhood/county/state/country/region/island/archipelago/continent), `tourism` (museum/attraction/monument/artwork/gallery), `amenity` (place_of_worship/university/courthouse/townhall/library/theatre/hospital/school), `building` (castle/cathedral/church/chapel/mosque/synagogue/temple/palace), or `military` (castle/fort/barracks). Relations always count.
@@ -518,7 +518,7 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 |------|-------|
 | 4306 | `[ohm] Source optimization - move non-URL source tags to source:name` |
 | 4307 | `[ohm] Source optimization - repair URL missing 'http[s]://'` |
-| 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review & add a source=URL, if possible` |
+| 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review` |
 
 **4306 trigger:** `source` (or numbered variant) contains a non-URL text string.  
 **4306 fix:** Moves value to `source:name`, leaves `source` blank for a URL.  
@@ -635,7 +635,7 @@ Suggested manual fix: split by hand into `source`, `source:1`, `source:name`, `s
 
 | Code | Title |
 |------|-------|
-| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add an appropriate Wikipedia article` |
+| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review` |
 | 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please add appropriate Wikidata QID` |
 
 **4308 trigger:** A `*:source` tag references Wikipedia but no `wikipedia` tag exists on the feature.  
@@ -673,7 +673,7 @@ Trigger: a node tagged `historic=castle` representing a castle that is still sta
 
 | Code | Title |
 |------|-------|
-| 4318 | `[ohm] Suspicious member - role=label; unfixable, please review and download parent relations` |
+| 4318 | `[ohm] Suspicious member - role=label; unfixable, please review` |
 
 **4318 trigger:** A relation has at least one member with `role=label`. OHM renderers automatically generate label points server-side, so editor-supplied labels are usually unnecessary. The warning fires once per relation regardless of how many `role=label` members it has.
 

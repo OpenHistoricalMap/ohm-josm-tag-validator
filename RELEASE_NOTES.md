@@ -26,6 +26,10 @@ OHM convention is that `historic=*` applies only to entities that have actually 
 
 The plugin icon's black background is now transparent. Same shield/checkmark glyph; cleaner blend with JOSM's plugin list.
 
+## Shorter validator titles
+
+Validator messages whose titles ended with content trailing "please review" (e.g. "; unfixable, please review and add a Wikidata QID", "; fixable, please review suggestion") are trimmed to end at "please review". The trailing detail still lives in the description field, so no information is lost — but the validator panel's row no longer wraps so eagerly, making the error count column easier to read.
+
 ---
 
 # v0.3.1 — JOSM plugin registry submission prep

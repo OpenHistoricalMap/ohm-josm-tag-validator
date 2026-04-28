@@ -865,7 +865,7 @@ public class DateTagTest extends Test {
                     tr("Normalize start_date:edtf"), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review suggestion"),
+                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
                              tr("start_date:edtf={0}: strip leading backslash and "
                               + "re-normalize to {1}?",
                                 startEdtf, normalized.get()))
@@ -887,7 +887,7 @@ public class DateTagTest extends Test {
                     tr("Normalize start_date:edtf"), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review suggestion"),
+                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
                              tr("start_date:edtf={0}: strip leading backslash to {1}?",
                                 startEdtf, backslashRemainder))
                     .primitives(p)
@@ -980,7 +980,7 @@ public class DateTagTest extends Test {
                 Command fix = new SequenceCommand(tr("Normalize {0}", key), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review suggestion"),
+                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
                              tr("{0}={1} is not valid EDTF. Normalize to {2} and "
                               + "preserve original in {3}?",
                                 key, value, newEdtf, rawSibling))
@@ -1478,7 +1478,7 @@ public class DateTagTest extends Test {
             // Deliberately no :edtf — EDTF has no standard form for Julian dates.
             Command fix = new SequenceCommand(tr("Convert Julian date for {0}", baseKey), cmds);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_JULIAN_CONVERSION)
-                .message(tr("[ohm] Invalid date - Julian date; fixable, please review Gregorian conversion"),
+                .message(tr("[ohm] Invalid date - Julian date; fixable, please review"),
                          tr("{0}={1} \u2192 {0}={2} (Gregorian), {0}:note added",
                             baseKey, base, gregorian))
                 .primitives(p)
@@ -1502,7 +1502,7 @@ public class DateTagTest extends Test {
 
             Command fix = buildTripleFix(p, baseKey, derivedBase, derivedEdtf, base);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
-                .message(tr("[ohm] Invalid date - *_date; fixable, please review suggestion"),
+                .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
                          tr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}, {0}:raw={1}",
                             baseKey, base,
                             derivedBase == null ? "(absent)" : derivedBase,
@@ -1541,10 +1541,10 @@ public class DateTagTest extends Test {
             String messageTitle;
             if (originalWasEdtf) {
                 fix = buildBaseAndEdtfFix(p, baseKey, passthroughBase, cleaned);
-                messageTitle = tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review suggestion");
+                messageTitle = tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review");
             } else {
                 fix = buildTripleFix(p, baseKey, passthroughBase, cleaned, base);
-                messageTitle = tr("[ohm] Invalid date - *_date; fixable, please review suggestion");
+                messageTitle = tr("[ohm] Invalid date - *_date; fixable, please review");
             }
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                 .message(messageTitle,

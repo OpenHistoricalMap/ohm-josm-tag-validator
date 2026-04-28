@@ -262,7 +262,7 @@ public class TagConsistencyTest extends Test {
         if (labels.isEmpty()) return;
 
         errors.add(TestError.builder(this, Severity.WARNING, CODE_RELATION_LABEL_MEMBER)
-            .message(tr("[ohm] Suspicious member - role=label; unfixable, please review and download parent relations"),
+            .message(tr("[ohm] Suspicious member - role=label; unfixable, please review"),
                      tr("OHM servers automatically generate label points; only use these "
                         + "when necessary. To verify, download all parent relations of "
                         + "this label object (File ▸ Download parent relations / ways). "
@@ -336,7 +336,7 @@ public class TagConsistencyTest extends Test {
                 if (p.get(companionSourceKey) == null
                     || p.get(companionSourceKey).isEmpty()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_WITHOUT_URL)
-                        .message(tr("[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review & add a source=URL, if possible"),
+                        .message(tr("[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review"),
                                  tr("{0}={1} is set, but {2} is empty. "
                                     + "Would you like to add a URL for the source?",
                                     key, p.get(key), companionSourceKey))
@@ -370,7 +370,7 @@ public class TagConsistencyTest extends Test {
         // the QID (lazy — runs only when the user clicks Fix).
         if (p.get("wikidata") == null && hasNotabilitySignal(p)) {
             TestError.Builder builder = TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
-                .message(tr("[ohm] Missing tag - wikidata; unfixable, please review and add a Wikidata QID"),
+                .message(tr("[ohm] Missing tag - wikidata; unfixable, please review"),
                          tr("This named feature has no ''wikidata'' tag. "
                             + "Wikidata is the preferred identifier for cross-referencing."))
                 .primitives(p);
@@ -850,7 +850,7 @@ public class TagConsistencyTest extends Test {
         if ("wikipedia".equalsIgnoreCase(value)) {
             if (!hasAnyKeyStartingWith(p, "wikipedia")) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
-                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add an appropriate Wikipedia article"),
+                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review"),
                              tr("{0}={1}: please add an appropriate ''wikipedia'' tag.",
                                 key, value))
                     .primitives(p)
