@@ -14,6 +14,7 @@ import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.SequenceCommand;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
+import org.openstreetmap.josm.data.osm.RelationMember;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.Test;
 import org.openstreetmap.josm.data.validation.TestError;
@@ -108,6 +109,7 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_SOURCE_SEMICOLON_MULTI_URL = 4315;
     protected static final int CODE_SOURCE_SEMICOLON_MULTI_TEXT = 4316;
     protected static final int CODE_SOURCE_SEMICOLON_MIXED = 4317;
+    protected static final int CODE_RELATION_LABEL_MEMBER = 4318;
 
     // --- Patterns ------------------------------------------------------------
 
@@ -174,6 +176,35 @@ public class TagConsistencyTest extends Test {
     @Override
     public void visit(org.openstreetmap.josm.data.osm.Relation r) {
         checkPrimitive(r);
+        checkLabelMembers(r);
+    }
+
+    /**
+     * Warn once per relation that contains at least one {@code role=label}
+     * member. OHM renderers auto-generate label points server-side, so
+     * editor-supplied labels are usually unnecessary. The warning also
+     * prompts the editor to download parent relations of the shared label
+     * object before making changes.
+     */
+    private void checkLabelMembers(Relation r) {
+        List<String> labels = new ArrayList<>();
+        for (RelationMember rm : r.getMembers()) {
+            if ("label".equals(rm.getRole()) && rm.getMember() != null) {
+                OsmPrimitive m = rm.getMember();
+                labels.add(m.getType().getAPIName().substring(0, 1) + "/" + m.getId());
+            }
+        }
+        if (labels.isEmpty()) return;
+
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_RELATION_LABEL_MEMBER)
+            .message(tr("[ohm] Suspicious member - role=label; unfixable, please review and download parent relations"),
+                     tr("OHM servers automatically generate label points; only use these "
+                        + "when necessary. To verify, download all parent relations of "
+                        + "this label object (File ▸ Download parent relations / ways). "
+                        + "role=label members on this relation: {0}.",
+                        String.join(", ", labels)))
+            .primitives(r)
+            .build());
     }
 
     private void checkPrimitive(OsmPrimitive p) {
@@ -253,7 +284,7 @@ public class TagConsistencyTest extends Test {
 
         // Rule: named feature without wikidata.
         if (p.get("wikidata") == null) {
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_WIKIDATA)
+            errors.add(TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
                 .message(tr("[ohm] Missing tag - wikidata; unfixable, please review and add a Wikidata QID"),
                          tr("This named feature has no ''wikidata'' tag. "
                             + "Wikidata is the preferred identifier for cross-referencing."))
