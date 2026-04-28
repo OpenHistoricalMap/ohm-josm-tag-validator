@@ -593,7 +593,7 @@ public class DateTagTest extends Test {
             // LocalDate.of throws DateTimeException on invalid dates.
             if (!isValidDayForMonth(year, month, day)) {
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
-                    .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month in start_date or end_date; unfixable, please review"),
+                    .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review"),
                              tr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
                               + "(e.g. Feb 30, June 31, or Feb 29 on a non-leap year). "
                               + "Manual review needed.",

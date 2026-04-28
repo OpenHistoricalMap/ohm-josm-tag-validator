@@ -155,7 +155,7 @@ After autofix: `end_date` removed (treated as a typo / data-import artifact).
 |------|-------|
 | 4217 | `[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY` |
 | 4218 | `[ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM` |
-| 4222 | `[ohm] Invalid date - month/day mismatch; too many days in the month in start_date or end_date; unfixable, please review` |
+| 4222 | `[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review` |
 
 **4217 trigger:** Month component is out of range (< 1 or > 12). Offers trim-to-YYYY fix.  
 **4217 description:** _{key}={value}: month {MM} is > 12. Trim to {YYYY}?_
@@ -592,7 +592,7 @@ After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`,
 
 | Code | Title |
 |------|-------|
-| 4314 | `[ohm] Source optimization - source contains one URL and one text string; autofix by splitting into source and source:name` |
+| 4314 | `[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name` |
 | 4315 | `[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys` |
 | 4316 | `[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys` |
 | 4317 | `[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review` |
@@ -635,8 +635,8 @@ Suggested manual fix: split by hand into `source`, `source:1`, `source:name`, `s
 
 | Code | Title |
 |------|-------|
-| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review` |
-| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please add appropriate Wikidata QID` |
+| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag` |
+| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag` |
 
 **4308 trigger:** A `*:source` tag references Wikipedia but no `wikipedia` tag exists on the feature.  
 **4308 description:** _{key}={value}: please add an appropriate 'wikipedia' tag._

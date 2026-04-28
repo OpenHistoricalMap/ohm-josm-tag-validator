@@ -674,7 +674,7 @@ public class TagConsistencyTest extends Test {
                 tr("Split source into URL and name"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_URL_TEXT)
-                .message(tr("[ohm] Source optimization - source contains one URL and one text string; autofix by splitting into source and source:name"),
+                .message(tr("[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name"),
                          tr("{0}={1}: move URL to source and text to source:name?", key, value))
                 .primitives(p)
                 .fix(() -> fix)
@@ -850,7 +850,7 @@ public class TagConsistencyTest extends Test {
         if ("wikipedia".equalsIgnoreCase(value)) {
             if (!hasAnyKeyStartingWith(p, "wikipedia")) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
-                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review"),
+                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag"),
                              tr("{0}={1}: please add an appropriate ''wikipedia'' tag.",
                                 key, value))
                     .primitives(p)
@@ -861,7 +861,7 @@ public class TagConsistencyTest extends Test {
         if ("wikidata".equalsIgnoreCase(value)) {
             if (p.get("wikidata") == null) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
-                    .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please add appropriate Wikidata QID"),
+                    .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag"),
                              tr("{0}={1}: please add an appropriate ''wikidata'' tag.",
                                 key, value))
                     .primitives(p)
