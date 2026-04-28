@@ -23,7 +23,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 **Trigger:** Feature carries at least one tag from a curated **man-made allowlist** but has no `start_date`. The allowlist (see `DateTagTest.MANMADE_KEYS` and `MANMADE_DENYLIST`) covers buildings, highways, railways, amenities, leisure, barriers, addressed features, and other tags that mark a primitive as built / established with a discrete creation date.  
 **Fix:** None.  
-**Description:** _Please make every effort to attempt a reasonable range for the `start_date:edtf` tag and provide an explanation in the `start_date:source` tag._
+**Description:** _Please add a reasonable `start_date:edtf` range & explain it in `start_date:source`._
 
 The trigger is a positive allowlist (since 2026-04). Earlier versions used a negative test ("any tag except `natural=*`") which over-fired badly on member ways of large boundary relations — see issue #4 (3344 warnings on the British Empire 1921-1922 relation, forum post 2026-04-21). A primitive with only `name=*`, `wikidata=*`, `boundary=*` (on a way), `addr:*`-free metadata, etc. no longer triggers; it must carry a positively man-made key.
 
@@ -102,34 +102,37 @@ Suggested manual fix: if the start was genuinely on Dec 31, 1875 (e.g. a treaty 
 
 ---
 
-### Suspicious date — ordering and equality
+### Suspicious date — ordering and equality (Rules B and C)
 
 | Code | Title |
 |------|-------|
 | 4215 | `[ohm] Suspicious date - start_date > end_date; autofix by swapping these` |
 | 4224 | `[ohm] Suspicious date - start_date = end_date; unfixable, please review` |
-| 4224 | `[ohm] Suspicious date - start_date = end_date with backslash pattern; autofix by deleting start_date:edtf` |
+| 4225 | `[ohm] Suspicious date - start_date = end_date with backslash pattern; autofix by deleting start_date:edtf` |
 
 **4215 trigger:** `start_date` parses to a date after `end_date`.  
 **4215 fix:** Swaps `start_date` and `end_date`.  
 **4215 description:** _start_date={start}, end_date={end}. Swap?_
 
-**4224 trigger (no backslash):** `start_date` and `end_date` are equal — valid only for a feature that existed for a single day.  
-**4224 trigger (backslash):** `start_date:edtf` contains a backslash pattern where start equals end.  
-**4224 fix (backslash):** Deletes `start_date:edtf`.
-**4224 description (backslash):** _start_date:edtf=/{end} → null_
+**4224 trigger (Rule B):** `start_date` and `end_date` are equal — valid only for a feature that existed for a single day, month, or year (depending on date precision). No backslash pattern, non-bot last editor.  
+**4224 fix:** None.  
+**4224 description:** _did this feature exist for just 1 day/month/year?_
+
+**4225 trigger (Rule C):** `start_date:edtf` matches the tagcleanupbot backslash signature (`\<end_date_value>`) AND `start_date` equals `end_date`, but the last editor was not the bot — i.e., a human edit landed on top of a bot-introduced anomaly.  
+**4225 fix:** Deletes `start_date:edtf`.  
+**4225 description:** _The start_date and end_date values are equal and should only be that way for an object that existed only for a day. Delete start_date:edtf?_
 
 **4215 example:**  
 Before: `start_date=1950`, `end_date=1900`  
 After autofix: `start_date=1900`, `end_date=1950`.
 
-**4224 example (no backslash):**  
+**4224 example:**  
 Trigger: `start_date=1969-07-20`, `end_date=1969-07-20`.  
 Suggested manual fix: if this is a single-day event (Apollo 11 landing) leave it; otherwise correct one side.
 
-**4224 example (backslash):**  
-Before: `start_date:edtf=\1900`, `end_date=1900`  
-After autofix: `start_date:edtf` removed; `end_date=1900` retained as the canonical date.
+**4225 example:**  
+Before: `start_date=1900`, `start_date:edtf=\1900`, `end_date=1900` (last editor was a human, not the bot)  
+After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` retained.
 
 ---
 
@@ -343,24 +346,26 @@ Suggested manual fix: hand-correct the date based on whatever source produced th
 
 ---
 
-### Backslash patterns (Rules A and C)
+### Backslash patterns (Rules A and D1)
+
+Rules B and C also relate to the `\<end_date>` pattern but live with the equality section above. This section covers the two backslash rules that don't depend on `start_date == end_date`.
 
 | Code | Title |
 |------|-------|
 | 4223 | `[ohm] Suspicious date - start_date:edtf=\[end_date]; autofix to delete tags` _(Rule A, bot rollback)_ |
-| 4225 | `[ohm] Suspicious date - start_date:edtf range extends after end_date; unfixable, please review` _(Rule C)_ |
+| 4226 | `[ohm] Suspicious date - start_date:edtf range extends after end_date; unfixable, please review` _(Rule D1)_ |
 
-**4223 trigger (Rule A):** `start_date:edtf` matches the pattern written by `tagcleanupbot`. Full rollback offered.
+**4223 trigger (Rule A):** `start_date:edtf` matches the tagcleanupbot signature (`\<end_date_value>`) AND the last editor was the bot. Full rollback offered.
 
-**4225 trigger (Rule C):** `start_date:edtf` is a slash-range that extends past `end_date`.
+**4226 trigger (Rule D1):** `start_date:edtf` starts with `\` and the remainder, after stripping the backslash, is a *prefix* of `end_date` but not the exact value. The implication: the bot's `\<end_date>` pattern was truncated by a subsequent human edit, leaving a partial match.
 
 **4223 example:**  
 Before: `start_date=1900`, `start_date:edtf=\1900`, `end_date=1900` (last editor `tagcleanupbot`)  
 After autofix: `start_date` and `start_date:edtf` deleted (bot-induced rollback).
 
-**4225 example:**  
-Trigger: `start_date:edtf=1900/1960`, `end_date=1950` (range extends past end).  
-Suggested manual fix: pick the authoritative end and tighten one or the other.
+**4226 example:**  
+Trigger: `start_date:edtf=\190`, `end_date=1900` — the backslash remainder `190` is a prefix of `1900` but not equal.  
+Suggested manual fix: confirm the intended start_date manually; the bot pattern is truncated and ambiguous.
 
 ---
 
@@ -391,7 +396,7 @@ After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
 
-These four rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings always attach to the parent chronology relation; offending member ids appear in the description text.
+These six rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings select only the offending member(s); the outside-parent rule (4234) additionally selects the parent chronology relation since the violation is intrinsically about the parent ↔ member relationship.
 
 **4234 (ERROR) trigger:** Any member's `start_date` falls before the parent chronology relation's own `start_date`, or any member's `end_date` falls after the parent's `end_date`. Skipped if neither parent date is strictly parseable.
 
@@ -475,7 +480,7 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 | Code | Title |
 |------|-------|
 | 4302 | `[ohm] Missing tag - wikidata; unfixable, please review` |
-| 4303 | `[ohm] Missing tag - source; named feature without source; unfixable, please review` |
+| 4303 | `[ohm] Missing tag - source on named feature; unfixable, please review and add` |
 
 **4302 trigger:** Named feature has no `wikidata` tag **and** carries a notability signal: any `wikipedia=*`, `historic=*`, `boundary=administrative`, or a notable value of `place` (city/town/village/hamlet/suburb/neighbourhood/county/state/country/region/island/archipelago/continent), `tourism` (museum/attraction/monument/artwork/gallery), `amenity` (place_of_worship/university/courthouse/townhall/library/theatre/hospital/school), `building` (castle/cathedral/church/chapel/mosque/synagogue/temple/palace), or `military` (castle/fort/barracks). Relations always count.
 
@@ -483,10 +488,10 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 
 **4302 fix:** If `wikipedia=*` is present, an autofix is offered that resolves the QID via the Wikidata API (`wbgetentities` against `<lang>wiki` site title) at fix-click time. If the lookup fails (network error, missing article, no QID in response), the fix is a silent no-op. No autofix is offered when `wikipedia=*` is absent.
 
-**4302 description:** _This named feature has no 'wikidata' tag. Wikidata is the preferred identifier for cross-referencing._
+**4302 description:** _Wikidata QIDs help link OHM data to other databases._
 
 **4303 trigger:** Named feature has no `source*` tag of any kind.  
-**4303 description:** _This named feature has no 'source' tag. Please document the provenance of this feature._
+**4303 description:** _other mappers are lost without it._
 
 **4302 example (no autofix):**  
 Trigger: `name=Eiffel Tower`, `tourism=attraction`, no `wikidata`, no `wikipedia`.  
