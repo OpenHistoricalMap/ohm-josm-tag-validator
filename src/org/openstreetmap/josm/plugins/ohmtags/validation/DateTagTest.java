@@ -183,7 +183,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_EDTF_MISSING_BASE = 4211;
     protected static final int CODE_SUSPICIOUS_YEAR_START = 4212;
     protected static final int CODE_SUSPICIOUS_YEAR_END = 4213;
-    protected static final int CODE_SUSPICIOUS_OFF_BY_ONE = 4214;
+    protected static final int CODE_SUSPICIOUS_REVERSED_BOUNDARY = 4214;
     protected static final int CODE_START_AFTER_END = 4215;
     protected static final int CODE_FUTURE_DATE = 4216;
     protected static final int CODE_INVALID_MONTH = 4217;
@@ -474,21 +474,25 @@ public class DateTagTest extends Test {
             // events (laws taking effect, fiscal year boundaries, etc.);
             // forum feedback flagged the auto-removal as too aggressive.
             String yearStr = padAstronomicalYear(year);
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_START)
-                .message(tr("[ohm] Suspicious date - 01-01 start_date; unfixable, please review"),
-                         tr("{0}={1}: if the exact day is unknown, change to {0}={2}.",
+                .message(tr("[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01"),
+                         tr("{0}={1} → {0}={2}",
                             baseKey, value, yearStr))
                 .primitives(p)
+                .fix(() -> fix)
                 .build());
         } else if (isEnd && isDec31) {
             // Possible false precision: end of year. Same reasoning as
             // above — Dec 31 is a real date too often to autofix.
             String yearStr = padAstronomicalYear(year);
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_END)
-                .message(tr("[ohm] Suspicious date - 12-31 end_date; unfixable, please review"),
-                         tr("{0}={1}: if the exact day is unknown, change to {0}={2}.",
+                .message(tr("[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31"),
+                         tr("{0}={1} → {0}={2}",
                             baseKey, value, yearStr))
                 .primitives(p)
+                .fix(() -> fix)
                 .build());
         } else if (isStart && isDec31) {
             // Off-by-one: start on last day of year N almost certainly means year N+1.
@@ -496,25 +500,29 @@ public class DateTagTest extends Test {
             // mechanically — e.g. -0050-12-31 → -0049 (1 year later astronomically,
             // which is 49 BCE, i.e. 1 year later in BCE labeling too since both
             // representations share the year-0 convention here).
-            String shiftedYear = padAstronomicalYear(year + 1);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, shiftedYear);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_OFF_BY_ONE)
-                .message(tr("[ohm] Suspicious date - 12-31 start_date; autofix by removing -12-31"),
-                         tr("{0}={1} likely means the beginning of year {2}. \u2192 {0}={2}",
-                            baseKey, value, shiftedYear))
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_REVERSED_BOUNDARY)
+                .message(tr("[ohm] Suspicious date - 12-31 start_date; unfixable, please review"),
+                         tr("{0}={1}: end-of-year used as start_date. If the exact "
+                            + "day is unknown, manually change to {0}={2} (the year "
+                            + "this date falls in) or {0}={3} (the next year, if a "
+                            + "typo).",
+                            baseKey, value,
+                            padAstronomicalYear(year),
+                            padAstronomicalYear(year + 1)))
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isEnd && isJan1) {
             // Off-by-one: end on first day of year N almost certainly means year N-1.
-            String shiftedYear = padAstronomicalYear(year - 1);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, shiftedYear);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_OFF_BY_ONE)
-                .message(tr("[ohm] Suspicious date - 01-01 end_date; autofix by removing -01-01"),
-                         tr("{0}={1} likely means the end of year {2}. \u2192 {0}={2}",
-                            baseKey, value, shiftedYear))
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_REVERSED_BOUNDARY)
+                .message(tr("[ohm] Suspicious date - 01-01 end_date; unfixable, please review"),
+                         tr("{0}={1}: start-of-year used as end_date. If the exact "
+                            + "day is unknown, manually change to {0}={2} (the year "
+                            + "this date falls in) or {0}={3} (the previous year, "
+                            + "if a typo).",
+                            baseKey, value,
+                            padAstronomicalYear(year),
+                            padAstronomicalYear(year - 1)))
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         }
     }

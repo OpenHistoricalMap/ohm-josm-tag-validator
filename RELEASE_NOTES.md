@@ -1,4 +1,13 @@
-# v0.3.2 — wikidata rule detune, new historic warning, icon polish
+# v0.3.2 — wikidata rule detune, new historic warning, year-boundary swap, icon polish
+
+## Year-boundary fixability swap (4212/4213/4214)
+
+The fix-vs-no-fix policy on year-boundary dates is reversed:
+
+- `start_date=YYYY-01-01` (4212) and `end_date=YYYY-12-31` (4213): now **autofixable** by trimming to bare-year. These sit at the year boundary that matches the role — under OHM's conservative year-only convention, the trimmed form bounds the same calendar year the explicit form does, so trimming is safe.
+- `start_date=YYYY-12-31` (4214) and `end_date=YYYY-01-01` (4214): now **unfixable, please review**. These sit at the *opposite* year boundary for the role. Could be a typo (year-±1 intended) or a legitimate event-day start/end; ambiguous, so manual review only.
+
+This reverses the previous policy (where 4212/4213 were unfixable and 4214 autofixed by year-shifting). The earlier non-fix on 4212/4213 was a 2026-04 forum-feedback response to over-aggressive auto-removal; the v0.3.2 reasoning is that *these specific* trims (boundary-matches-role) are safe in OHM's data model, while the year-shift on 4214 was the actually-aggressive operation.
 
 ## Less noise from the missing-`wikidata` rule (4302)
 

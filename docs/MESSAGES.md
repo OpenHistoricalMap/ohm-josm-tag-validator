@@ -79,26 +79,26 @@ After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start
 
 | Code | Title |
 |------|-------|
-| 4212 | `[ohm] Suspicious date - 01-01 start_date; unfixable, please review` |
-| 4213 | `[ohm] Suspicious date - 12-31 end_date; unfixable, please review` |
-| 4214 | `[ohm] Suspicious date - 12-31 start_date; autofix by removing -12-31` |
-| 4214 | `[ohm] Suspicious date - 01-01 end_date; autofix by removing -01-01` |
+| 4212 | `[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01` |
+| 4213 | `[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31` |
+| 4214 | `[ohm] Suspicious date - 12-31 start_date; unfixable, please review` |
+| 4214 | `[ohm] Suspicious date - 01-01 end_date; unfixable, please review` |
 
-**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — _possibly_ an overly precise encoding of a bare year, but Jan 1 and Dec 31 are also legitimate dates for many real events (laws taking effect, fiscal-year boundaries, etc.). Forum feedback (2026-04-21) flagged the previous auto-removal as too aggressive, so these are now no-fix warnings.  
-**4212/4213 fix:** None — the user manually trims to the bare year if appropriate.  
-**4212/4213 description:** _{key}={value}: if the exact day is unknown, change to {key}={year}._
+**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — at the year boundary that matches the role. Under OHM's conservative year-only convention, `start_date=YYYY` already starts at Jan 1 and `end_date=YYYY` already ends Dec 31, so the explicit form is functionally redundant.  
+**4212/4213 fix:** Trim to the bare year (e.g. `start_date=1875-01-01` → `start_date=1875`).  
+**4212/4213 description:** _{key}={value} → {key}={year}_
 
-**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — likely an off-by-one (next/previous year intended). This is a clearer typo signal than 4212/4213, so the autofix stays.  
-**4214 fix:** Shifts year by ±1.  
-**4214 description:** _{key}={value} likely means the {start|end} of year {shifted}. → {key}={shifted}_
+**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — at the *opposite* year boundary for the role. Could be a typo (next/previous year intended) or a legitimate event-day boundary (e.g. a treaty signed Dec 31). Ambiguous; manual review only.  
+**4214 fix:** None.  
+**4214 description:** _{key}={value}: end-of-year used as start_date / start-of-year used as end_date. If the exact day is unknown, manually change to {key}={year} (the year this date falls in) or {key}={shifted} (next/previous year, if a typo)._
 
 **4212/4213 example:**  
-Trigger: `start_date=1875-01-01` (4212) or `end_date=1900-12-31` (4213).  
-Suggested manual fix: if the precise day is real, leave alone; otherwise change to `start_date=1875` or `end_date=1900`.
+Before: `start_date=1875-01-01`  
+After autofix: `start_date=1875`.
 
 **4214 example:**  
-Before: `start_date=1875-12-31`  
-After autofix: `start_date=1876` (interpreting Dec 31 of year N as the start of year N+1).
+Trigger: `start_date=1875-12-31`.  
+Suggested manual fix: if the start was genuinely on Dec 31, 1875 (e.g. a treaty signed that day), leave alone; otherwise change to `start_date=1875` (the year this date falls in) or `start_date=1876` (the year the entity started, if the original was an off-by-one typo).
 
 ---
 
