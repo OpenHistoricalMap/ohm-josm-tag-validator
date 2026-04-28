@@ -136,6 +136,7 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_SOURCE_SEMICOLON_MIXED = 4317;
     protected static final int CODE_RELATION_LABEL_MEMBER = 4318;
     protected static final int CODE_HISTORIC_SUSPICIOUS = 4319;
+    protected static final int CODE_NAME_HAS_HISTORIC = 4320;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -175,6 +176,15 @@ public class TagConsistencyTest extends Test {
 
     /** Validates the language-prefix portion of a wikipedia=lang:Title value. */
     private static final Pattern WIKIPEDIA_LANG = Pattern.compile("[a-z]{2,10}");
+
+    /**
+     * Matches the word "historic" (also "Historic", "historical", "HISTORIC",
+     * etc.) at a word boundary inside a name-family value. The boundary anchor
+     * keeps "prehistoric" or other compound forms from firing — only the
+     * "historic*" stem at a real word edge counts.
+     */
+    private static final Pattern HISTORIC_IN_NAME =
+        Pattern.compile("\\bhistoric", Pattern.CASE_INSENSITIVE);
 
     // --- Patterns ------------------------------------------------------------
 
@@ -307,6 +317,17 @@ public class TagConsistencyTest extends Test {
                         .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
                                  tr("{0}={1}: dates in parentheses are discouraged in names; "
                                     + "move the date to start_date / end_date instead.",
+                                    key, value))
+                        .primitives(p)
+                        .build());
+                }
+                if (value != null && HISTORIC_IN_NAME.matcher(value).find()) {
+                    errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_HISTORIC)
+                        .message(tr("[ohm] Name warning - \"historic\" in name; unfixable, please review if this is date appropriate"),
+                                 tr("{0}={1}: \"historic\" in a name often reflects a "
+                                    + "present-day perspective. In OHM, confirm the "
+                                    + "entity was actually called this at the time it "
+                                    + "existed.",
                                     key, value))
                         .primitives(p)
                         .build());

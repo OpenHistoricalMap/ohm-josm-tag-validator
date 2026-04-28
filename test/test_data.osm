@@ -38779,4 +38779,26 @@
   <node id='9100504' visible='true' version='1' lat='0.0' lon='0.0'>
     <tag k='historic' v='castle' />
   </node>
+  <!-- Fixture R: name contains "historic". Fires 4320. -->
+  <node id='9100601' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Historic House' />
+    <tag k='wikidata' v='Q3' />
+    <tag k='source' v='https://example.com/r' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture S: "Historical" still fires 4320 (matches \bhistoric prefix). -->
+  <node id='9100602' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Historical Society Building' />
+    <tag k='wikidata' v='Q4' />
+    <tag k='source' v='https://example.com/s' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture T: "Prehistoric" does NOT fire (no word boundary before
+       "historic"). Negative case. -->
+  <node id='9100603' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Prehistoric Cave' />
+    <tag k='wikidata' v='Q5' />
+    <tag k='source' v='https://example.com/t' />
+    <tag k='start_date' v='1900' />
+  </node>
 </osm>

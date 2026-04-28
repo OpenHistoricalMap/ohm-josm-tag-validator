@@ -432,7 +432,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4319)
+## TagConsistencyTest (codes 4300–4320)
 
 ### Name consistency
 
@@ -440,6 +440,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 |------|-------|
 | 4300 | `[ohm] Missing tag - name=*; unfixable, please review` |
 | 4301 | `[ohm] Name warning - parentheses in name; unfixable, please review` |
+| 4320 | `[ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate` |
 
 **4300 trigger:** Feature has language-variant name keys (e.g. `name:en`) but no plain `name` key. **Skipped on `type=route` relations** — routes are conventionally identified by `ref` (route number / designation), so name-family-only routes are legitimate.  
 **4300 description:** _Feature has name-family keys ({key}, etc.) but no plain 'name' key. Please add a canonical name._
@@ -460,6 +461,15 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 
 **4301 example (does not fire):**  
 `name=City Park (Springfield)` — parenthesised disambiguator with no year-like content; left alone.
+
+**4320 trigger:** Any name-family value contains the word "historic" at a word boundary (so `historic`, `Historic`, `historical`, `Historical`, etc. — but not `prehistoric` since the "h" sits between word characters, no boundary). The reasoning: "historic" framing usually reflects a present-day vantage; in OHM's time-aware data model, the entity at the time it existed wouldn't have called itself "historic". The Forum in Rome was just a Forum, not "historic", in 50 BCE.  
+**4320 description:** _{key}={value}: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed._
+
+**4320 example (fires):**  
+`name=Historic Town Hall` or `name=Historical Society` — both trip the rule. Confirm whether the actual entity at its time was so named, or whether the qualifier is being added retrospectively.
+
+**4320 example (does not fire):**  
+`name=Prehistoric Cave` — "historic" sits inside "Prehistoric" with no preceding word boundary, so the regex doesn't match.
 
 ---
 

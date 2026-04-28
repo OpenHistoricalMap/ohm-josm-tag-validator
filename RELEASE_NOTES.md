@@ -1,4 +1,8 @@
-# v0.3.2 — wikidata rule detune, new historic warning, year-boundary swap, icon polish
+# v0.3.2 — wikidata rule detune, historic-tag and historic-in-name warnings, year-boundary swap, icon polish
+
+## New: `[ohm] Name warning - "historic" in name` (4320, WARNING)
+
+Companion rule to 4319 (suspicious `historic=*` tag): any name-family value containing the word `historic` (at a word boundary, so `historic`, `Historic`, `historical`, `Historical` all trigger; `prehistoric` does not) trips the rule. OHM's time-aware data model wants the entity's name as it would have been used at the time it existed, not a present-day historicizing label.
 
 ## Year-boundary fixability swap (4212/4213/4214)
 
