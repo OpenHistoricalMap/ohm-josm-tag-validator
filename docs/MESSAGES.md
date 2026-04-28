@@ -19,7 +19,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 | Code | Title |
 |------|-------|
-| 4200 | `[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable `start_date:edtf` range & explain the reasons in start_date:source` |
+| 4200 | `[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source` |
 
 **Trigger:** Feature carries at least one tag from a curated **man-made allowlist** but has no `start_date`. The allowlist (see `DateTagTest.MANMADE_KEYS` and `MANMADE_DENYLIST`) covers buildings, highways, railways, amenities, leisure, barriers, addressed features, and other tags that mark a primitive as built / established with a discrete creation date.  
 **Fix:** None.  

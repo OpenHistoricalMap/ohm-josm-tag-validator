@@ -309,7 +309,7 @@ public class DateTagTest extends Test {
         // warnings on r/2828412 / British Empire 1921-1922).
         if (p.get("start_date") == null && isManMade(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_START_DATE)
-                .message(tr("[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable `start_date:edtf` range & explain the reasons in start_date:source"),
+                .message(tr("[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source"),
                          tr(""))
                 .primitives(p)
                 .build());
