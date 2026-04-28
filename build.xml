@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project name="ohm-tags" default="dist" basedir=".">
+<project name="OHM_Tag_Validator" default="dist" basedir=".">
 
     <!-- === Configuration =================================================== -->
     <!-- Minimum JOSM version this plugin requires (svn revision). Bump as needed. -->
@@ -9,7 +9,7 @@
     <property name="plugin.description"  value="Validator for OpenHistoricalMap: checks start_date/end_date formatting and EDTF normalization, name conventions, source tagging, and Wikidata/Wikipedia cross-references."/>
     <property name="plugin.link"         value="https://github.com/OpenHistoricalMap/ohm-josm-tag-validator"/>
     <property name="plugin.canloadatruntime" value="true"/>
-    <property name="plugin.icon"         value="images/preferences/ohm-tags.png"/>
+    <property name="plugin.icon"         value="images/preferences/OHM_Tag_Validator.png"/>
     <property name="plugin.minimum.java.version" value="17"/>
 
     <!-- === Paths =========================================================== -->

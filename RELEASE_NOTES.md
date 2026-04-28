@@ -1,16 +1,23 @@
-# v0.3.1 — manifest polish for JOSM plugin registry submission
+# v0.3.1 — JOSM plugin registry submission prep
 
-Pre-submission housekeeping for getting `ohm-tags` into the JOSM
+Pre-submission housekeeping for getting the plugin into the JOSM
 plugin directory (so it appears in every JOSM user's *Available
 plugins* list by default). No validator behavior changes.
 
+- **Renamed** the plugin from `ohm-tags` to `OHM_Tag_Validator`. JOSM
+  uses the jar/SVN-directory name as the user-facing string in its
+  plugin list, and underscores render as visual spaces, so the new
+  name reads almost like "OHM Tag Validator" in the UI. The Java
+  package (`org.openstreetmap.josm.plugins.ohmtags`) is unchanged —
+  only the build artifact and user-facing name have moved. The jar
+  is now `dist/OHM_Tag_Validator.jar`.
 - **Plugin-Minimum-Java-Version: 17** added to the manifest. The
   plugin already required JDK 17 because of the bundled `edtf-java`
   dependency; this just declares that requirement explicitly so JOSM
   doesn't try to load the plugin on older Java versions.
-- **Plugin-Icon** added. The icon ships as `images/preferences/ohm-tags.png`
-  inside the jar and is what JOSM displays next to the plugin name in
-  the plugin list.
+- **Plugin-Icon** added. The icon ships as `images/preferences/OHM_Tag_Validator.png`
+  inside the jar and is what JOSM displays next to the plugin name
+  in the plugin list.
 
 ---
 
