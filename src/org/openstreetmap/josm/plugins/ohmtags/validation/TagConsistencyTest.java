@@ -393,7 +393,7 @@ public class TagConsistencyTest extends Test {
         if (p.get("wikidata") == null && hasNotabilitySignal(p)) {
             TestError.Builder builder = TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
                 .message(tr("[ohm] Missing tag - wikidata; unfixable, please review"),
-                         tr(""))
+                         tr("Wikidata QIDs help link OHM data to other databases."))
                 .primitives(p);
             String wikipediaValue = p.get("wikipedia");
             if (wikipediaValue != null) {
