@@ -38746,4 +38746,83 @@
     <tag k='start_date' v='1800' />
     <tag k='end_date' v='1900' />
   </relation>
+  <!-- Fixture N: named feature without any notability signal. Under
+       option D, the missing-wikidata rule (4302) does NOT fire on this
+       node — random named buildings/streets are not noteworthy. -->
+  <node id='9100501' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Ordinary House' />
+    <tag k='building' v='residential' />
+    <tag k='source' v='https://example.com/n' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture O: named cathedral. building=cathedral is in BUILDING_NOTABLE,
+       so 4302 fires. No wikipedia tag, so no autofix is offered. -->
+  <node id='9100502' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Cathedral' />
+    <tag k='building' v='cathedral' />
+    <tag k='source' v='https://example.com/o' />
+    <tag k='start_date' v='1500' />
+  </node>
+  <!-- Fixture P: named feature with wikipedia=* but no wikidata. Fires
+       4302 with a fix supplier attached (the supplier performs a Wikidata
+       API lookup at fix-click time; not exercised in the headless harness). -->
+  <node id='9100503' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Linked To Wikipedia' />
+    <tag k='wikipedia' v='en:Test Article' />
+    <tag k='source' v='https://example.com/p' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture Q: historic=castle on a node with no name. Fires 4319
+       (suspicious historic) but NOT 4302 (no name-family key). Also
+       fires 4200 (man-made allowlist + no start_date) — that's the
+       existing rule, not new. -->
+  <node id='9100504' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='historic' v='castle' />
+  </node>
+  <!-- Fixture R: name contains "historic". Fires 4320. -->
+  <node id='9100601' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Historic House' />
+    <tag k='wikidata' v='Q3' />
+    <tag k='source' v='https://example.com/r' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture S: "Historical" still fires 4320 (matches \bhistoric prefix). -->
+  <node id='9100602' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Historical Society Building' />
+    <tag k='wikidata' v='Q4' />
+    <tag k='source' v='https://example.com/s' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture T: "Prehistoric" also fires 4320 — "historic" appears as
+       a substring and any historicizing frame is suspect in OHM,
+       however constructed. -->
+  <node id='9100603' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Prehistoric Cave' />
+    <tag k='wikidata' v='Q5' />
+    <tag k='source' v='https://example.com/t' />
+    <tag k='start_date' v='1900' />
+  </node>
+  <!-- Fixture U: maritime boundary-segment way. Member of a
+       type=boundary relation, carries maritime=yes. The 4302 rule
+       must NOT fire on the way (segments don't have their own QID),
+       though it will still fire on the parent relation. -->
+  <node id='9100701' visible='true' version='1' lat='0.0' lon='0.0' />
+  <node id='9100702' visible='true' version='1' lat='0.1' lon='0.1' />
+  <way id='9100710' visible='true' version='1'>
+    <nd ref='9100701' />
+    <nd ref='9100702' />
+    <tag k='name' v='Maritime Boundary Segment' />
+    <tag k='boundary' v='administrative' />
+    <tag k='maritime' v='yes' />
+    <tag k='source' v='https://example.com/u' />
+    <tag k='start_date' v='1900' />
+  </way>
+  <relation id='9100720' visible='true' version='1'>
+    <member type='way' ref='9100710' role='outer' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='name' v='Maritime Boundary Parent' />
+    <tag k='source' v='https://example.com/u-parent' />
+    <tag k='start_date' v='1900' />
+  </relation>
 </osm>

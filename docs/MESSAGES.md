@@ -79,26 +79,26 @@ After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start
 
 | Code | Title |
 |------|-------|
-| 4212 | `[ohm] Suspicious date - 01-01 start_date; unfixable, please review` |
-| 4213 | `[ohm] Suspicious date - 12-31 end_date; unfixable, please review` |
-| 4214 | `[ohm] Suspicious date - 12-31 start_date; autofix by removing -12-31` |
-| 4214 | `[ohm] Suspicious date - 01-01 end_date; autofix by removing -01-01` |
+| 4212 | `[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01` |
+| 4213 | `[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31` |
+| 4214 | `[ohm] Suspicious date - 12-31 start_date; unfixable, please review` |
+| 4214 | `[ohm] Suspicious date - 01-01 end_date; unfixable, please review` |
 
-**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — _possibly_ an overly precise encoding of a bare year, but Jan 1 and Dec 31 are also legitimate dates for many real events (laws taking effect, fiscal-year boundaries, etc.). Forum feedback (2026-04-21) flagged the previous auto-removal as too aggressive, so these are now no-fix warnings.  
-**4212/4213 fix:** None — the user manually trims to the bare year if appropriate.  
-**4212/4213 description:** _{key}={value}: if the exact day is unknown, change to {key}={year}._
+**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — at the year boundary that matches the role. Under OHM's conservative year-only convention, `start_date=YYYY` already starts at Jan 1 and `end_date=YYYY` already ends Dec 31, so the explicit form is functionally redundant.  
+**4212/4213 fix:** Trim to the bare year (e.g. `start_date=1875-01-01` → `start_date=1875`).  
+**4212/4213 description:** _{key}={value} → {key}={year}_
 
-**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — likely an off-by-one (next/previous year intended). This is a clearer typo signal than 4212/4213, so the autofix stays.  
-**4214 fix:** Shifts year by ±1.  
-**4214 description:** _{key}={value} likely means the {start|end} of year {shifted}. → {key}={shifted}_
+**4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — at the *opposite* year boundary for the role. Could be a typo (next/previous year intended) or a legitimate event-day boundary (e.g. a treaty signed Dec 31). Ambiguous; manual review only.  
+**4214 fix:** None.  
+**4214 description:** _{key}={value}: end-of-year used as start_date / start-of-year used as end_date. If the exact day is unknown, manually change to {key}={year} (the year this date falls in) or {key}={shifted} (next/previous year, if a typo)._
 
 **4212/4213 example:**  
-Trigger: `start_date=1875-01-01` (4212) or `end_date=1900-12-31` (4213).  
-Suggested manual fix: if the precise day is real, leave alone; otherwise change to `start_date=1875` or `end_date=1900`.
+Before: `start_date=1875-01-01`  
+After autofix: `start_date=1875`.
 
 **4214 example:**  
-Before: `start_date=1875-12-31`  
-After autofix: `start_date=1876` (interpreting Dec 31 of year N as the start of year N+1).
+Trigger: `start_date=1875-12-31`.  
+Suggested manual fix: if the start was genuinely on Dec 31, 1875 (e.g. a treaty signed that day), leave alone; otherwise change to `start_date=1875` (the year this date falls in) or `start_date=1876` (the year the entity started, if the original was an off-by-one typo).
 
 ---
 
@@ -155,7 +155,7 @@ After autofix: `end_date` removed (treated as a typo / data-import artifact).
 |------|-------|
 | 4217 | `[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY` |
 | 4218 | `[ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM` |
-| 4222 | `[ohm] Invalid date - month/day mismatch; too many days in the month in start_date or end_date; unfixable, please review` |
+| 4222 | `[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review` |
 
 **4217 trigger:** Month component is out of range (< 1 or > 12). Offers trim-to-YYYY fix.  
 **4217 description:** _{key}={value}: month {MM} is > 12. Trim to {YYYY}?_
@@ -210,7 +210,7 @@ After autofix: `start_date` and `start_date:edtf` deleted; `end_date=2010` retai
 
 | Code | Title |
 |------|-------|
-| 4202 | `[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review suggestion` |
+| 4202 | `[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review` |
 
 **Trigger:** `start_date` or `end_date` contains a value that looks like EDTF (slashes, ranges, uncertainty markers) rather than a plain ISO date.  
 **Fix:** Moves value to `*_date:edtf`, derives plain ISO base, stores original in `*_date:raw`.  
@@ -227,7 +227,7 @@ After autofix: `start_date=2003-03`, `start_date:edtf=2003-03/2016`, `start_date
 | Code | Title |
 |------|-------|
 | 4201 | `[ohm] Invalid date - *_date cannot be read; unfixable, please review` |
-| 4202 | `[ohm] Invalid date - *_date; fixable, please review suggestion` |
+| 4202 | `[ohm] Invalid date - *_date; fixable, please review` |
 
 **4201 trigger:** `start_date` or `end_date` cannot be parsed or normalized to EDTF.  
 **4201 fix:** None.  
@@ -251,8 +251,8 @@ After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23
 | Code | Title |
 |------|-------|
 | 4208 | `[ohm] Invalid date - *_date:edtf; unfixable, please review` |
-| 4226 | `[ohm] Invalid date - *_date:edtf; fixable, please review suggestion` _(backslash truncated — Rule D1)_ |
-| 4228 | `[ohm] Invalid date - *_date:edtf; fixable, please review suggestion` |
+| 4226 | `[ohm] Invalid date - *_date:edtf; fixable, please review` _(backslash truncated — Rule D1)_ |
+| 4228 | `[ohm] Invalid date - *_date:edtf; fixable, please review` |
 | 4228 | `[ohm] Invalid date - *_date:edtf; unfixable, please review` |
 
 **4208 trigger:** `*_date:edtf` is invalid EDTF and there is no corresponding base tag to fall back on.  
@@ -368,7 +368,7 @@ Suggested manual fix: pick the authoritative end and tighten one or the other.
 
 | Code | Title |
 |------|-------|
-| 4233 | `[ohm] Invalid date - Julian date; fixable, please review Gregorian conversion` |
+| 4233 | `[ohm] Invalid date - Julian date; fixable, please review` |
 
 **Trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation.  
 **Fix:** Converts to Gregorian, stores converted value in base tag, preserves original in `*_date:note`.  
@@ -432,7 +432,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4318)
+## TagConsistencyTest (codes 4300–4320)
 
 ### Name consistency
 
@@ -440,6 +440,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 |------|-------|
 | 4300 | `[ohm] Missing tag - name=*; unfixable, please review` |
 | 4301 | `[ohm] Name warning - parentheses in name; unfixable, please review` |
+| 4320 | `[ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate` |
 
 **4300 trigger:** Feature has language-variant name keys (e.g. `name:en`) but no plain `name` key. **Skipped on `type=route` relations** — routes are conventionally identified by `ref` (route number / designation), so name-family-only routes are legitimate.  
 **4300 description:** _Feature has name-family keys ({key}, etc.) but no plain 'name' key. Please add a canonical name._
@@ -461,24 +462,42 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 **4301 example (does not fire):**  
 `name=City Park (Springfield)` — parenthesised disambiguator with no year-like content; left alone.
 
+**4320 trigger:** Any name-family value contains the substring "historic" (case-insensitive). Matches `Historic`, `historical`, `Prehistoric`, `Ahistorical`, etc. — any historicizing frame, however constructed. The reasoning: "historic" framing reflects a present-day vantage; in OHM's time-aware data model, the entity at the time it existed wouldn't have called itself "historic". The Forum in Rome was just a Forum, not "historic", in 50 BCE.  
+**4320 description:** _{key}={value}: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed._
+
+**4320 example (fires):**  
+`name=Historic Town Hall`, `name=Historical Society`, `name=Prehistoric Cave` — all trip the rule. Confirm whether the actual entity at its time was so named, or whether the qualifier is being added retrospectively.
+
 ---
 
 ### Missing attribution
 
 | Code | Title |
 |------|-------|
-| 4302 | `[ohm] Missing tag - wikidata; unfixable, please review and add a Wikidata QID` |
+| 4302 | `[ohm] Missing tag - wikidata; unfixable, please review` |
 | 4303 | `[ohm] Missing tag - source; named feature without source; unfixable, please review` |
 
-**4302 trigger:** Named feature has no `wikidata` tag.  
+**4302 trigger:** Named feature has no `wikidata` tag **and** carries a notability signal: any `wikipedia=*`, `historic=*`, `boundary=administrative`, or a notable value of `place` (city/town/village/hamlet/suburb/neighbourhood/county/state/country/region/island/archipelago/continent), `tourism` (museum/attraction/monument/artwork/gallery), `amenity` (place_of_worship/university/courthouse/townhall/library/theatre/hospital/school), `building` (castle/cathedral/church/chapel/mosque/synagogue/temple/palace), or `military` (castle/fort/barracks). Relations always count.
+
+**4302 exception:** Ways with `maritime=yes` that are members of a `type=boundary` relation are skipped — they're segments of a larger boundary entity and don't have their own Wikidata identity. The parent boundary relation still fires the rule.
+
+**4302 fix:** If `wikipedia=*` is present, an autofix is offered that resolves the QID via the Wikidata API (`wbgetentities` against `<lang>wiki` site title) at fix-click time. If the lookup fails (network error, missing article, no QID in response), the fix is a silent no-op. No autofix is offered when `wikipedia=*` is absent.
+
 **4302 description:** _This named feature has no 'wikidata' tag. Wikidata is the preferred identifier for cross-referencing._
 
 **4303 trigger:** Named feature has no `source*` tag of any kind.  
 **4303 description:** _This named feature has no 'source' tag. Please document the provenance of this feature._
 
-**4302 example:**  
-Trigger: `name=Eiffel Tower` with no `wikidata` tag.  
+**4302 example (no autofix):**  
+Trigger: `name=Eiffel Tower`, `tourism=attraction`, no `wikidata`, no `wikipedia`.  
 Suggested manual fix: add `wikidata=Q243`.
+
+**4302 example (with autofix):**  
+Trigger: `name=Eiffel Tower`, `wikipedia=en:Eiffel Tower`, no `wikidata`.  
+Click Fix → plugin queries `https://www.wikidata.org/w/api.php?action=wbgetentities&sites=enwiki&titles=Eiffel%20Tower&props=info&format=json`, extracts `Q243`, adds `wikidata=Q243`.
+
+**4302 example (does not fire):**  
+`name=Ordinary Building`, `building=residential`, no `wikidata`. No notability signal; rule is silent.
 
 **4303 example:**  
 Trigger: `name=Old Mill` with no `source*` tags.  
@@ -508,7 +527,7 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 |------|-------|
 | 4306 | `[ohm] Source optimization - move non-URL source tags to source:name` |
 | 4307 | `[ohm] Source optimization - repair URL missing 'http[s]://'` |
-| 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review & add a source=URL, if possible` |
+| 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review` |
 
 **4306 trigger:** `source` (or numbered variant) contains a non-URL text string.  
 **4306 fix:** Moves value to `source:name`, leaves `source` blank for a URL.  
@@ -582,7 +601,7 @@ After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`,
 
 | Code | Title |
 |------|-------|
-| 4314 | `[ohm] Source optimization - source contains one URL and one text string; autofix by splitting into source and source:name` |
+| 4314 | `[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name` |
 | 4315 | `[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys` |
 | 4316 | `[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys` |
 | 4317 | `[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review` |
@@ -625,8 +644,8 @@ Suggested manual fix: split by hand into `source`, `source:1`, `source:name`, `s
 
 | Code | Title |
 |------|-------|
-| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add an appropriate Wikipedia article` |
-| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please add appropriate Wikidata QID` |
+| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag` |
+| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag` |
 
 **4308 trigger:** A `*:source` tag references Wikipedia but no `wikipedia` tag exists on the feature.  
 **4308 description:** _{key}={value}: please add an appropriate 'wikipedia' tag._
@@ -644,11 +663,26 @@ Suggested manual fix: add `wikidata=Q12345`.
 
 ---
 
+### Suspicious tag — historic
+
+| Code | Title |
+|------|-------|
+| 4319 | `[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic` |
+
+**4319 trigger:** Any feature carrying a `historic=*` tag (any value). OHM convention is that `historic=*` applies to entities that have actually passed into history; using it on a still-current feature is premature.
+
+**4319 description:** _historic={value}: confirm the entity has actually passed into history before applying this tag._
+
+**4319 example:**  
+Trigger: a node tagged `historic=castle` representing a castle that is still standing as a tourist attraction. The warning prompts the editor to consider whether the tag is appropriate or whether it should be removed (or paired with an `end_date` indicating the historical scope).
+
+---
+
 ### Suspicious member — role=label
 
 | Code | Title |
 |------|-------|
-| 4318 | `[ohm] Suspicious member - role=label; unfixable, please review and download parent relations` |
+| 4318 | `[ohm] Suspicious member - role=label; unfixable, please review` |
 
 **4318 trigger:** A relation has at least one member with `role=label`. OHM renderers automatically generate label points server-side, so editor-supplied labels are usually unnecessary. The warning fires once per relation regardless of how many `role=label` members it has.
 

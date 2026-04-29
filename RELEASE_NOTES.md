@@ -1,3 +1,50 @@
+# v0.3.2 — wikidata rule detune, historic-tag and historic-in-name warnings, year-boundary swap, icon polish
+
+## New: `[ohm] Name warning - "historic" in name` (4320, WARNING)
+
+Companion rule to 4319 (suspicious `historic=*` tag): any name-family value containing the word `historic` (at a word boundary, so `historic`, `Historic`, `historical`, `Historical` all trigger; `prehistoric` does not) trips the rule. OHM's time-aware data model wants the entity's name as it would have been used at the time it existed, not a present-day historicizing label.
+
+## Year-boundary fixability swap (4212/4213/4214)
+
+The fix-vs-no-fix policy on year-boundary dates is reversed:
+
+- `start_date=YYYY-01-01` (4212) and `end_date=YYYY-12-31` (4213): now **autofixable** by trimming to bare-year. These sit at the year boundary that matches the role — under OHM's conservative year-only convention, the trimmed form bounds the same calendar year the explicit form does, so trimming is safe.
+- `start_date=YYYY-12-31` (4214) and `end_date=YYYY-01-01` (4214): now **unfixable, please review**. These sit at the *opposite* year boundary for the role. Could be a typo (year-±1 intended) or a legitimate event-day start/end; ambiguous, so manual review only.
+
+This reverses the previous policy (where 4212/4213 were unfixable and 4214 autofixed by year-shifting). The earlier non-fix on 4212/4213 was a 2026-04 forum-feedback response to over-aggressive auto-removal; the v0.3.2 reasoning is that *these specific* trims (boundary-matches-role) are safe in OHM's data model, while the year-shift on 4214 was the actually-aggressive operation.
+
+## Less noise from the missing-`wikidata` rule (4302)
+
+`[ohm] Missing tag - wikidata` previously fired on every named feature without a `wikidata` tag, which over-fired on routine named buildings, local roads, and the like. It now fires only when the feature also carries a notability signal:
+
+- Any `wikipedia=*`, `historic=*`, or `boundary=administrative`
+- A notable value of `place` (city, town, village, hamlet, suburb, neighbourhood, county, state, country, region, island, archipelago, continent)
+- A notable value of `tourism` (museum, attraction, monument, artwork, gallery)
+- A notable value of `amenity` (place_of_worship, university, courthouse, townhall, library, theatre, hospital, school)
+- A notable value of `building` (castle, cathedral, church, chapel, mosque, synagogue, temple, palace)
+- A notable value of `military` (castle, fort, barracks)
+- Or the primitive is a relation (relations almost always represent compound named entities)
+
+In the bundled regression dataset, the rule's hit count drops from 268 to 73 — a 73% reduction.
+
+## Wikidata QID autofix when `wikipedia=*` is set
+
+If `wikipedia=*` is present but `wikidata` is missing, a fix is now offered that resolves the QID via the Wikidata API (`wbgetentities` against `<lang>wiki` site title) at fix-click time. The lookup is lazy — validation stays offline-fast. If the lookup fails (network error, missing article, no QID in response), the fix is a silent no-op.
+
+## New: `[ohm] Suspicious tag - historic` (4319, WARNING)
+
+OHM convention is that `historic=*` applies only to entities that have actually passed into history; using it on a still-current feature is premature. The rule fires once per feature carrying `historic=*` (any value), prompting the editor to confirm. Unfixable.
+
+## Icon polish
+
+The plugin icon's black background is now transparent. Same shield/checkmark glyph; cleaner blend with JOSM's plugin list.
+
+## Shorter validator titles
+
+Validator messages whose titles ended with content trailing "please review" (e.g. "; unfixable, please review and add a Wikidata QID", "; fixable, please review suggestion") are trimmed to end at "please review". The trailing detail still lives in the description field, so no information is lost — but the validator panel's row no longer wraps so eagerly, making the error count column easier to read.
+
+---
+
 # v0.3.1 — JOSM plugin registry submission prep
 
 Pre-submission housekeeping for getting the plugin into the JOSM

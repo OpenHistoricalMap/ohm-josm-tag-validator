@@ -183,7 +183,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_EDTF_MISSING_BASE = 4211;
     protected static final int CODE_SUSPICIOUS_YEAR_START = 4212;
     protected static final int CODE_SUSPICIOUS_YEAR_END = 4213;
-    protected static final int CODE_SUSPICIOUS_OFF_BY_ONE = 4214;
+    protected static final int CODE_SUSPICIOUS_REVERSED_BOUNDARY = 4214;
     protected static final int CODE_START_AFTER_END = 4215;
     protected static final int CODE_FUTURE_DATE = 4216;
     protected static final int CODE_INVALID_MONTH = 4217;
@@ -310,9 +310,8 @@ public class DateTagTest extends Test {
         if (p.get("start_date") == null && isManMade(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_START_DATE)
                 .message(tr("[ohm] Suspicious date - man-made object without start_date; unfixable, please review"),
-                         tr("Please make every effort to attempt a reasonable range "
-                          + "for the `start_date:edtf` tag and provide an explanation "
-                          + "in the `start_date:source` tag."))
+                         tr("Please add a reasonable `start_date:edtf` range & "
+                          + "explain it in `start_date:source`."))
                 .primitives(p)
                 .build());
         }
@@ -474,21 +473,25 @@ public class DateTagTest extends Test {
             // events (laws taking effect, fiscal year boundaries, etc.);
             // forum feedback flagged the auto-removal as too aggressive.
             String yearStr = padAstronomicalYear(year);
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_START)
-                .message(tr("[ohm] Suspicious date - 01-01 start_date; unfixable, please review"),
-                         tr("{0}={1}: if the exact day is unknown, change to {0}={2}.",
+                .message(tr("[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01"),
+                         tr("{0}={1} → {0}={2}",
                             baseKey, value, yearStr))
                 .primitives(p)
+                .fix(() -> fix)
                 .build());
         } else if (isEnd && isDec31) {
             // Possible false precision: end of year. Same reasoning as
             // above — Dec 31 is a real date too often to autofix.
             String yearStr = padAstronomicalYear(year);
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_END)
-                .message(tr("[ohm] Suspicious date - 12-31 end_date; unfixable, please review"),
-                         tr("{0}={1}: if the exact day is unknown, change to {0}={2}.",
+                .message(tr("[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31"),
+                         tr("{0}={1} → {0}={2}",
                             baseKey, value, yearStr))
                 .primitives(p)
+                .fix(() -> fix)
                 .build());
         } else if (isStart && isDec31) {
             // Off-by-one: start on last day of year N almost certainly means year N+1.
@@ -496,25 +499,29 @@ public class DateTagTest extends Test {
             // mechanically — e.g. -0050-12-31 → -0049 (1 year later astronomically,
             // which is 49 BCE, i.e. 1 year later in BCE labeling too since both
             // representations share the year-0 convention here).
-            String shiftedYear = padAstronomicalYear(year + 1);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, shiftedYear);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_OFF_BY_ONE)
-                .message(tr("[ohm] Suspicious date - 12-31 start_date; autofix by removing -12-31"),
-                         tr("{0}={1} likely means the beginning of year {2}. \u2192 {0}={2}",
-                            baseKey, value, shiftedYear))
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_REVERSED_BOUNDARY)
+                .message(tr("[ohm] Suspicious date - 12-31 start_date; unfixable, please review"),
+                         tr("{0}={1}: end-of-year used as start_date. If the exact "
+                            + "day is unknown, manually change to {0}={2} (the year "
+                            + "this date falls in) or {0}={3} (the next year, if a "
+                            + "typo).",
+                            baseKey, value,
+                            padAstronomicalYear(year),
+                            padAstronomicalYear(year + 1)))
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isEnd && isJan1) {
             // Off-by-one: end on first day of year N almost certainly means year N-1.
-            String shiftedYear = padAstronomicalYear(year - 1);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, shiftedYear);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_OFF_BY_ONE)
-                .message(tr("[ohm] Suspicious date - 01-01 end_date; autofix by removing -01-01"),
-                         tr("{0}={1} likely means the end of year {2}. \u2192 {0}={2}",
-                            baseKey, value, shiftedYear))
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_REVERSED_BOUNDARY)
+                .message(tr("[ohm] Suspicious date - 01-01 end_date; unfixable, please review"),
+                         tr("{0}={1}: start-of-year used as end_date. If the exact "
+                            + "day is unknown, manually change to {0}={2} (the year "
+                            + "this date falls in) or {0}={3} (the previous year, "
+                            + "if a typo).",
+                            baseKey, value,
+                            padAstronomicalYear(year),
+                            padAstronomicalYear(year - 1)))
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         }
     }
@@ -585,7 +592,7 @@ public class DateTagTest extends Test {
             // LocalDate.of throws DateTimeException on invalid dates.
             if (!isValidDayForMonth(year, month, day)) {
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
-                    .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month in start_date or end_date; unfixable, please review"),
+                    .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review"),
                              tr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
                               + "(e.g. Feb 30, June 31, or Feb 29 on a non-leap year). "
                               + "Manual review needed.",
@@ -865,7 +872,7 @@ public class DateTagTest extends Test {
                     tr("Normalize start_date:edtf"), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review suggestion"),
+                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
                              tr("start_date:edtf={0}: strip leading backslash and "
                               + "re-normalize to {1}?",
                                 startEdtf, normalized.get()))
@@ -887,7 +894,7 @@ public class DateTagTest extends Test {
                     tr("Normalize start_date:edtf"), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review suggestion"),
+                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
                              tr("start_date:edtf={0}: strip leading backslash to {1}?",
                                 startEdtf, backslashRemainder))
                     .primitives(p)
@@ -912,8 +919,7 @@ public class DateTagTest extends Test {
         if (start != null && end != null && start.equals(end) && !botIsLastEditor) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_START_END_EQUAL)
                 .message(tr("[ohm] Suspicious date - start_date = end_date; unfixable, please review"),
-                         tr("The start_date and end_date values are equal and should "
-                          + "only be that way for an object that existed only for a day."))
+                         tr("did this feature exist for just 1 day/month/year?"))
                 .primitives(p)
                 .build());
         }
@@ -980,7 +986,7 @@ public class DateTagTest extends Test {
                 Command fix = new SequenceCommand(tr("Normalize {0}", key), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review suggestion"),
+                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
                              tr("{0}={1} is not valid EDTF. Normalize to {2} and "
                               + "preserve original in {3}?",
                                 key, value, newEdtf, rawSibling))
@@ -1478,7 +1484,7 @@ public class DateTagTest extends Test {
             // Deliberately no :edtf — EDTF has no standard form for Julian dates.
             Command fix = new SequenceCommand(tr("Convert Julian date for {0}", baseKey), cmds);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_JULIAN_CONVERSION)
-                .message(tr("[ohm] Invalid date - Julian date; fixable, please review Gregorian conversion"),
+                .message(tr("[ohm] Invalid date - Julian date; fixable, please review"),
                          tr("{0}={1} \u2192 {0}={2} (Gregorian), {0}:note added",
                             baseKey, base, gregorian))
                 .primitives(p)
@@ -1502,7 +1508,7 @@ public class DateTagTest extends Test {
 
             Command fix = buildTripleFix(p, baseKey, derivedBase, derivedEdtf, base);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
-                .message(tr("[ohm] Invalid date - *_date; fixable, please review suggestion"),
+                .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
                          tr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}, {0}:raw={1}",
                             baseKey, base,
                             derivedBase == null ? "(absent)" : derivedBase,
@@ -1541,10 +1547,10 @@ public class DateTagTest extends Test {
             String messageTitle;
             if (originalWasEdtf) {
                 fix = buildBaseAndEdtfFix(p, baseKey, passthroughBase, cleaned);
-                messageTitle = tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review suggestion");
+                messageTitle = tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review");
             } else {
                 fix = buildTripleFix(p, baseKey, passthroughBase, cleaned, base);
-                messageTitle = tr("[ohm] Invalid date - *_date; fixable, please review suggestion");
+                messageTitle = tr("[ohm] Invalid date - *_date; fixable, please review");
             }
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                 .message(messageTitle,
