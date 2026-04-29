@@ -15,10 +15,16 @@ See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messag
 
 ## Installation
 
-### From a release (recommended)
+### From JOSM settings/preferences Plugin panel (recommended)
+
+<img width="955" height="603" alt="Monosnap Preferences 2026-04-28 18-56-27" src="https://github.com/user-attachments/assets/4d7b34da-2c90-4465-8dd6-888f13a864a1" />
+
+### From a release
+
+This is the same place JOSM gets the plugin automatically.
 
 1. Download `OHM_Tag_Validator.jar` from the
-   [latest release](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/releases/latest)
+   [latest release](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/releases/latest/download/OHM_Tag_Validator.jar)
 2. Copy the jar into JOSM's plugins directory:
    - **macOS:** `~/Library/JOSM/plugins/`
    - **Linux:** `~/.local/share/JOSM/plugins/`
