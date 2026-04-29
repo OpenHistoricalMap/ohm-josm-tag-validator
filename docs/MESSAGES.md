@@ -19,11 +19,11 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 | Code | Title |
 |------|-------|
-| 4200 | `[ohm] Suspicious date - man-made object without start_date; unfixable, please review` |
+| 4200 | `[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source` |
 
 **Trigger:** Feature carries at least one tag from a curated **man-made allowlist** but has no `start_date`. The allowlist (see `DateTagTest.MANMADE_KEYS` and `MANMADE_DENYLIST`) covers buildings, highways, railways, amenities, leisure, barriers, addressed features, and other tags that mark a primitive as built / established with a discrete creation date.  
 **Fix:** None.  
-**Description:** _Please add a reasonable `start_date:edtf` range & explain it in `start_date:source`._
+**Description:** _(empty — the actionable advice now lives in the title itself.)_
 
 The trigger is a positive allowlist (since 2026-04). Earlier versions used a negative test ("any tag except `natural=*`") which over-fired badly on member ways of large boundary relations — see issue #4 (3344 warnings on the British Empire 1921-1922 relation, forum post 2026-04-21). A primitive with only `name=*`, `wikidata=*`, `boundary=*` (on a way), `addr:*`-free metadata, etc. no longer triggers; it must carry a positively man-made key.
 
