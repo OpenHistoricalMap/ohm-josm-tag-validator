@@ -409,8 +409,8 @@ public class TagConsistencyTest extends Test {
         // Rule: named feature without any source*.
         if (!hasAnySourceTag(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_SOURCE)
-                .message(tr("[ohm] Missing tag - source; named feature without source; unfixable, please review"),
-                         tr("Please review & add; other mappers are lost without it."))
+                .message(tr("[ohm] Missing tag - source on named feature; unfixable, please review and add"),
+                         tr("other mappers are lost without it."))
                 .primitives(p)
                 .build());
         }
