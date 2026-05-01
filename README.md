@@ -1,4 +1,4 @@
-#  OHM_Tag_Validator — JOSM validator plugin for OpenHistoricalMap
+#  OHM_Tag_Validator — an OpenHistoricalMap tag validator plugin for JOSM
 
 Validates and normalizes OHM-style date tags and source/name consistency for [OpenHistoricalMap](https://www.openhistoricalmap.org/).
 
