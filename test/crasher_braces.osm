@@ -58,4 +58,26 @@
     <tag k='start_date' v='1965' />
     <tag k='end_date' v='1980' />
   </node>
+  <node id='9000006' visible='true' version='1' lat='0.0' lon='0.5'>
+    <!-- Regression for the 4322 / multi-URL enumeration conflict path:
+         source has 3 URLs to enumerate AND source:1 already holds a
+         value. Pre-fix autofix silently overwrote source:1. The fixed
+         validator must instead emit an unfixable warning. -->
+    <tag k='name' v='Conflict C — multi-URL source split into already-occupied source:1' />
+    <tag k='source' v='https://example.org/a;https://example.org/b;https://example.org/c' />
+    <tag k='source:1' v='https://existing.example.org/preserved' />
+    <tag k='start_date' v='1990' />
+    <tag k='end_date' v='2000' />
+  </node>
+  <node id='9000007' visible='true' version='1' lat='0.0' lon='0.6'>
+    <!-- Regression for the 4323 / multi-text enumeration conflict path:
+         source has 2 text strings to enumerate into source:name and
+         source:1:name; source:name already holds a value. Pre-fix
+         autofix silently overwrote source:name. -->
+    <tag k='name' v='Conflict D — multi-text source split into already-occupied source:name' />
+    <tag k='source' v='Archive folder 12; Field notes 1923' />
+    <tag k='source:name' v='Pre-existing citation; do not lose' />
+    <tag k='start_date' v='1920' />
+    <tag k='end_date' v='1925' />
+  </node>
 </osm>

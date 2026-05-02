@@ -615,22 +615,32 @@ After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`,
 | 4315 | `[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys` |
 | 4316 | `[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys` |
 | 4317 | `[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review` |
+| 4322 | `[ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review` |
+| 4323 | `[ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review` |
 
 **4314 trigger:** `source` contains two semicolon-separated values: one URL and one text string.  
-**4314 fix:** Splits into `source` (URL) and `source:name` (text).  
+**4314 fix:** Splits into `source` (URL) and `source:name` (text). If `source:name` already holds a value, the new text is appended with `;` rather than overwriting.  
 **4314 description:** _{key}={value}: move URL to source and text to source:name?_
 
-**4315 trigger:** `source` contains two or more semicolon-separated URLs.  
+**4315 trigger:** `source` contains two or more semicolon-separated URLs AND no enumerated `source:N` slot in the target range is already occupied.  
 **4315 fix:** Enumerates into `source`, `source:1`, `source:2`, …  
 **4315 description:** _{key}={value}: enumerate into source, source:1, source:2, …?_
 
-**4316 trigger:** `source` contains two or more semicolon-separated non-URL strings.  
+**4316 trigger:** `source` contains two or more semicolon-separated non-URL strings AND no target `source:name` / `source:N:name` slot is already occupied.  
 **4316 fix:** Enumerates into `source:name`, `source:1:name`, …  
 **4316 description:** _{key}={value}: enumerate into source:name, source:1:name, …?_
 
 **4317 trigger:** `source` contains 3+ semicolon-separated items mixing URLs and text.  
 **4317 fix:** None — too ambiguous to autofix.  
 **4317 description:** _{key}={value}: 3 or more items mixing URLs and text. Manual review needed — split into source, source:N, source:name, source:N:name as appropriate._
+
+**4322 trigger:** Same shape as 4315 — `source` contains multiple URLs — but at least one target `source:N` slot already holds a value, so the autofix would silently overwrite it.  
+**4322 fix:** None. Manual review required to decide whether to merge, replace the occupied slot, or shift the split to higher `source:N` indices.  
+**4322 description:** _{key}={value}: cannot enumerate into source, source:1, … because {occupiedKey}={occupiedValue} already holds a value. Manual review needed: merge, replace, or shift to higher source:# slots._
+
+**4323 trigger:** Same shape as 4316 — `source` contains multiple text strings — but at least one target `source:name` / `source:N:name` slot already holds a value, so the autofix would silently overwrite it.  
+**4323 fix:** None. Manual review required to decide whether to merge, replace the occupied slot, or shift the split to higher `source:N:name` indices.  
+**4323 description:** _{key}={value}: cannot enumerate into source:name, source:1:name, … because {occupiedKey}={occupiedValue} already holds a value. Manual review needed: merge, replace, or shift to higher source:#:name slots._
 
 **4314 example:**  
 Before: `source=https://usgs.gov/topo1925; USGS topo 1925`  

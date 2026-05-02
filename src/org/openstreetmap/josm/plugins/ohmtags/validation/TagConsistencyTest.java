@@ -140,6 +140,8 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_HISTORIC_SUSPICIOUS = 4319;
     protected static final int CODE_NAME_HAS_HISTORIC = 4320;
     protected static final int CODE_SOURCE_NAME_CONFLICT = 4321;
+    protected static final int CODE_SOURCE_SEMICOLON_MULTI_URL_CONFLICT = 4322;
+    protected static final int CODE_SOURCE_SEMICOLON_MULTI_TEXT_CONFLICT = 4323;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -741,6 +743,34 @@ public class TagConsistencyTest extends Test {
 
         // Case: all URLs (2+).
         if (urlCount == items.size()) {
+            // Enumerated targets: items.get(1) -> source:1, ..., items.get(N-1) -> source:N-1.
+            // The source -> items.get(0) write is a self-overwrite of the
+            // semicolon-list value being split, so it's intentional. The
+            // enumerated targets must not already hold values, or we'd
+            // silently clobber them.
+            String firstOccupied = null;
+            String firstOccupiedValue = null;
+            for (int i = 1; i < items.size(); i++) {
+                String slot = "source:" + i;
+                String existing = p.get(slot);
+                if (existing != null && !existing.isEmpty()) {
+                    firstOccupied = slot;
+                    firstOccupiedValue = existing;
+                    break;
+                }
+            }
+            if (firstOccupied != null) {
+                errors.add(TestError.builder(this, Severity.WARNING,
+                                             CODE_SOURCE_SEMICOLON_MULTI_URL_CONFLICT)
+                    .message(tr("[ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review"),
+                             marktr("{0}={1}: cannot enumerate into source, source:1, ... "
+                                + "because {2}={3} already holds a value. Manual review needed: "
+                                + "merge, replace, or shift to higher source:# slots."),
+                                key, value, firstOccupied, firstOccupiedValue)
+                    .primitives(p)
+                    .build());
+                return;
+            }
             List<Command> cmds = new ArrayList<>();
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", items.get(0)));
             for (int i = 1; i < items.size(); i++) {
@@ -761,6 +791,33 @@ public class TagConsistencyTest extends Test {
 
         // Case: all text (2+).
         if (textCount == items.size()) {
+            // Targets: items.get(0) -> source:name, items.get(1) -> source:1:name,
+            // ..., items.get(N-1) -> source:N-1:name. None of these is a
+            // self-overwrite of `key` (the source tag), so every target slot
+            // must be checked for an existing value.
+            String firstOccupied = null;
+            String firstOccupiedValue = null;
+            for (int i = 0; i < items.size(); i++) {
+                String slot = (i == 0) ? "source:name" : "source:" + i + ":name";
+                String existing = p.get(slot);
+                if (existing != null && !existing.isEmpty()) {
+                    firstOccupied = slot;
+                    firstOccupiedValue = existing;
+                    break;
+                }
+            }
+            if (firstOccupied != null) {
+                errors.add(TestError.builder(this, Severity.WARNING,
+                                             CODE_SOURCE_SEMICOLON_MULTI_TEXT_CONFLICT)
+                    .message(tr("[ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review"),
+                             marktr("{0}={1}: cannot enumerate into source:name, source:1:name, ... "
+                                + "because {2}={3} already holds a value. Manual review needed: "
+                                + "merge, replace, or shift to higher source:#:name slots."),
+                                key, value, firstOccupied, firstOccupiedValue)
+                    .primitives(p)
+                    .build());
+                return;
+            }
             List<Command> cmds = new ArrayList<>();
             // Existing source tag is untouched per spec. Text items go into
             // source:name (and enumerated source:N:name variants).
@@ -771,8 +828,8 @@ public class TagConsistencyTest extends Test {
                                                    "source:" + i + ":name", items.get(i)));
             }
             // Clear the combined-value source tag since the pieces are now
-            // redistributed. But only if it matches what we're splitting —
-            // don't clobber if something changed since.
+            // redistributed. The slot-conflict check above ensures no
+            // destination key is overwritten.
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
             Command fix = new SequenceCommand(tr("Enumerate source names"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,

@@ -18,16 +18,17 @@ The plugin was using JOSM's `TestError.Builder.message(String, String, Object...
 - **Regression fixture** at `test/crasher_braces.osm` carries three primitives whose tag values exercise the previously-crashing description paths (bare `source:url` with `{z}/{x}/{y}`, non-URL `source` value with literal braces, two differing brace-bearing URLs).
 - **Golden-file diff.** `ant test` now redirects RunTests' findings to `test/results.txt` and diffs against the committed `test/expected.txt`. Any drift in finding count, ordering, or text fails the build with a unified diff.
 
-## Also fixed: 4306 no longer silently overwrites existing `source:name`
+## Also fixed: source-family autofixes no longer silently overwrite existing keys
 
-Companion bug surfaced during the audit: rule 4306 (`move non-URL source tags to source:name`) blindly wrote the source value into `source:name` (or `source:N:name`) without checking whether the destination already held content. On a feature with both `source=Some text` and a real `source:name=Other text`, accepting the autofix silently lost `source:name`'s prior value.
+Companion bug class surfaced during the audit. Three rules wrote into source-family keys without checking whether the destination slot already held content. On features that had both the source being fixed AND a real value at the destination key, the autofix silently lost the destination value.
 
-The fix splits the rule into two paths:
+The fix splits each affected rule into two paths: autofix when destination slots are clear, unfixable warning when any destination slot is occupied. New codes 4321 / 4322 / 4323 carry the unfixable variants:
 
-- **4306 (autofixable)** still fires when the companion `:name` slot is empty or absent, and offers the rename.
-- **4321 (new, unfixable)** fires when the companion `:name` slot already holds a value. Manual review required to decide whether to merge, replace, or move to an enumerated slot. No autofix.
+- **4306 (`move non-URL source tags to source:name`)** now only autofixes when the companion `source:name` (or `source:N:name`) is empty. The new **4321** fires the unfixable variant when it isn't.
+- **4315 (`source contains multiple URLs; autofix by enumerating source:# keys`)** now only autofixes when none of the target `source:1`, `source:2`, … slots is occupied. The new **4322** fires the unfixable variant when any is.
+- **4316 (`source contains multiple text strings; autofix by enumerating source:#:name keys`)** now only autofixes when none of the target `source:name`, `source:1:name`, … slots is occupied. The new **4323** fires the unfixable variant when any is.
 
-Same rule shape applies to enumerated keys (`source:N` → `source:N:name`).
+The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
 ## Side benefit: apostrophes are now rendered correctly
 
