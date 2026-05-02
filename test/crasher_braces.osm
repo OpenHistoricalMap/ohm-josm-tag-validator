@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='ohm-tag-validator-test'>
+  <!--
+    Minimal regression fixture for issue #26 (v0.3.3).
+
+    Each node carries a tag value containing literal '{' / '}' that the
+    validator interpolates into a description message. Pre-fix, this
+    crashed JOSM via java.text.MessageFormat parsing the substituted
+    string. Post-fix, the validator must produce normal warnings.
+
+    Don't mutate values without understanding which rules each one
+    exercises — replacing the braces defeats the regression coverage.
+  -->
+  <node id='9000001' visible='true' version='1' lat='0.0' lon='0.0'>
+    <!-- Triggers checkSourceUrlConsolidation when source is absent but
+         source:url is present and is a URL with '{z}/{x}/{y}' tile
+         placeholders. This is the exact shape that crashed JOSM in #26. -->
+    <tag k='name' v='Crasher A — bare source:url with tile placeholders' />
+    <tag k='source:url' v='https://mapwarper.net/maps/tile/86360/{z}/{x}/{y}.png' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <node id='9000002' visible='true' version='1' lat='0.0' lon='0.1'>
+    <!-- Triggers the non-URL source rename rule with a value containing
+         literal '{' / '}'. Different code path from -1, same crash class. -->
+    <tag k='name' v='Crasher B — non-URL source with literal braces' />
+    <tag k='source' v='Sketch {hand-drawn}, archive folder 12' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1875' />
+  </node>
+  <node id='9000003' visible='true' version='1' lat='0.0' lon='0.2'>
+    <!-- Triggers checkSourceUrlConsolidation case 2 (both source and
+         source:url are URLs but differ); both URLs contain braces. -->
+    <tag k='name' v='Crasher C — two differing URLs both with placeholders' />
+    <tag k='source' v='https://example.org/tile/{z}/{x}/{y}' />
+    <tag k='source:url' v='https://example.com/raster/{z}-{x}-{y}.png' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+</osm>

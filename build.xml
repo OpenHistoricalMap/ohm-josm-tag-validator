@@ -21,6 +21,9 @@
     <property name="test.src.dir"     value="test"/>
     <property name="test.build.dir"   value="build-test"/>
     <property name="test.data.file"   value="test/test_data.osm"/>
+    <property name="test.crasher.file" value="test/crasher_braces.osm"/>
+    <property name="test.expected.file" value="test/expected.txt"/>
+    <property name="test.results.file"  value="test/results.txt"/>
 
     <!-- === Third-party dependency: edtf-java =============================== -->
     <!-- Resolved from Maven Central. The pom.xml is the source of truth for
@@ -193,16 +196,43 @@ to an existing josm-custom.jar.
     </target>
 
     <target name="test" depends="test-compile"
-            description="Run headless regression tests against test/test_data.osm">
-        <java classname="RunTests" fork="true" failonerror="true">
+            description="Run headless regression tests; diff output against test/expected.txt">
+        <!-- Build-time anti-pattern guard. Fails fast if anyone reintroduces
+             the .message(title, tr(format, args)) idiom that crashed JOSM
+             on tile-template URLs (issue #26). -->
+        <java classname="MessageApiAuditor" fork="true" failonerror="true">
+            <classpath>
+                <path refid="compile.classpath"/>
+                <pathelement location="${plugin.build.dir}"/>
+                <pathelement location="${test.build.dir}"/>
+            </classpath>
+        </java>
+        <!-- output= captures stdout (the findings) only. error= sends
+             stderr (incl. any JVM startup notices like "Picked up
+             JAVA_TOOL_OPTIONS") to a separate file so it doesn't pollute
+             the golden-file diff. -->
+        <java classname="RunTests" fork="true" failonerror="true"
+              output="${test.results.file}"
+              error="${test.results.file}.stderr">
             <classpath>
                 <path refid="compile.classpath"/>
                 <pathelement location="${plugin.build.dir}"/>
                 <pathelement location="${test.build.dir}"/>
             </classpath>
             <arg value="${test.data.file}"/>
+            <arg value="${test.crasher.file}"/>
             <sysproperty key="java.awt.headless" value="true"/>
         </java>
+        <!-- Golden-file regression check. If RunTests output drifts from
+             test/expected.txt the build fails with the diff. To accept a
+             change, regenerate expected.txt from results.txt by hand and
+             commit. -->
+        <exec executable="diff" failonerror="true" failifexecutionfails="true">
+            <arg value="-u"/>
+            <arg value="${test.expected.file}"/>
+            <arg value="${test.results.file}"/>
+        </exec>
+        <echo>test: ${test.results.file} matches ${test.expected.file}</echo>
     </target>
 
     <target name="clean">
