@@ -636,8 +636,10 @@ Suggested manual fix: add `source=https://...` pointing at the actual scanned ma
 | 4312 | `[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N` |
 | 4313 | `[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these` |
 
-**4311 trigger:** `source` and `source:url` hold the same value.  
-**4311 fix:** Deletes `source:url`.
+**4311 / 4312 / 4313 — generalized to `source[:N]?:url`.** As of v0.4.0, all three rules apply to every `source[:N]?:url` key on a primitive, not just the literal `source:url`. So `source:1:url` is paired with `source:1`, `source:7:url` with `source:7`, and so on. Per-pair, the four sub-cases below run independently. (Issue #27.)
+
+**4311 trigger:** `source[:N]?` and `source[:N]?:url` hold the same value.  
+**4311 fix:** Deletes the `:url` key.
 
 **4312 trigger (no source):** `source:url` is set but `source` is absent.  
 **4312 fix:** Moves `source:url` value to `source`.  

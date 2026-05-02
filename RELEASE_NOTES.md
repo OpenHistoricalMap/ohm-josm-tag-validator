@@ -46,6 +46,12 @@ Per [issue #22](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issu
 
 Both variants use the same code (4236), severity, and overall description shape as the original consecutive-pair gap. The titles differentiate the three cases. Real OHM data turns out to have plenty of these — ~14 boundary gaps fire across the regression dataset.
 
+## Generalization: source/source:url consolidation now handles every `source[:N]?:url`
+
+Per [issue #27](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/27), rules 4311 / 4312 / 4313 (`source` vs `source:url` consolidation) now apply to every `source[:N]?:url` key on a primitive, not just the literal `source:url`. So a feature with `source:1:url=https://...` gets paired against `source:1`, `source:7:url` against `source:7`, etc. Per-pair, the four existing sub-cases (blank companion → rename, identical values → delete duplicate, both URLs → move to next free `source:N` slot, text companion → swap with `:name`) run independently.
+
+The fix descriptions name the actual key pair so the editor sees `source:1:url=... should live in source:1` rather than the static `source:url should live in source`. The autofix targets are derived per-pair: text→name swap on `source:1` writes to `source:1:name` (not `source:name`).
+
 ## Suppression: 4303 (`Missing tag - source on named feature`) skips chronology relations
 
 Per [issue #23](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/23), `type=chronology` relations are now exempt from the missing-source warning. They're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal. ~3 chronology relations in the regression dataset stop firing this warning.

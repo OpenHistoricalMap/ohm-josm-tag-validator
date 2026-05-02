@@ -334,4 +334,38 @@
     <tag k='end_date' v='1900' />
     <tag k='source' v='https://example.org/source' />
   </relation>
+  <!-- source:N:url generalization probes (issue #27). Pre-v0.4.0 only
+       the literal pair source/source:url was checked; now every
+       source[:N]?:url key gets paired with its companion. -->
+  <node id='9000051' visible='true' version='1' lat='0.0' lon='3.1'>
+    <tag k='name' v='source:1:url probe — blank companion rename' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:1:url' v='https://example.org/secondary' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000052' visible='true' version='1' lat='0.0' lon='3.2'>
+    <tag k='name' v='source:1 == source:1:url duplicate probe' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:1' v='https://example.org/dup' />
+    <tag k='source:1:url' v='https://example.org/dup' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000053' visible='true' version='1' lat='0.0' lon='3.3'>
+    <tag k='name' v='source:1 text source:1:url URL swap probe' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:1' v='Local archive notes (probe)' />
+    <tag k='source:1:url' v='https://example.org/url' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000054' visible='true' version='1' lat='0.0' lon='3.4'>
+    <tag k='name' v='source:2 and source:2:url both URLs differ probe' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:2' v='https://example.org/two-a' />
+    <tag k='source:2:url' v='https://example.org/two-b' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
 </osm>

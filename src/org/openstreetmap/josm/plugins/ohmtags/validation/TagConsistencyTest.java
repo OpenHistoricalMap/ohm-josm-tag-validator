@@ -218,6 +218,15 @@ public class TagConsistencyTest extends Test {
         Pattern.compile("^source(?::(\\d+))?:name$");
 
     /**
+     * Matches a source-URL key: {@code source:url} or {@code source:N:url}.
+     * Captures the optional numeric sub-index (group 1). Used by
+     * {@link #checkSourceUrlConsolidation} to enumerate all url-shaped
+     * keys for per-pair consolidation.
+     */
+    private static final Pattern SOURCE_URL_KEY =
+        Pattern.compile("^source(?::(\\d+))?:url$");
+
+    /**
      * Matches any attribute-scoped source key: anything ending in
      * {@code :source} that is NOT itself {@code source:N} (those are covered
      * by {@link #SOURCE_KEY}). Captures the attribute prefix (group 1).
@@ -870,39 +879,66 @@ public class TagConsistencyTest extends Test {
     }
 
     /**
-     * Detect and fix the (common) case where a feature has both
-     * {@code source} and {@code source:url} tags. Three sub-cases:
+     * Detect and fix cases where a feature has both a {@code source[:N]?}
+     * key and its companion {@code source[:N]?:url} key. Iterates every
+     * {@code source[:N]?:url} present on the primitive (per issue #27 — the
+     * pre-v0.4.0 implementation only handled the literal pair
+     * {@code source} / {@code source:url}). For each pair, applies the
+     * four sub-cases in {@link #checkSourceUrlPair}.
      *
+     * <p>Per-pair sub-cases:
      * <ul>
-     *   <li><b>{@code source} value equals {@code source:url} value.</b>
-     *       Delete the redundant {@code source:url}.</li>
-     *   <li><b>{@code source} is a URL differing from {@code source:url}.</b>
-     *       Three-step rewrite: existing {@code source} → {@code source:name},
-     *       {@code source:url} → {@code source}, delete {@code source:url}.
-     *       If {@code source:name} already exists, append the existing
-     *       {@code source} value to it with {@code ;} separator.</li>
-     *   <li><b>{@code source} is non-URL text.</b> Three-step rewrite as above:
-     *       existing {@code source} → {@code source:name} (with append logic
-     *       if {@code source:name} already exists), {@code source:url} →
-     *       {@code source}, delete {@code source:url}.</li>
+     *   <li>Companion is blank: rename {@code *:url} to companion.</li>
+     *   <li>Companion equals {@code *:url}: delete the redundant
+     *       {@code *:url}.</li>
+     *   <li>Both are URLs but differ: move {@code *:url} to the next
+     *       available {@code source:N} slot.</li>
+     *   <li>Companion is non-URL text: swap — companion becomes
+     *       {@code companion:name} (append-merging when companion:name
+     *       already exists), {@code *:url} becomes companion, and
+     *       {@code *:url} is deleted.</li>
      * </ul>
      */
     private void checkSourceUrlConsolidation(OsmPrimitive p) {
-        String source = p.get("source");
-        String sourceUrl = p.get("source:url");
+        // Snapshot all url-shaped keys before invoking per-pair checks. We
+        // only read keys (not modifying the primitive) so iteration is safe;
+        // a snapshot avoids any future surprise.
+        List<String[]> pairs = new ArrayList<>();
+        for (String key : p.keySet()) {
+            Matcher m = SOURCE_URL_KEY.matcher(key);
+            if (m.matches()) {
+                String numIdx = m.group(1);
+                String companionKey = (numIdx == null) ? "source" : "source:" + numIdx;
+                pairs.add(new String[] { key, companionKey });
+            }
+        }
+        for (String[] pair : pairs) {
+            checkSourceUrlPair(p, pair[0], pair[1]);
+        }
+    }
+
+    /**
+     * Per-pair logic invoked by {@link #checkSourceUrlConsolidation} for
+     * each {@code source[:N]?:url} key. {@code urlKey} is the URL-shaped
+     * key (e.g. {@code source:url} or {@code source:1:url});
+     * {@code companionKey} is the matching shaped companion (e.g.
+     * {@code source} or {@code source:1}).
+     */
+    private void checkSourceUrlPair(OsmPrimitive p, String urlKey, String companionKey) {
+        String source = p.get(companionKey);
+        String sourceUrl = p.get(urlKey);
         if (sourceUrl == null || sourceUrl.isEmpty()) return;
-        // If source has semicolons, defer to the semicolon handler — don't
-        // treat a multi-value source as a single value here.
+        // If companion has semicolons, defer to the semicolon handler.
         if (source != null && source.contains(";")) return;
-        // If source is blank, just rename source:url → source.
+        // If companion is blank, just rename urlKey to companionKey.
         if (source == null || source.isEmpty()) {
             List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", sourceUrl));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", null));
-            Command fix = new SequenceCommand(tr("Rename source:url to source"), cmds);
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), companionKey, sourceUrl));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+            Command fix = new SequenceCommand(tr("Rename {0} to {1}", urlKey, companionKey), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
                 .message(tr("[ohm] Source mismatch - no source tag and valid source:url tag; autofix by moving *:url value to source="),
-                         marktr("source:url={0} should live in source."), sourceUrl)
+                         marktr("{0}={1} should live in {2}."), urlKey, sourceUrl, companionKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -911,11 +947,11 @@ public class TagConsistencyTest extends Test {
 
         // Case 1: identical values. Redundant.
         if (source.equals(sourceUrl)) {
-            Command fix = new ChangePropertyCommand(Arrays.asList(p),
-                                                    "source:url", null);
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), urlKey, null);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_REDUNDANT)
                 .message(tr("[ohm] Source keys with duplicate values - source=source:url; autofix by deleting source:url"),
-                         marktr("source and source:url hold the same value. Delete source:url?"))
+                         marktr("{0} and {1} hold the same value. Delete {0}?"),
+                            urlKey, companionKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -925,12 +961,12 @@ public class TagConsistencyTest extends Test {
         boolean sourceIsUrl = URL_WITH_SCHEME.matcher(source).matches();
 
         if (sourceIsUrl) {
-            // Case 2: both source and source:url are URLs but differ.
-            // Move source:url to the next available source:N slot.
+            // Case 2: companion and urlKey are both URLs but differ.
+            // Move urlKey value to the next available source:N slot.
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_CONFLICTS)
                 .message(tr("[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N"),
-                         marktr("source={0} and source:url={1} are different URLs. Move source:url to the next numbered source key?"),
-                            source, sourceUrl)
+                         marktr("{0}={1} and {2}={3} are different URLs. Move {2} to the next numbered source key?"),
+                            companionKey, source, urlKey, sourceUrl)
                 .primitives(p)
                 .fix(() -> {
                     int maxN = p.keySet().stream()
@@ -944,23 +980,27 @@ public class TagConsistencyTest extends Test {
                     String newKey = "source:" + (maxN + 1);
                     List<Command> moveCmds = new ArrayList<>();
                     moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), newKey, sourceUrl));
-                    moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", null));
-                    return new SequenceCommand(tr("Move source:url to {0}", newKey), moveCmds);
+                    moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+                    return new SequenceCommand(tr("Move {0} to {1}", urlKey, newKey), moveCmds);
                 })
                 .build());
         } else {
-            // Case 3: source is text, source:url is a URL — swap them.
-            String existingName = p.get("source:name");
+            // Case 3: companion is text, urlKey is a URL — swap them.
+            // Name target is companion + ":name" (so source -> source:name,
+            // source:N -> source:N:name).
+            String nameKey = companionKey + ":name";
+            String existingName = p.get(nameKey);
             String newName = (existingName == null || existingName.isEmpty())
                 ? source : existingName + ";" + source;
             List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:name", newName));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", sourceUrl));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", null));
-            Command fix = new SequenceCommand(tr("Consolidate source and source:url"), cmds);
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), nameKey, newName));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), companionKey, sourceUrl));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+            Command fix = new SequenceCommand(tr("Consolidate {0} and {1}", companionKey, urlKey), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
                 .message(tr("[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these"),
-                         marktr("Consolidate: source:url \u2192 source, source \u2192 source:name?"))
+                         marktr("Consolidate: {0} \u2192 {1}, {1} \u2192 {2}?"),
+                            urlKey, companionKey, nameKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
