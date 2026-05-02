@@ -1,6 +1,7 @@
 // License: GPL v2 or later. For details, see LICENSE file.
 package org.openstreetmap.josm.plugins.ohmtags.validation;
 
+import static org.openstreetmap.josm.tools.I18n.marktr;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.net.URI;
@@ -274,11 +275,11 @@ public class TagConsistencyTest extends Test {
 
         errors.add(TestError.builder(this, Severity.WARNING, CODE_RELATION_LABEL_MEMBER)
             .message(tr("[ohm] Suspicious member - role=label; unfixable, please review"),
-                     tr("OHM servers automatically generate label points; only use these "
+                     marktr("OHM servers automatically generate label points; only use these "
                         + "when necessary. To verify, download all parent relations of "
                         + "this label object (File ▸ Download parent relations / ways). "
-                        + "role=label members on this relation: {0}.",
-                        String.join(", ", labels)))
+                        + "role=label members on this relation: {0}."),
+                        String.join(", ", labels))
             .primitives(r)
             .build());
     }
@@ -298,9 +299,9 @@ public class TagConsistencyTest extends Test {
         if (historic != null) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_HISTORIC_SUSPICIOUS)
                 .message(tr("[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic"),
-                         tr("historic={0}: confirm the entity has actually passed into "
-                            + "history before applying this tag.",
-                            historic))
+                         marktr("historic={0}: confirm the entity has actually passed into "
+                            + "history before applying this tag."),
+                            historic)
                 .primitives(p)
                 .build());
         }
@@ -316,20 +317,20 @@ public class TagConsistencyTest extends Test {
                 if (value != null && containsDateInParens(value)) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
                         .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
-                                 tr("{0}={1}: dates in parentheses are discouraged in names; "
-                                    + "move the date to start_date / end_date instead.",
-                                    key, value))
+                                 marktr("{0}={1}: dates in parentheses are discouraged in names; "
+                                    + "move the date to start_date / end_date instead."),
+                                    key, value)
                         .primitives(p)
                         .build());
                 }
                 if (value != null && HISTORIC_IN_NAME.matcher(value).find()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_HISTORIC)
                         .message(tr("[ohm] Name warning - \"historic\" in name; unfixable, please review if this is date appropriate"),
-                                 tr("{0}={1}: \"historic\" in a name often reflects a "
+                                 marktr("{0}={1}: \"historic\" in a name often reflects a "
                                     + "present-day perspective. In OHM, confirm the "
                                     + "entity was actually called this at the time it "
-                                    + "existed.",
-                                    key, value))
+                                    + "existed."),
+                                    key, value)
                         .primitives(p)
                         .build());
                 }
@@ -359,9 +360,9 @@ public class TagConsistencyTest extends Test {
                     || p.get(companionSourceKey).isEmpty()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_WITHOUT_URL)
                         .message(tr("[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review"),
-                                 tr("{0}={1} is set, but {2} is empty. "
-                                    + "Would you like to add a URL for the source?",
-                                    key, p.get(key), companionSourceKey))
+                                 marktr("{0}={1} is set, but {2} is empty. "
+                                    + "Would you like to add a URL for the source?"),
+                                    key, p.get(key), companionSourceKey)
                         .primitives(p)
                         .build());
                 }
@@ -377,9 +378,9 @@ public class TagConsistencyTest extends Test {
         if (!hasPlainName && !isRouteRelation(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_PLAIN_NAME)
                 .message(tr("[ohm] Missing tag - name=*; unfixable, please review"),
-                         tr("Feature has name-family keys ({0}, etc.) but no plain "
-                            + "''name'' key. Please add a canonical name.",
-                            firstNameFamilyKeyFound(p)))
+                         marktr("Feature has name-family keys ({0}, etc.) but no plain "
+                            + "''name'' key. Please add a canonical name."),
+                            firstNameFamilyKeyFound(p))
                 .primitives(p)
                 .build());
         }
@@ -393,7 +394,7 @@ public class TagConsistencyTest extends Test {
         if (p.get("wikidata") == null && hasNotabilitySignal(p)) {
             TestError.Builder builder = TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
                 .message(tr("[ohm] Missing tag - wikidata; unfixable, please review"),
-                         tr("Wikidata QIDs help link OHM data to other databases."))
+                         marktr("Wikidata QIDs help link OHM data to other databases."))
                 .primitives(p);
             String wikipediaValue = p.get("wikipedia");
             if (wikipediaValue != null) {
@@ -410,7 +411,7 @@ public class TagConsistencyTest extends Test {
         if (!hasAnySourceTag(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_SOURCE)
                 .message(tr("[ohm] Missing tag - source on named feature; unfixable, please review and add"),
-                         tr("other mappers are lost without it."))
+                         marktr("other mappers are lost without it."))
                 .primitives(p)
                 .build());
         }
@@ -598,10 +599,10 @@ public class TagConsistencyTest extends Test {
         if ("wikipedia".equalsIgnoreCase(value)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIPEDIA)
                 .message(tr("[ohm] Suspicious source - source=wikipedia; unfixable, please review"),
-                         tr("{0}={1}: Wikipedia is not a reasonable source for "
+                         marktr("{0}={1}: Wikipedia is not a reasonable source for "
                             + "geometry claims. Please link to an actual map, image, "
-                            + "or other primary source.",
-                            key, value))
+                            + "or other primary source."),
+                            key, value)
                 .primitives(p)
                 .build());
             return;
@@ -609,10 +610,10 @@ public class TagConsistencyTest extends Test {
         if ("wikidata".equalsIgnoreCase(value)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIDATA)
                 .message(tr("[ohm] Suspicious source - source=wikidata; unfixable, please review"),
-                         tr("{0}={1}: Wikidata is not a reasonable source for "
+                         marktr("{0}={1}: Wikidata is not a reasonable source for "
                             + "geometry claims. Please link to an actual map, image, "
-                            + "or other primary source.",
-                            key, value))
+                            + "or other primary source."),
+                            key, value)
                 .primitives(p)
                 .build());
             return;
@@ -627,8 +628,8 @@ public class TagConsistencyTest extends Test {
             Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_MISSING_SCHEME)
                 .message(tr("[ohm] Source optimization - repair URL missing ''http[s]://''"),
-                         tr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?",
-                            key, value))
+                         marktr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?"),
+                            key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -644,9 +645,9 @@ public class TagConsistencyTest extends Test {
         Command fix = new SequenceCommand(tr("Rename {0} to {1}", key, renamedKey), cmds);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NOT_URL)
             .message(tr("[ohm] Source optimization - move non-URL source tags to source:name"),
-                     tr("{0}={1} is not a URL. Move to {2} and leave {0} blank "
-                        + "for a URL?",
-                        key, value, renamedKey))
+                     marktr("{0}={1} is not a URL. Move to {2} and leave {0} blank "
+                        + "for a URL?"),
+                        key, value, renamedKey)
             .primitives(p)
             .fix(() -> fix)
             .build());
@@ -709,7 +710,7 @@ public class TagConsistencyTest extends Test {
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_URL_TEXT)
                 .message(tr("[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name"),
-                         tr("{0}={1}: move URL to source and text to source:name?", key, value))
+                         marktr("{0}={1}: move URL to source and text to source:name?"), key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -728,8 +729,8 @@ public class TagConsistencyTest extends Test {
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_MULTI_URL)
                 .message(tr("[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys"),
-                         tr("{0}={1}: enumerate into source, source:1, source:2, ...?",
-                            key, value))
+                         marktr("{0}={1}: enumerate into source, source:1, source:2, ...?"),
+                            key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -755,8 +756,8 @@ public class TagConsistencyTest extends Test {
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_MULTI_TEXT)
                 .message(tr("[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys"),
-                         tr("{0}={1}: enumerate into source:name, source:1:name, ...?",
-                            key, value))
+                         marktr("{0}={1}: enumerate into source:name, source:1:name, ...?"),
+                            key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -767,10 +768,10 @@ public class TagConsistencyTest extends Test {
         errors.add(TestError.builder(this, Severity.WARNING,
                                      CODE_SOURCE_SEMICOLON_MIXED)
             .message(tr("[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review"),
-                     tr("{0}={1}: 3 or more items mixing URLs and text. "
+                     marktr("{0}={1}: 3 or more items mixing URLs and text. "
                       + "Manual review needed — split into source, source:N, "
-                      + "source:name, source:N:name as appropriate.",
-                        key, value))
+                      + "source:name, source:N:name as appropriate."),
+                        key, value)
             .primitives(p)
             .build());
     }
@@ -808,7 +809,7 @@ public class TagConsistencyTest extends Test {
             Command fix = new SequenceCommand(tr("Rename source:url to source"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
                 .message(tr("[ohm] Source mismatch - no source tag and valid source:url tag; autofix by moving *:url value to source="),
-                         tr("source:url={0} should live in source.", sourceUrl))
+                         marktr("source:url={0} should live in source."), sourceUrl)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -821,7 +822,7 @@ public class TagConsistencyTest extends Test {
                                                     "source:url", null);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_REDUNDANT)
                 .message(tr("[ohm] Source keys with duplicate values - source=source:url; autofix by deleting source:url"),
-                         tr("source and source:url hold the same value. Delete source:url?"))
+                         marktr("source and source:url hold the same value. Delete source:url?"))
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -835,8 +836,8 @@ public class TagConsistencyTest extends Test {
             // Move source:url to the next available source:N slot.
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_CONFLICTS)
                 .message(tr("[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N"),
-                         tr("source={0} and source:url={1} are different URLs. Move source:url to the next numbered source key?",
-                            source, sourceUrl))
+                         marktr("source={0} and source:url={1} are different URLs. Move source:url to the next numbered source key?"),
+                            source, sourceUrl)
                 .primitives(p)
                 .fix(() -> {
                     int maxN = p.keySet().stream()
@@ -866,7 +867,7 @@ public class TagConsistencyTest extends Test {
             Command fix = new SequenceCommand(tr("Consolidate source and source:url"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
                 .message(tr("[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these"),
-                         tr("Consolidate: source:url \u2192 source, source \u2192 source:name?"))
+                         marktr("Consolidate: source:url \u2192 source, source \u2192 source:name?"))
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -885,8 +886,8 @@ public class TagConsistencyTest extends Test {
             if (!hasAnyKeyStartingWith(p, "wikipedia")) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
                     .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag"),
-                             tr("{0}={1}: please add an appropriate ''wikipedia'' tag.",
-                                key, value))
+                             marktr("{0}={1}: please add an appropriate ''wikipedia'' tag."),
+                                key, value)
                     .primitives(p)
                     .build());
             }
@@ -896,8 +897,8 @@ public class TagConsistencyTest extends Test {
             if (p.get("wikidata") == null) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
                     .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag"),
-                             tr("{0}={1}: please add an appropriate ''wikidata'' tag.",
-                                key, value))
+                             marktr("{0}={1}: please add an appropriate ''wikidata'' tag."),
+                                key, value)
                     .primitives(p)
                     .build());
             }
