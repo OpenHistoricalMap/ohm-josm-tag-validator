@@ -77,9 +77,11 @@ author. Bugs, design flaws, and behavior issues are the author's
 responsibility; the presence of AI assistance in development does
 not transfer authorship or liability.
 
-Commits made directly by Claude Code carry a `Co-Authored-By: Claude
-<noreply@anthropic.com>` trailer in the commit message, making AI
-involvement traceable at the commit level.
+Commits made directly by Claude Code carry a `Co-Authored-By:` trailer
+naming Claude as a co-author (with the model identifier where
+available, e.g. `Co-Authored-By: Claude Opus 4.7 (1M context)
+<noreply@anthropic.com>`), making AI involvement traceable at the
+commit level.
 
 ### Why this notice exists
 

@@ -11,6 +11,8 @@ Validates and normalizes OHM-style date tags and source/name consistency for [Op
 
 **Tag consistency (`TagConsistencyTest`)** checks names, source tags, and external-identifier references. It warns on named features missing a plain `name` or `wikidata` tag, flags `source` values that are misformatted URLs or should be split into `source` / `source:name` / `source:N` keys, consolidates redundant `source:url` tags, and checks that `wikipedia` and `wikidata` tags are present when referenced by attribute-source keys. It also flags relations carrying a `role=label` member, since OHM renderers generate label points server-side and editor-supplied labels are usually unnecessary.
 
+**Autofix safety.** When the plugin offers an autofix, it never silently overwrites a populated user-authored tag. If a fix would clobber a populated companion (an existing `source:name`, an enumerated `source:N` / `source:N:name` slot, an existing `*_date:note`, etc.), the validator emits an unfixable warning instead, naming the conflicting tag so the editor can decide whether to merge, replace, or shift the new value to a different slot.
+
 See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messages, triggers, and autofixes.
 
 ## Installation
