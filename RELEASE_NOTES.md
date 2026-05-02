@@ -31,6 +31,12 @@ The fix splits each affected rule into two paths: autofix when destination slots
 
 The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
+## New: 4243 — boundary chronology has non-relation members
+
+Per [issue #21](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/21), a "boundary chronology" — defined as a `type=chronology` relation with 2 or more `type=boundary` relations as members — must contain only relation members. Non-relation members (ways, nodes attached directly) indicate the contributor mistakenly bypassed the member boundary relations and attached the geometry to the chronology instead. Severity ERROR.
+
+The 2+ threshold avoids flagging single-boundary chronologies (degenerate cases the editor probably hasn't finished assembling).
+
 ## New: 4236 boundary-gap variants
 
 Per [issue #22](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/22), the chronology gap rule (4236) now fires for **two new boundary cases** in addition to the existing "gap between consecutive members":

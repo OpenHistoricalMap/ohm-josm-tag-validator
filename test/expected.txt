@@ -277,6 +277,10 @@ E   r/2893869   [ohm] Invalid date - *_date contains a readable EDTF date; fixab
 E   r/2893869   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/9000026   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/9000030   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9000040   [ohm] Chronology - boundary chronology has non-relation members; unfixable, please review   Boundary chronology relation r/9000040 has non-relation member(s): w/9000044. Boundary chronologies should only contain relation members (typically other type=boundary relations representing the entity at different periods in time).
+E   r/9000040   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9000045   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9000046   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/9100020   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   r/9100720   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=2200-05-32: day 32 is out of range. Trim to 2200-05?
@@ -722,6 +726,7 @@ E   w/202089230   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/202089240   [ohm] Invalid date - *_date; fixable, please review   start_date=C19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=C19
 E   w/202089255   [ohm] Invalid date - *_date; fixable, please review   start_date=C19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=C19
 E   w/202089256   [ohm] Invalid date - *_date; fixable, please review   start_date=C19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=C19
+E   w/9000044   [ohm] Chronology - boundary chronology has non-relation members; unfixable, please review   Boundary chronology relation r/9000040 has non-relation member(s): w/9000044. Boundary chronologies should only contain relation members (typically other type=boundary relations representing the entity at different periods in time).
 W   n/1684872037   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2083309640   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   n/2083309641   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
@@ -1029,6 +1034,8 @@ W   r/2893866   [ohm] Chronology - member without dates; unfixable, please revie
 W   r/2893867   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893867 of chronology relation r/2893868 has neither start_date nor end_date.
 W   r/9000030   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9000032 (in chronology relation r/9000030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   r/9000030   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9000030 starts at 1500 but oldest member n/9000031 starts at 1800, leaving a 299 year(s) gap at the start of the chronology.
+W   r/9000045   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000045 (1800..1850) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
+W   r/9000046   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000046 (1850..1900) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
 W   r/9100020   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
 W   r/9100030   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100022 (in chronology relation r/9100030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   r/9100030   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
@@ -1462,3 +1469,5 @@ W   w/202089255   [ohm] Source optimization - move non-URL source tags to source
 W   w/202089255   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/202089256   [ohm] Source optimization - move non-URL source tags to source:name   source=Service public de Wallonie (SPW), PICC numerical imagery https://geoportail.wallonie.be/ is not a URL. Move to source:name and leave source blank for a URL?
 W   w/202089256   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/9000044   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000045 (1800..1850) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
+W   w/9000044   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000046 (1850..1900) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.

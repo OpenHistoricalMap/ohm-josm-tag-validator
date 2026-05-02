@@ -225,6 +225,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_JULIAN_NOTE_CONFLICT = 4240;
     protected static final int CODE_C_SHORTHAND_AMBIGUOUS = 4241;
     protected static final int CODE_RAW_CONFLICT = 4242;
+    protected static final int CODE_BOUNDARY_CHRONOLOGY_NON_RELATION = 4243;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -1954,6 +1955,62 @@ public class DateTagTest extends Test {
         checkChronologyGap(r, infos, youngest);
         checkChronologyBoundaryGap(r, infos, youngest);
         checkChronologyDuplicatePredecessor(r, infos);
+        checkBoundaryChronologyMemberTypes(r);
+    }
+
+    /**
+     * Rule 4243: a boundary chronology (a {@code type=chronology} relation
+     * whose members include 2 or more {@code type=boundary} relations) must
+     * not include non-relation members. Non-relation members on a boundary
+     * chronology indicate the contributor mistakenly attached ways or
+     * nodes directly instead of attaching them to one of the member
+     * boundary relations.
+     *
+     * <p>The "2 or more boundary relations" threshold is the boundary-
+     * chronology signature per OHM convention (issue #21). Single-boundary
+     * chronologies aren't flagged because a chronology with only one
+     * boundary member is a degenerate case the editor probably hasn't
+     * finished assembling.
+     */
+    private void checkBoundaryChronologyMemberTypes(Relation r) {
+        int boundaryRelCount = 0;
+        for (RelationMember rm : r.getMembers()) {
+            OsmPrimitive m = rm.getMember();
+            if (m instanceof Relation && "boundary".equals(m.get("type"))) {
+                boundaryRelCount++;
+            }
+        }
+        if (boundaryRelCount < 2) return;
+
+        List<OsmPrimitive> nonRelationMembers = new ArrayList<>();
+        for (RelationMember rm : r.getMembers()) {
+            OsmPrimitive m = rm.getMember();
+            if (m == null) continue;
+            if (!(m instanceof Relation)) {
+                nonRelationMembers.add(m);
+            }
+        }
+        if (nonRelationMembers.isEmpty()) return;
+
+        StringBuilder sb = new StringBuilder();
+        for (OsmPrimitive m : nonRelationMembers) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(formatPrim(m));
+        }
+
+        List<OsmPrimitive> primitives = new ArrayList<>();
+        primitives.add(r);
+        primitives.addAll(nonRelationMembers);
+
+        errors.add(TestError.builder(this, Severity.ERROR, CODE_BOUNDARY_CHRONOLOGY_NON_RELATION)
+            .message(tr("[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review"),
+                     marktr("Boundary chronology relation {0} has non-relation member(s): {1}. "
+                        + "Boundary chronologies should only contain relation members "
+                        + "(typically other type=boundary relations representing the "
+                        + "entity at different periods in time)."),
+                        formatPrim(r), sb.toString())
+            .primitives(primitives)
+            .build());
     }
 
     /**

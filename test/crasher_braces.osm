@@ -289,4 +289,49 @@
     <tag k='end_date' v='2000' />
     <tag k='source' v='https://example.org/source' />
   </relation>
+  <!-- Boundary-chronology non-relation members probe (issue #21).
+       Boundary chronologies (chronology with 2+ type=boundary relation
+       members) should only contain relations. Attaching a way directly
+       indicates the contributor mistakenly bypassed the member
+       boundary relations. 4243 must fire. -->
+  <node id='9000041' visible='true' version='1' lat='0.0' lon='2.9' />
+  <node id='9000042' visible='true' version='1' lat='0.0' lon='3.0' />
+  <node id='9000043' visible='true' version='1' lat='0.1' lon='3.0' />
+  <way id='9000044' visible='true' version='1'>
+    <nd ref='9000041' />
+    <nd ref='9000042' />
+    <nd ref='9000043' />
+    <tag k='name' v='Stray way attached directly to boundary chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </way>
+  <relation id='9000045' visible='true' version='1'>
+    <member type='way' ref='9000044' role='outer' />
+    <tag k='name' v='Boundary chronology member 1 1800-1850' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
+  <relation id='9000046' visible='true' version='1'>
+    <member type='way' ref='9000044' role='outer' />
+    <tag k='name' v='Boundary chronology member 2 1850-1900' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
+  <relation id='9000040' visible='true' version='1'>
+    <member type='relation' ref='9000045' role='' />
+    <member type='relation' ref='9000046' role='' />
+    <member type='way' ref='9000044' role='' />
+    <tag k='name' v='Boundary chronology probe with stray way member' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
 </osm>

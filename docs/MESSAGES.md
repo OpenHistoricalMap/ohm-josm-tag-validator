@@ -456,6 +456,7 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 | 4237 | `[ohm] Chronology - member missing required date tag; unfixable, please review` |
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
+| 4243 | `[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review` |
 
 These six rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings select only the offending member(s); the outside-parent rule (4234) additionally selects the parent chronology relation since the violation is intrinsically about the parent ↔ member relationship.
 
