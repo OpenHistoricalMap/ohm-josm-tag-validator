@@ -361,6 +361,7 @@ After autofix: `start_date:edtf=1900-03-15` (lifts to match the more specific ba
 | 4205 | `[ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf` |
 | 4206 | `[ohm] Date mismatch - across date tags; autofix by deleting :raw` |
 | 4207 | `[ohm] Invalid date - Unparseable data preserved in *_date:raw tag, no valid *_date:edtf or *_date tags; unfixable, please review.` |
+| 4242 | `[ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review` |
 
 **4205 trigger (Rule A):** `tagcleanupbot` wrote a `:raw` value and the derived `*_date` / `*_date:edtf` can be reconstructed from it.  
 **4205 fix:** Reconstructs the triple from `:raw`.  
@@ -384,6 +385,14 @@ After autofix: `start_date:raw` deleted (the human edit is canonical; the stale 
 **4207 example:**  
 Trigger: `start_date:raw=garbage`, no valid `start_date` or `:edtf`.  
 Suggested manual fix: hand-correct the date based on whatever source produced the :raw value.
+
+**4242 trigger:** A normalization autofix would write `*_date:raw` with a value different from what the user already has there. Currently fires for the decade/century rule (4203/4204) and the `end_date=present` rule (4221) when their respective autofix path's intended `:raw` write would clobber a hand-authored or pre-existing machine-generated value.  
+**4242 fix:** None. Manual review required: delete or merge the existing `:raw` before re-running the validator.  
+**4242 description:** _{key}={value}: would normalize to {key}={newBase}, {key}:edtf={newEdtf}, {key}:raw={proposedRaw}, but {key}:raw={existingRaw} already holds a different value. Manual review needed: delete or merge the existing :raw before re-running the validator._
+
+**4242 example:**  
+Trigger: `start_date=1800s` AND `start_date:raw=around 1800 (hand-authored)`.  
+Suggested manual fix: decide whether the user's hand annotation is canonical (delete or pre-edit `:raw` to match what the autofix would produce, then re-run) or whether the user wanted the normalized form (delete the hand annotation and accept the autofix). Same shape applies to `end_date=present` overwriting a pre-existing `end_date:raw`.
 
 ---
 

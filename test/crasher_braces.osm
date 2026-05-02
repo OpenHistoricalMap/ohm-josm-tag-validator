@@ -219,4 +219,24 @@
     <tag k='end_date' v='100' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000024' visible='true' version='1' lat='0.0' lon='2.3'>
+    <!-- 4242 :raw clobber probe (decade/century path). 1800s would
+         autofix as decade or century, both writing :raw=1800s; the
+         pre-existing user :raw should not be silently overwritten. -->
+    <tag k='name' v='raw conflict probe — 1800s with hand-authored :raw' />
+    <tag k='start_date' v='1800s' />
+    <tag k='start_date:raw' v='around 1800 (hand-authored)' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000025' visible='true' version='1' lat='0.0' lon='2.4'>
+    <!-- 4242 :raw clobber probe (end_date=present path). Pre-fix the
+         autofix would overwrite :raw=2099-12-31 with :raw=present.
+         Post-fix: unfixable warning instead. -->
+    <tag k='name' v='raw conflict probe — end_date=present with hand-authored :raw' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='present' />
+    <tag k='end_date:raw' v='2099-12-31 (machine-generated, do not lose)' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

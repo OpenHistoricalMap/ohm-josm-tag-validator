@@ -224,6 +224,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_CHRONOLOGY_MEMBER_NO_DATES = 4239;
     protected static final int CODE_JULIAN_NOTE_CONFLICT = 4240;
     protected static final int CODE_C_SHORTHAND_AMBIGUOUS = 4241;
+    protected static final int CODE_RAW_CONFLICT = 4242;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -1056,6 +1057,14 @@ public class DateTagTest extends Test {
             if ("end_date".equals(baseKey)) {
                 // end_date=present: legitimate "ongoing" intent, offer to
                 // convert to the canonical empty end_date + :raw=present form.
+                // The L1053 early-out already returned when :raw=present, so
+                // any non-null :raw at this point would be clobbered by the
+                // autofix. Fire CODE_RAW_CONFLICT instead in that case.
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, null, null, base, existingRaw);
+                    return;
+                }
                 List<Command> cmds = new ArrayList<>();
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, null));
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", null));
@@ -1153,16 +1162,22 @@ public class DateTagTest extends Test {
             Optional<String> decadeBase = "start_date".equals(baseKey)
                 ? DateNormalizer.lowerBoundIso(decadeEdtf.get())
                 : DateNormalizer.upperBoundIso(decadeEdtf.get());
-            Command fix = buildTripleFix(p, baseKey, decadeBase.orElse(null),
-                                         decadeEdtf.get(), sourceValue);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_DECADE)
-                .message(tr("[ohm] Ambiguous date - unclear century/decade date; autofix as decade"),
-                         marktr("{0}={1} as a decade: {0}={2}, :edtf={3}"),
-                            sourceKey, sourceValue,
-                            decadeBase.orElse("?"), decadeEdtf.get())
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
+            String existingRaw = rawConflictValue(p, baseKey, sourceValue);
+            if (existingRaw != null) {
+                addRawConflictFinding(p, baseKey, sourceValue,
+                    decadeBase.orElse(null), decadeEdtf.get(), sourceValue, existingRaw);
+            } else {
+                Command fix = buildTripleFix(p, baseKey, decadeBase.orElse(null),
+                                             decadeEdtf.get(), sourceValue);
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_DECADE)
+                    .message(tr("[ohm] Ambiguous date - unclear century/decade date; autofix as decade"),
+                             marktr("{0}={1} as a decade: {0}={2}, :edtf={3}"),
+                                sourceKey, sourceValue,
+                                decadeBase.orElse("?"), decadeEdtf.get())
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+            }
         }
 
         // --- Century interpretation ---
@@ -1175,6 +1190,12 @@ public class DateTagTest extends Test {
             Optional<String> centuryBase = "start_date".equals(baseKey)
                 ? DateNormalizer.lowerBoundIso(centuryEdtf.get())
                 : DateNormalizer.upperBoundIso(centuryEdtf.get());
+            String existingRaw = rawConflictValue(p, baseKey, sourceValue);
+            if (existingRaw != null) {
+                addRawConflictFinding(p, baseKey, sourceValue,
+                    centuryBase.orElse(null), centuryEdtf.get(), sourceValue, existingRaw);
+                return;
+            }
             Command fix = buildTripleFix(p, baseKey, centuryBase.orElse(null),
                                          centuryEdtf.get(), sourceValue);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_CENTURY)
@@ -1535,6 +1556,11 @@ public class DateTagTest extends Test {
                 String year2Str = String.format("%04d", year2);
                 String fullEdtf = year1Str + "/" + year2Str;
                 String newBase = "start_date".equals(baseKey) ? year1Str : year2Str;
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, newBase, fullEdtf, base, existingRaw);
+                    return;
+                }
                 Command fix = buildTripleFix(p, baseKey, newBase, fullEdtf, base);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                     .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
@@ -1563,6 +1589,11 @@ public class DateTagTest extends Test {
             if (upperYear > 400) {
                 String upperYearStr = String.format("%04d", upperYear);
                 String fullEdtf = "/" + upperYearStr;
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, upperYearStr, fullEdtf, base, existingRaw);
+                    return;
+                }
                 Command fix = buildTripleFix(p, baseKey, upperYearStr, fullEdtf, base);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                     .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
@@ -1632,6 +1663,11 @@ public class DateTagTest extends Test {
                 : DateNormalizer.upperBoundIso(derivedEdtf);
             String derivedBase = derivedBaseOpt.orElse(null);
 
+            String existingRaw = rawConflictValue(p, baseKey, base);
+            if (existingRaw != null) {
+                addRawConflictFinding(p, baseKey, base, derivedBase, derivedEdtf, base, existingRaw);
+                return;
+            }
             Command fix = buildTripleFix(p, baseKey, derivedBase, derivedEdtf, base);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                 .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
@@ -1672,9 +1708,17 @@ public class DateTagTest extends Test {
             Command fix;
             String messageTitle;
             if (originalWasEdtf) {
+                // Path 3a: original was already valid EDTF, no :raw write,
+                // so no clobber risk.
                 fix = buildBaseAndEdtfFix(p, baseKey, passthroughBase, cleaned);
                 messageTitle = tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review");
             } else {
+                // Path 3b: write triple with :raw preserved. Check for clobber.
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, passthroughBase, cleaned, base, existingRaw);
+                    return;
+                }
                 fix = buildTripleFix(p, baseKey, passthroughBase, cleaned, base);
                 messageTitle = tr("[ohm] Invalid date - *_date; fixable, please review");
             }
@@ -1712,6 +1756,47 @@ public class DateTagTest extends Test {
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", newEdtf));
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, newBase));
         return new SequenceCommand(tr("Normalize {0}", baseKey), cmds);
+    }
+
+    /**
+     * Returns the value already at {@code baseKey + ":raw"} if a
+     * {@link #buildTripleFix} call would silently overwrite it (i.e. the
+     * existing value is non-empty AND differs from the {@code rawValue} we'd
+     * write). Returns null when the autofix is safe to apply: either the
+     * slot is empty/absent, or the existing value matches what we'd write.
+     *
+     * <p>Callers that detect a non-null return should emit
+     * {@link #CODE_RAW_CONFLICT} via {@link #addRawConflictFinding} instead
+     * of calling buildTripleFix, to avoid silent data loss.
+     */
+    private static String rawConflictValue(OsmPrimitive p, String baseKey, String rawValue) {
+        String existing = p.get(baseKey + ":raw");
+        if (existing == null || existing.isEmpty() || existing.equals(rawValue)) {
+            return null;
+        }
+        return existing;
+    }
+
+    /**
+     * Emit a CODE_RAW_CONFLICT finding for the case where a normalization
+     * autofix would have overwritten an existing {@code *_date:raw} value.
+     * Names both the proposed and existing values so the editor can decide.
+     */
+    private void addRawConflictFinding(OsmPrimitive p, String baseKey, String base,
+                                       String newBase, String newEdtf,
+                                       String proposedRaw, String existingRaw) {
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_CONFLICT)
+            .message(tr("[ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review"),
+                     marktr("{0}={1}: would normalize to {0}={2}, {0}:edtf={3}, "
+                        + "{0}:raw={4}, but {0}:raw={5} already holds a different value. "
+                        + "Manual review needed: delete or merge the existing :raw before "
+                        + "re-running the validator."),
+                        baseKey, base,
+                        newBase == null ? "(absent)" : newBase,
+                        newEdtf == null ? "(absent)" : newEdtf,
+                        proposedRaw, existingRaw)
+            .primitives(p)
+            .build());
     }
 
     /**
