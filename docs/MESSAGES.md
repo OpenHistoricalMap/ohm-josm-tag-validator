@@ -374,14 +374,23 @@ Suggested manual fix: confirm the intended start_date manually; the bot pattern 
 | Code | Title |
 |------|-------|
 | 4233 | `[ohm] Invalid date - Julian date; fixable, please review` |
+| 4240 | `[ohm] Invalid date - Julian date but *_date:note already populated; unfixable, please review` |
 
-**Trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation.  
-**Fix:** Converts to Gregorian, stores converted value in base tag, preserves original in `*_date:note`.  
-**Description:** _{key}={julian} → {key}={gregorian} (Gregorian), {key}:note added_
+**4233 trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation AND `*_date:note` is empty or absent.  
+**4233 fix:** Converts to Gregorian, stores converted value in base tag, writes a calendar-conversion annotation into `*_date:note`.  
+**4233 description:** _{key}={julian} → {key}={gregorian} (Gregorian), {key}:note added_
 
-**Example:**  
-Before: `start_date=j:1582-10-04` (Julian calendar)  
-After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=j:1582-10-04` (original preserved).
+**4240 trigger:** Same as 4233 — Julian or Julian Day Number notation — but `*_date:note` already holds a value. The autofix would synthesise its own calendar-conversion note and silently overwrite the user's annotation, so this case is split out as unfixable. Per OHM wiki convention, `:note` is the slot for human-meaningful annotation, so preserving its content is non-negotiable.  
+**4240 fix:** None. Manual review required: keep, merge, or replace the existing note before re-running the validator.  
+**4240 description:** _{key}={julian}: would convert to {gregorian} (Gregorian) and add a calendar-conversion :note, but {noteKey}={existingNote} already holds a value. Manual review needed: keep, merge, or replace the existing note before re-running the validator._
+
+**4233 example:**  
+Before: `start_date=j:1582-10-04` (Julian calendar), no `start_date:note`.  
+After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=Converted from j:1582-10-04`.
+
+**4240 example:**  
+Trigger: `start_date=j:1582-10-04` AND `start_date:note=From archival entry, see ledger p.42`.  
+Suggested manual fix: decide whether to merge the calendar-conversion note with the existing archival note, replace one with the other, or keep the original and switch to a manually-converted Gregorian date.
 
 ---
 

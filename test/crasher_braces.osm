@@ -80,4 +80,15 @@
     <tag k='start_date' v='1920' />
     <tag k='end_date' v='1925' />
   </node>
+  <node id='9000008' visible='true' version='1' lat='0.0' lon='0.7'>
+    <!-- Regression for the 4240 / Julian :note conflict path: a Julian
+         date that would otherwise be autofixed AND a pre-existing
+         user-authored start_date:note. Pre-fix autofix silently
+         overwrote the user's note with "Converted from j:1582-10-15".
+         The fixed validator must emit an unfixable warning instead. -->
+    <tag k='name' v='Conflict E — Julian date with existing :note' />
+    <tag k='start_date' v='j:1582-10-15' />
+    <tag k='start_date:note' v='Hand-authored: archival entry says ten days adjustment per Gregorian rollover' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

@@ -222,6 +222,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_CHRONOLOGY_MISSING_DATE = 4237;
     protected static final int CODE_CHRONOLOGY_DUPLICATE = 4238;
     protected static final int CODE_CHRONOLOGY_MEMBER_NO_DATES = 4239;
+    protected static final int CODE_JULIAN_NOTE_CONFLICT = 4240;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -1471,13 +1472,31 @@ public class DateTagTest extends Test {
         Optional<String> julianGregorian = DateNormalizer.tryConvertJulian(base);
         if (julianGregorian.isPresent()) {
             String gregorian = julianGregorian.get();
+            String noteKey = baseKey + ":note";
+            String existingNote = p.get(noteKey);
+            // The autofix synthesises a :note string; if the user has already
+            // hand-authored a :note here, autofix would silently overwrite their
+            // annotation. Emit an unfixable variant in that case so the editor
+            // can decide whether to merge, replace, or leave their note alone.
+            if (existingNote != null && !existingNote.isEmpty()) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_JULIAN_NOTE_CONFLICT)
+                    .message(tr("[ohm] Invalid date - Julian date but *_date:note already populated; unfixable, please review"),
+                             marktr("{0}={1}: would convert to {2} (Gregorian) and add a "
+                                + "calendar-conversion :note, but {3}={4} already holds a value. "
+                                + "Manual review needed: keep, merge, or replace the existing note "
+                                + "before re-running the validator."),
+                                baseKey, base, gregorian, noteKey, existingNote)
+                    .primitives(p)
+                    .build());
+                return;
+            }
             List<Command> cmds = new ArrayList<>();
             // Per OHM wiki convention, calendar-conversion annotation lives in
             // :note, not :raw. The wiki's start_date page explicitly asks for
             // start_date:note=* to explain non-trivial calendar conversions.
             // :raw is reserved for machine-generated scaffold of shorthand
             // normalization; it shouldn't carry semantic notes.
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":note",
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), noteKey,
                 tr("Converted from {0}", base)));
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, gregorian));
             // Deliberately no :edtf — EDTF has no standard form for Julian dates.
