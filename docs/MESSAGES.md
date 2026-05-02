@@ -451,6 +451,8 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 | 4234 | `[ohm] Chronology - member date range outside parent chronology range; unfixable, please review` |
 | 4235 | `[ohm] Chronology - member date range overlap; unfixable, please review` |
 | 4236 | `[ohm] Chronology - gap between member date ranges; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between parent start and oldest member; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between latest member end and parent end; unfixable, please review` |
 | 4237 | `[ohm] Chronology - member missing required date tag; unfixable, please review` |
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |

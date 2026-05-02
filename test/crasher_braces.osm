@@ -263,4 +263,30 @@
     <tag k='start_date' v='1800' />
     <tag k='end_date' v='1900' />
   </relation>
+  <!-- Chronology boundary gap probe (issue #22). Parent declares
+       1500..2000 but members only cover 1800..1900, so 4236 should
+       fire twice: once for the leading gap (parent start 1500 vs
+       oldest member start 1800) and once for the trailing gap
+       (latest member end 1900 vs parent end 2000). -->
+  <node id='9000031' visible='true' version='1' lat='0.0' lon='2.7'>
+    <tag k='name' v='Boundary gap member 1' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000032' visible='true' version='1' lat='0.0' lon='2.8'>
+    <tag k='name' v='Boundary gap member 2' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <relation id='9000030' visible='true' version='1'>
+    <member type='node' ref='9000031' role='' />
+    <member type='node' ref='9000032' role='' />
+    <tag k='name' v='Chronology probe — boundary gap parent extends beyond members' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1500' />
+    <tag k='end_date' v='2000' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
 </osm>

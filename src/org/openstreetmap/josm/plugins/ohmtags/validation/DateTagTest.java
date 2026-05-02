@@ -1952,6 +1952,7 @@ public class DateTagTest extends Test {
         checkChronologyMissingTags(r, infos, youngest);
         checkChronologyOverlap(r, infos, youngest);
         checkChronologyGap(r, infos, youngest);
+        checkChronologyBoundaryGap(r, infos, youngest);
         checkChronologyDuplicatePredecessor(r, infos);
     }
 
@@ -2137,6 +2138,103 @@ public class DateTagTest extends Test {
                             formatPrim(r))
                 .primitives(Arrays.asList(prev.prim, next.prim))
                 .build());
+        }
+    }
+
+    /**
+     * Rule 4236 boundary variant: gap between the chronology relation's
+     * own date range and its oldest/latest member. Fires when the parent's
+     * {@code start_date} is more than 1 unit (at the coarser shared precision)
+     * before the oldest member's {@code start_date}, or when the parent's
+     * {@code end_date} is more than 1 unit after the latest member's
+     * {@code end_date}. Issue #22.
+     *
+     * <p>The existing {@link #checkChronologyGap} rule only catches gaps
+     * between consecutive sorted members. This method covers the
+     * gap-at-the-edges case the user reported in #22.
+     *
+     * <p>Skips the trailing-gap check entirely when any member is
+     * open-ended (no {@code end_date}), since open-ended coverage extends
+     * to infinity and no trailing gap is possible.
+     */
+    private void checkChronologyBoundaryGap(Relation r, List<MemberInfo> infos,
+                                            MemberInfo youngest) {
+        ParsedDate parentStart = parseStrictBaseDate(r.get("start_date"));
+        ParsedDate parentEnd = parseStrictBaseDate(r.get("end_date"));
+        if (parentStart == null && parentEnd == null) return;
+
+        // Same eligibility as overlap/gap: needs a start; non-youngest
+        // missing-end members are reported by 4237 and skipped here.
+        List<MemberInfo> withStart = new ArrayList<>();
+        for (MemberInfo mi : infos) {
+            if (mi.start != null && (mi.end != null || mi == youngest)) {
+                withStart.add(mi);
+            }
+        }
+        if (withStart.isEmpty()) return;
+
+        // --- Leading gap: parent.start vs oldest member's start. ---
+        if (parentStart != null) {
+            MemberInfo oldest = null;
+            for (MemberInfo mi : withStart) {
+                if (oldest == null
+                    || mi.start.lowerBound().isBefore(oldest.start.lowerBound())) {
+                    oldest = mi;
+                }
+            }
+            // Skip when oldest start is at or before parent start (4234
+            // handles "before parent" as outside-parent-range).
+            if (!touchesAtMatchingPrecision(parentStart, oldest.start)
+                && oldest.start.lowerBound().isAfter(parentStart.upperBound())) {
+                int missing = missingUnitsAtCoarserPrecision(parentStart, oldest.start);
+                if (missing > 1) {
+                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
+                        .message(tr("[ohm] Chronology - gap between parent start and oldest member; unfixable, please review"),
+                                 marktr("Chronology relation {0} starts at {1} but oldest member {2} "
+                                    + "starts at {3}, leaving a {4} {5} gap at the start of the chronology."),
+                                    formatPrim(r), parentStart.raw,
+                                    formatPrim(oldest.prim), oldest.start.raw,
+                                    missing,
+                                    coarserPrecisionName(parentStart.precision, oldest.start.precision))
+                        .primitives(Arrays.asList(r, oldest.prim))
+                        .build());
+                }
+            }
+        }
+
+        // --- Trailing gap: parent.end vs latest member's end. ---
+        if (parentEnd != null) {
+            // If any eligible member is open-ended, coverage extends to
+            // MAX and no trailing gap is possible.
+            boolean anyOpenEnded = false;
+            MemberInfo latest = null;
+            for (MemberInfo mi : withStart) {
+                if (mi.end == null) {
+                    anyOpenEnded = true;
+                    break;
+                }
+                if (latest == null
+                    || mi.end.upperBound().isAfter(latest.end.upperBound())) {
+                    latest = mi;
+                }
+            }
+            if (!anyOpenEnded && latest != null
+                && !touchesAtMatchingPrecision(latest.end, parentEnd)
+                && latest.end.upperBound().isBefore(parentEnd.lowerBound())) {
+                int missing = missingUnitsAtCoarserPrecision(latest.end, parentEnd);
+                if (missing > 1) {
+                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
+                        .message(tr("[ohm] Chronology - gap between latest member end and parent end; unfixable, please review"),
+                                 marktr("Latest member {0} (in chronology relation {1}) ends at {2} but "
+                                    + "the chronology''s end_date is {3}, leaving a {4} {5} gap at the end of the chronology."),
+                                    formatPrim(latest.prim), formatPrim(r), latest.end.raw,
+                                    parentEnd.raw,
+                                    missing,
+                                    coarserPrecisionName(latest.end.precision, parentEnd.precision))
+                        .primitives(Arrays.asList(r, latest.prim))
+                        .build());
+                }
+            }
         }
     }
 

@@ -31,6 +31,15 @@ The fix splits each affected rule into two paths: autofix when destination slots
 
 The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
+## New: 4236 boundary-gap variants
+
+Per [issue #22](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/22), the chronology gap rule (4236) now fires for **two new boundary cases** in addition to the existing "gap between consecutive members":
+
+- **Gap between parent `start_date` and the oldest member's `start_date`**, when the gap exceeds 1 unit at the coarser shared precision. e.g. chronology declares `start_date=0100` but the oldest member relation starts at `0300` — 199-year gap at the start.
+- **Gap between the latest member's `end_date` and parent `end_date`**, same threshold. Skipped entirely if any eligible member is open-ended (no `end_date`), since open-ended coverage extends to infinity.
+
+Both variants use the same code (4236), severity, and overall description shape as the original consecutive-pair gap. The titles differentiate the three cases. Real OHM data turns out to have plenty of these — ~14 boundary gaps fire across the regression dataset.
+
 ## Suppression: 4303 (`Missing tag - source on named feature`) skips chronology relations
 
 Per [issue #23](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/23), `type=chronology` relations are now exempt from the missing-source warning. They're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal. ~3 chronology relations in the regression dataset stop firing this warning.
