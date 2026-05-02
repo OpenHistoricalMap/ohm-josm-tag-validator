@@ -223,6 +223,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_CHRONOLOGY_DUPLICATE = 4238;
     protected static final int CODE_CHRONOLOGY_MEMBER_NO_DATES = 4239;
     protected static final int CODE_JULIAN_NOTE_CONFLICT = 4240;
+    protected static final int CODE_C_SHORTHAND_AMBIGUOUS = 4241;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -1468,6 +1469,30 @@ public class DateTagTest extends Test {
      * </ol>
      */
     private void checkBaseOnly(OsmPrimitive p, String baseKey, String base) {
+        // Path 0a: Ambiguous "cYY" shorthand. Three magnitude bands, only
+        //   the middle one fires here:
+        //     - abs(year) >= 100: handled by DateNormalizer.preprocess
+        //       (rewrites "cYYYY" -> "~YYYY" and flows into Path 2 below).
+        //     - 22 <= abs(year) <= 99: ambiguous (could be "circa year"
+        //       or "century N") — emit unfixable here.
+        //     - abs(year) <= 21: falls through to the existing CN /
+        //       YY00s century shorthand normalization.
+        Integer cYear = DateNormalizer.parseCShorthandYear(base);
+        if (cYear != null) {
+            int absYear = Math.abs(cYear);
+            if (absYear >= 22 && absYear <= 99) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_C_SHORTHAND_AMBIGUOUS)
+                    .message(tr("[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review"),
+                             marktr("{0}={1}: ''c{2}'' could mean ''circa year {2}'' or "
+                                + "''century {2}''. Manual review needed: rewrite as "
+                                + "~{2} for circa year, or use a century form for the century."),
+                                baseKey, base, cYear)
+                    .primitives(p)
+                    .build());
+                return;
+            }
+        }
+
         // Path 0: Julian calendar or Julian day number.
         Optional<String> julianGregorian = DateNormalizer.tryConvertJulian(base);
         if (julianGregorian.isPresent()) {

@@ -31,6 +31,18 @@ The fix splits each affected rule into two paths: autofix when destination slots
 
 The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
+## Also fixed: cYYYY shorthand normalization
+
+Pre-fix, the compact `cYYYY` shorthand (e.g. `start_date=c1920`) flowed through the existing decade/century pipeline and produced **invalid EDTF output** like `start_date:edtf=1919XX` — a malformed string that JOSM's downstream EDTF check would then re-flag, leaving the user worse off than before they accepted the fix.
+
+The validator now handles `cYYYY` shorthand in three magnitude bands:
+
+- **`abs(YYYY) >= 100`** — unambiguous "circa year": rewrite to the canonical EDTF `~YYYY` triple. `c1920` → `start_date=1920, :edtf=1920~, :raw=c1920`. `c-1500` → `start_date=-1500, :edtf=-1500~`. `c1920bc` flips the sign directly with no N-1 offset → `start_date=-1920, :edtf=-1920~`.
+- **`22 <= abs(YYYY) <= 99`** — ambiguous between "circa year" and "century N". Fires the new **4241** unfixable warning. Manual review required to pick one.
+- **`abs(YYYY) <= 21`** — highly probable century shorthand. Continues to flow through the existing CN/YY00s century pipeline unchanged (so `c19` is still treated the same as `1800s`).
+
+The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix.
+
 ## Side benefit: apostrophes are now rendered correctly
 
 The old double-`MessageFormat` path was silently stripping apostrophes from message text — both from format-string literals (e.g. `'https://'` came out as `https://`) and from tag values that contained apostrophes (e.g. `d'ouvrage` → `douvrage`). The single-pass path renders these correctly. ~20 finding descriptions across the regression dataset now read more naturally; no wording was deliberately changed.

@@ -212,6 +212,14 @@ E   n/2143549416   [ohm] Invalid date - *_date cannot be read; unfixable, please
 E   n/2146065865   [ohm] Invalid date - *_date; fixable, please review   start_date=29/11/2024 ? start_date=2024-11-29, start_date:edtf=2024-11-29, start_date:raw=29/11/2024
 E   n/2146375655   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   end_date=/1850 ? end_date=1850, end_date:edtf=/1850
 E   n/2147361393   [ohm] Invalid date - *_date; fixable, please review   end_date=circa 1977 ? end_date=1977, end_date:edtf=1977~, end_date:raw=circa 1977
+E   n/9000009   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920 ? start_date=1920, start_date:edtf=1920~, start_date:raw=c1920
+E   n/9000010   [ohm] Invalid date - *_date; fixable, please review   start_date=c-1500 ? start_date=-1500, start_date:edtf=-1500~, start_date:raw=c-1500
+E   n/9000011   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920bc ? start_date=-1920, start_date:edtf=-1920~, start_date:raw=c1920bc
+E   n/9000012   [ohm] Invalid date - *_date; fixable, please review   end_date=200 ? end_date=0200, end_date:edtf=0200, end_date:raw=200
+E   n/9000012   [ohm] Invalid date - *_date; fixable, please review   start_date=c100 ? start_date=0100, start_date:edtf=0100~, start_date:raw=c100
+E   n/9000013   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
+E   n/9000014   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
+E   n/9000015   [ohm] Invalid date - *_date; fixable, please review   start_date=c19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=c19
 E   n/9100011   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   n/9100221   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
 E   n/9100222   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
@@ -237,7 +245,7 @@ E   r/2736516   [ohm] Invalid date - *_date cannot be read; unfixable, please re
 E   r/2736516   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2742420   [ohm] Invalid date - *_date; fixable, please review   end_date=2020-12- 31 ? end_date=2020-12-31, end_date:edtf=2020-12-31, end_date:raw=2020-12- 31
 E   r/2742420   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   r/2747751   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920 ? start_date=(absent), start_date:edtf=1919XX, start_date:raw=c1920
+E   r/2747751   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920 ? start_date=1920, start_date:edtf=1920~, start_date:raw=c1920
 E   r/2747751   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2796293   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1716/17 ? start_date=1716, start_date:edtf=1716/17
 E   r/2796293   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
@@ -953,6 +961,8 @@ W   n/9000005   [ohm] Source mismatch - non-URL source with existing :name compa
 W   n/9000006   [ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review   source=https://example.org/a;https://example.org/b;https://example.org/c: cannot enumerate into source, source:1, ... because source:1=https://existing.example.org/preserved already holds a value. Manual review needed: merge, replace, or shift to higher source:# slots.
 W   n/9000007   [ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review   source=Archive folder 12; Field notes 1923: cannot enumerate into source:name, source:1:name, ... because source:name=Pre-existing citation; do not lose already holds a value. Manual review needed: merge, replace, or shift to higher source:#:name slots.
 W   n/9000008   [ohm] Invalid date - Julian date but *_date:note already populated; unfixable, please review   start_date=j:1582-10-15: would convert to 1582-10-25 (Gregorian) and add a calendar-conversion :note, but start_date:note=Hand-authored: archival entry says ten days adjustment per Gregorian rollover already holds a value. Manual review needed: keep, merge, or replace the existing note before re-running the validator.
+W   n/9000013   [ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review   start_date=c50: 'c50' could mean 'circa year 50' or 'century 50'. Manual review needed: rewrite as ~50 for circa year, or use a century form for the century.
+W   n/9000014   [ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review   start_date=c22: 'c22' could mean 'circa year 22' or 'century 22'. Manual review needed: rewrite as ~22 for circa year, or use a century form for the century.
 W   n/9100021   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100021 (1800..1850) and n/9100022 (1840..1900) have overlapping date ranges in chronology relation r/9100030.
 W   n/9100022   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100021 (1800..1850) and n/9100022 (1840..1900) have overlapping date ranges in chronology relation r/9100030.
 W   n/9100031   [ohm] Chronology - gap between member date ranges; unfixable, please review   Member n/9100031 (ends 1850) and member n/9100032 (starts 1855) leave a 4 year(s) gap in chronology relation r/9100040.

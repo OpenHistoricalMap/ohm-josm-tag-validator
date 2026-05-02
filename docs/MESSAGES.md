@@ -75,6 +75,35 @@ After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start
 
 ---
 
+### Compact "cYYYY" shorthand
+
+| Code | Title |
+|------|-------|
+| 4202 | `[ohm] Invalid date - *_date; fixable, please review` |
+| 4241 | `[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review` |
+
+OHM contributors sometimes write a compact `cYYYY` form for "circa YYYY" (e.g. `start_date=c1920`). The validator handles three magnitude bands separately:
+
+- **`abs(YYYY) >= 100`** — unambiguous "circa year". The existing 4202 normalization rule rewrites it via `DateNormalizer` to `~YYYY`, producing the standard triple.
+- **`22 <= abs(YYYY) <= 99`** — ambiguous: could be "circa year YY" or "century YY". Fires the new **4241** unfixable warning. Manual review required to pick one.
+- **`abs(YYYY) <= 21`** — highly probable century shorthand. Falls through to the existing `CN` century pipeline (so `c19` is treated the same as `1800s`).
+
+The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix. BCE flips the sign of `YYYY` directly with no N-1 offset (so `c1920bc` becomes `~-1920`, not `~-1919`) — the historian's astronomical-year convention is too persnickety for typical OHM editing.
+
+**4202 example (cYYYY band, abs >= 100):**  
+Before: `start_date=c1920`  
+After autofix: `start_date=1920`, `start_date:edtf=1920~`, `start_date:raw=c1920`.
+
+**4202 example (cYYYY with BCE suffix):**  
+Before: `start_date=c1920bc`  
+After autofix: `start_date=-1920`, `start_date:edtf=-1920~`, `start_date:raw=c1920bc`.
+
+**4241 example:**  
+Trigger: `start_date=c50`.  
+Suggested manual fix: rewrite as `~50` if "circa year 50" was intended, or as a century form if "century 50" was intended.
+
+---
+
 ### Suspicious date — year-boundary
 
 | Code | Title |

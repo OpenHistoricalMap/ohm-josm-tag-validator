@@ -134,6 +134,14 @@ public final class DateNormalizer {
         Pattern.compile("^(?i)(?:circa|ca\\.?|around)\\s+(.+)$");
 
     /**
+     * Compact "cYYYY" / "c YYYY" / "c-YYYY" shorthand — captures the
+     * signed digits. Used by {@link #parseCShorthandYear} after BCE-suffix
+     * stripping. Matches case-insensitively.
+     */
+    private static final Pattern C_SHORTHAND =
+        Pattern.compile("^(?i)c\\s*(-?\\d+)$");
+
+    /**
      * "between X and Y" — explicit range expressed in English.
      * Case-insensitive. Captures the two endpoint tails.
      */
@@ -480,6 +488,19 @@ public final class DateNormalizer {
         Matcher mc = CIRCA_PREFIX.matcher(s);
         if (mc.matches()) {
             s = "~" + mc.group(1);
+        }
+
+        // 3a-bis. Compact "cYYYY" shorthand for circa, when the magnitude
+        //   is unambiguously a year (abs(YYYY) >= 100). Smaller magnitudes
+        //   are NOT preprocessed here:
+        //     - 22 <= abs <= 99 is ambiguous (could be circa year or
+        //       century N); DateTagTest.checkBaseOnly fires the unfixable
+        //       variant before reaching this point.
+        //     - abs <= 21 falls through to the existing CN century
+        //       shorthand pipeline below (so "c19" still maps to "C19").
+        Integer cYear = parseCShorthandYear(s);
+        if (cYear != null && Math.abs(cYear) >= 100) {
+            s = "~" + (cYear < 0 ? "-" : "") + String.format("%04d", Math.abs(cYear));
         }
 
         // 3b. "between X and Y" → "X..Y" so the existing range parser can
@@ -929,6 +950,52 @@ public final class DateNormalizer {
      * conversion in a {@code :note} tag (per OHM wiki convention) and
      * skip writing {@code :edtf}.
      */
+    /**
+     * Parse OHM "cYYYY" compact-circa shorthand and return the signed year,
+     * or null if the input isn't c-shorthand.
+     *
+     * <p>Accepts {@code cN}, {@code c-N}, {@code cN bc}, {@code c-N bc}, with
+     * optional whitespace and any BCE-suffix variant accepted by
+     * {@link #BCE_SUFFIX}. Case-insensitive on the leading {@code c}.
+     *
+     * <p>BCE flips the sign directly without an N-1 offset, so
+     * {@code "c1920bc"} returns {@code -1920} (not {@code -1919}). This is
+     * deliberate: the historian's astronomical-year convention
+     * ({@code 1 BC = year 0}) is too persnickety for typical OHM editing,
+     * and a direct flip matches what an OHM contributor writing
+     * {@code c1920bc} actually means.
+     *
+     * <p>Callers decide what to do with the year by magnitude:
+     * <ul>
+     *   <li>{@code abs(year) >= 100}: unambiguous "circa year" — autofix
+     *       to {@code ~YYYY} (the preprocessor handles this).</li>
+     *   <li>{@code 22 <= abs(year) <= 99}: ambiguous between "circa year"
+     *       and "century N" — DateTagTest fires an unfixable warning.</li>
+     *   <li>{@code abs(year) <= 21}: highly probable century shorthand —
+     *       falls through to the existing CN/YY00s normalization.</li>
+     * </ul>
+     */
+    public static Integer parseCShorthandYear(String input) {
+        if (input == null) return null;
+        String s = input.trim().replaceAll("\\s+", " ");
+        if (s.isEmpty()) return null;
+        // Strip any trailing BCE marker, recording its presence.
+        boolean bce = false;
+        Matcher bceM = BCE_SUFFIX.matcher(s);
+        if (bceM.find()) {
+            bce = true;
+            s = s.substring(0, bceM.start()).trim();
+        }
+        Matcher cm = C_SHORTHAND.matcher(s);
+        if (!cm.matches()) return null;
+        try {
+            int year = Integer.parseInt(cm.group(1));
+            return bce ? -year : year;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     public static Optional<String> tryConvertJulian(String value) {
         if (value == null) return Optional.empty();
         value = value.trim();

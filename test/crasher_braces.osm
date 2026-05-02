@@ -91,4 +91,56 @@
     <tag k='start_date:note' v='Hand-authored: archival entry says ten days adjustment per Gregorian rollover' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <!--
+    cYYYY shorthand probes (post-fix). Three bands by abs(year):
+      >=100   → unambiguous circa, autofix to ~YYYY
+      22..99  → ambiguous, unfixable warning (4241)
+      <=21    → highly probable century, existing rule handles
+    Pre-fix, the >=100 band produced invalid EDTF like "1919XX". Post-fix,
+    the validator must produce clean ~YYYY output. The 22-99 band is the
+    new unfixable code; the <=21 band is exercised here only as a
+    sanity check that we didn't break the existing century shorthand rule.
+  -->
+  <node id='9000009' visible='true' version='1' lat='0.0' lon='0.8'>
+    <tag k='name' v='cYYYY band 1 probe — c1920 autofix circa' />
+    <tag k='start_date' v='c1920' />
+    <tag k='end_date' v='1950' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000010' visible='true' version='1' lat='0.0' lon='0.9'>
+    <tag k='name' v='cYYYY band 1 probe — c minus 1500 BCE via negative' />
+    <tag k='start_date' v='c-1500' />
+    <tag k='end_date' v='-1400' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000011' visible='true' version='1' lat='0.0' lon='1.0'>
+    <tag k='name' v='cYYYY band 1 probe — c1920bc BCE via suffix' />
+    <tag k='start_date' v='c1920bc' />
+    <tag k='end_date' v='-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000012' visible='true' version='1' lat='0.0' lon='1.1'>
+    <tag k='name' v='cYYYY band 1 probe — c100 boundary' />
+    <tag k='start_date' v='c100' />
+    <tag k='end_date' v='200' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000013' visible='true' version='1' lat='0.0' lon='1.2'>
+    <tag k='name' v='cYYYY band 2 probe — c50 ambiguous unfixable' />
+    <tag k='start_date' v='c50' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000014' visible='true' version='1' lat='0.0' lon='1.3'>
+    <tag k='name' v='cYYYY band 2 probe — c22 lower boundary of ambiguous' />
+    <tag k='start_date' v='c22' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000015' visible='true' version='1' lat='0.0' lon='1.4'>
+    <tag k='name' v='cYYYY band 3 probe — c19 existing century rule unchanged' />
+    <tag k='start_date' v='c19' />
+    <tag k='end_date' v='1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>
