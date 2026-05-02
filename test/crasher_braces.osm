@@ -143,4 +143,25 @@
     <tag k='end_date' v='1999' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000016' visible='true' version='1' lat='0.0' lon='1.5'>
+    <!-- Edge case: c0 is degenerate (year zero / century zero are both
+         nonsense in OHM convention). Pre-fix produced invalid EDTF
+         "-1XX". Post-fix: 4241 unfixable. -->
+    <tag k='name' v='cYYYY edge probe — c0 degenerate' />
+    <tag k='start_date' v='c0' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000017' visible='true' version='1' lat='0.0' lon='1.6'>
+    <!-- Edge case: negative band-3 (c-19). Pre-fix the existing CN
+         pipeline stripped the negative sign and produced century 19 CE
+         (start_date=1800), the wrong direction. Post-fix: 4241
+         unfixable, since neither circa year nor century has a safe
+         autofix path for negative magnitudes <= 21 in the current
+         pipeline. -->
+    <tag k='name' v='cYYYY edge probe — c-19 negative band 3 sign protection' />
+    <tag k='start_date' v='c-19' />
+    <tag k='end_date' v='-1' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

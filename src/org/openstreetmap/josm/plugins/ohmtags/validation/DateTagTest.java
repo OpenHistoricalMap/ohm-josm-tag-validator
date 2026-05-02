@@ -1469,28 +1469,31 @@ public class DateTagTest extends Test {
      * </ol>
      */
     private void checkBaseOnly(OsmPrimitive p, String baseKey, String base) {
-        // Path 0a: Ambiguous "cYY" shorthand. Three magnitude bands, only
-        //   the middle one fires here:
-        //     - abs(year) >= 100: handled by DateNormalizer.preprocess
-        //       (rewrites "cYYYY" -> "~YYYY" and flows into Path 2 below).
-        //     - 22 <= abs(year) <= 99: ambiguous (could be "circa year"
-        //       or "century N") — emit unfixable here.
-        //     - abs(year) <= 21: falls through to the existing CN /
-        //       YY00s century shorthand normalization.
+        // Path 0a: Ambiguous or unsafe "cYY" shorthand. Fires unfixable in
+        //   any case the rest of the pipeline can't handle correctly:
+        //     - cYear == 0 (c0, c-0, c0bc): degenerate, no clean
+        //       interpretation.
+        //     - 22 <= cYear <= 99: ambiguous between "circa year" and
+        //       "century N".
+        //     - -99 <= cYear <= -1: existing CN century pipeline strips the
+        //       sign and produces a CE century, so we must intercept
+        //       before falling through.
+        //   The two clean bands are deliberately NOT handled here:
+        //     - abs(cYear) >= 100: DateNormalizer.preprocess rewrites
+        //       "cYYYY" -> "~YYYY" and Path 2 below builds the triple.
+        //     - 1 <= cYear <= 21: positive band-3, falls through to the
+        //       existing CN / YY00s century pipeline (e.g. "c19" == "1800s").
         Integer cYear = DateNormalizer.parseCShorthandYear(base);
-        if (cYear != null) {
-            int absYear = Math.abs(cYear);
-            if (absYear >= 22 && absYear <= 99) {
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_C_SHORTHAND_AMBIGUOUS)
-                    .message(tr("[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review"),
-                             marktr("{0}={1}: ''c{2}'' could mean ''circa year {2}'' or "
-                                + "''century {2}''. Manual review needed: rewrite as "
-                                + "~{2} for circa year, or use a century form for the century."),
-                                baseKey, base, cYear)
-                    .primitives(p)
-                    .build());
-                return;
-            }
+        if (cYear != null && Math.abs(cYear) < 100 && (cYear <= 0 || cYear >= 22)) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_C_SHORTHAND_AMBIGUOUS)
+                .message(tr("[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review"),
+                         marktr("{0}={1}: ''c{2}'' could mean ''circa year {2}'' or "
+                            + "''the {3} century''. Manual review needed: rewrite as "
+                            + "~{2} for circa year, or as the appropriate century shorthand."),
+                            baseKey, base, cYear, withOrdinalSuffix(cYear))
+                .primitives(p)
+                .build());
+            return;
         }
 
         // Path 0: Julian calendar or Julian day number.
@@ -2124,6 +2127,31 @@ public class DateTagTest extends Test {
     }
 
     /** Compact "n/123", "w/456", "r/789" form for description text. */
+    /**
+     * English ordinal suffix for an integer: "1st", "2nd", "3rd", "11th",
+     * "21st", "22nd", "100th". Negative values keep the leading minus
+     * (e.g. "-22nd"). Used to render century numbers in the 4241
+     * description; "the 22nd century" reads more naturally than "century 22".
+     */
+    private static String withOrdinalSuffix(int n) {
+        int abs = Math.abs(n);
+        int lastTwo = abs % 100;
+        int lastOne = abs % 10;
+        String suffix;
+        if (lastTwo >= 11 && lastTwo <= 13) {
+            suffix = "th";
+        } else if (lastOne == 1) {
+            suffix = "st";
+        } else if (lastOne == 2) {
+            suffix = "nd";
+        } else if (lastOne == 3) {
+            suffix = "rd";
+        } else {
+            suffix = "th";
+        }
+        return n + suffix;
+    }
+
     private static String formatPrim(OsmPrimitive p) {
         return p.getType().getAPIName().substring(0, 1) + "/" + p.getId();
     }

@@ -38,8 +38,10 @@ Pre-fix, the compact `cYYYY` shorthand (e.g. `start_date=c1920`) flowed through 
 The validator now handles `cYYYY` shorthand in three magnitude bands:
 
 - **`abs(YYYY) >= 100`** — unambiguous "circa year": rewrite to the canonical EDTF `~YYYY` triple. `c1920` → `start_date=1920, :edtf=1920~, :raw=c1920`. `c-1500` → `start_date=-1500, :edtf=-1500~`. `c1920bc` flips the sign directly with no N-1 offset → `start_date=-1920, :edtf=-1920~`.
-- **`22 <= abs(YYYY) <= 99`** — ambiguous between "circa year" and "century N". Fires the new **4241** unfixable warning. Manual review required to pick one.
-- **`abs(YYYY) <= 21`** — highly probable century shorthand. Continues to flow through the existing CN/YY00s century pipeline unchanged (so `c19` is still treated the same as `1800s`).
+- **`22 <= YYYY <= 99`** — ambiguous between "circa year YY" and "the YYth century". Fires the new **4241** unfixable warning. Manual review required to pick one.
+- **`1 <= YYYY <= 21`** — highly probable positive century shorthand. Continues to flow through the existing CN/YY00s century pipeline unchanged (so `c19` is still treated the same as `1800s`).
+- **`-99 <= YYYY <= -1`** — negative magnitudes ≤ 21 (e.g. `c-19`) and the full negative ambiguous band. The existing CN pipeline silently strips the sign and produces a CE century, so these values now fire **4241** as well.
+- **`YYYY == 0`** (`c0`, `c-0`, `c0bc`) — degenerate. Year zero / century zero are both nonsense in OHM's astronomical-year convention. Fires **4241**.
 
 The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix.
 

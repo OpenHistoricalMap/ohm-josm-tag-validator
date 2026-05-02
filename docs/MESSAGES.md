@@ -82,11 +82,13 @@ After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start
 | 4202 | `[ohm] Invalid date - *_date; fixable, please review` |
 | 4241 | `[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review` |
 
-OHM contributors sometimes write a compact `cYYYY` form for "circa YYYY" (e.g. `start_date=c1920`). The validator handles three magnitude bands separately:
+OHM contributors sometimes write a compact `cYYYY` form for "circa YYYY" (e.g. `start_date=c1920`). The validator handles five magnitude/sign cases separately:
 
-- **`abs(YYYY) >= 100`** — unambiguous "circa year". The existing 4202 normalization rule rewrites it via `DateNormalizer` to `~YYYY`, producing the standard triple.
-- **`22 <= abs(YYYY) <= 99`** — ambiguous: could be "circa year YY" or "century YY". Fires the new **4241** unfixable warning. Manual review required to pick one.
-- **`abs(YYYY) <= 21`** — highly probable century shorthand. Falls through to the existing `CN` century pipeline (so `c19` is treated the same as `1800s`).
+- **`YYYY >= 100`** or **`YYYY <= -100`** — unambiguous "circa year". The existing 4202 normalization rule rewrites it via `DateNormalizer` to `~YYYY`, producing the standard triple.
+- **`22 <= YYYY <= 99`** — ambiguous: could be "circa year YY" or "the YYth century". Fires the new **4241** unfixable warning. Manual review required to pick one.
+- **`1 <= YYYY <= 21`** — highly probable positive century shorthand. Falls through to the existing `CN` century pipeline (so `c19` is treated the same as `1800s`).
+- **`-99 <= YYYY <= -1`** — negative magnitudes 1–99 (e.g. `c-19`, `c-50`) all fire **4241**. The existing CN pipeline silently strips the sign and produces a CE century, which is the wrong direction; firing unfixable forces the editor to write the date out explicitly.
+- **`YYYY == 0`** (`c0`, `c-0`, `c0bc`) — degenerate. Year zero and century zero are both nonsense in OHM's astronomical-year convention. Fires **4241**.
 
 The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix. BCE flips the sign of `YYYY` directly with no N-1 offset (so `c1920bc` becomes `~-1920`, not `~-1919`) — the historian's astronomical-year convention is too persnickety for typical OHM editing.
 
