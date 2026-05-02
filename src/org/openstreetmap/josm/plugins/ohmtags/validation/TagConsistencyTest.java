@@ -139,6 +139,7 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_RELATION_LABEL_MEMBER = 4318;
     protected static final int CODE_HISTORIC_SUSPICIOUS = 4319;
     protected static final int CODE_NAME_HAS_HISTORIC = 4320;
+    protected static final int CODE_SOURCE_NAME_CONFLICT = 4321;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -636,9 +637,30 @@ public class TagConsistencyTest extends Test {
             return;
         }
 
-        // Non-URL, non-Wikipedia/Wikidata source. Offer to rename to :name.
+        // Non-URL, non-Wikipedia/Wikidata source. We want to move the value
+        // into the companion :name slot and clear the URL slot. But if the
+        // companion :name already holds a value, the move would silently
+        // overwrite it — so split into two paths: fixable when :name is empty,
+        // unfixable when :name is occupied (manual review required to decide
+        // whether to merge, replace, or move to an enumerated slot).
         String renamedKey = numIdx == null
             ? "source:name" : "source:" + numIdx + ":name";
+        String existingRenamedValue = p.get(renamedKey);
+        boolean renamedTargetOccupied =
+            existingRenamedValue != null && !existingRenamedValue.isEmpty();
+
+        if (renamedTargetOccupied) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_CONFLICT)
+                .message(tr("[ohm] Source mismatch - non-URL source with existing :name companion; unfixable, please review"),
+                         marktr("{0}={1} is not a URL but {2}={3} already holds a value. "
+                            + "Manual review needed: merge, replace, or move to an "
+                            + "enumerated source:N:name slot."),
+                            key, value, renamedKey, existingRenamedValue)
+                .primitives(p)
+                .build());
+            return;
+        }
+
         List<Command> cmds = new ArrayList<>();
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), renamedKey, value));
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));

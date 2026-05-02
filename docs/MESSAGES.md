@@ -533,10 +533,15 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 | 4306 | `[ohm] Source optimization - move non-URL source tags to source:name` |
 | 4307 | `[ohm] Source optimization - repair URL missing 'http[s]://'` |
 | 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review` |
+| 4321 | `[ohm] Source mismatch - non-URL source with existing :name companion; unfixable, please review` |
 
-**4306 trigger:** `source` (or numbered variant) contains a non-URL text string.  
+**4306 trigger:** `source` (or numbered variant) contains a non-URL text string AND the companion `source:name` (or `source:N:name`) is empty or absent.  
 **4306 fix:** Moves value to `source:name`, leaves `source` blank for a URL.  
 **4306 description:** _{key}={value} is not a URL. Move to {source:name} and leave {key} blank for a URL?_
+
+**4321 trigger:** Same shape as 4306 — `source` (or numbered variant) contains a non-URL text string — but the companion `source:name` (or `source:N:name`) already holds a value. Autofix would silently overwrite the existing companion value, so this case is split out as unfixable.  
+**4321 fix:** None. Manual review required to decide whether to merge the two values, replace one with the other, or move the new value to an enumerated `source:N:name` slot.  
+**4321 description:** _{key}={value} is not a URL but {renamedKey}={existingValue} already holds a value. Manual review needed: merge, replace, or move to an enumerated source:N:name slot._
 
 **4307 trigger:** `source` value looks like a URL but is missing `http://` or `https://`.  
 **4307 fix:** Prepends `https://`.  

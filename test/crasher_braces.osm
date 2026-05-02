@@ -37,4 +37,25 @@
     <tag k='start_date' v='1900' />
     <tag k='end_date' v='1950' />
   </node>
+  <node id='9000004' visible='true' version='1' lat='0.0' lon='0.3'>
+    <!-- Regression for the 4321 / source:name conflict path: a non-URL
+         source value AND a pre-existing source:name. The pre-fix autofix
+         silently overwrote source:name with the source value, which is
+         data loss. The fixed validator must instead emit an unfixable
+         warning. -->
+    <tag k='name' v='Conflict A — non-URL source with existing source:name' />
+    <tag k='source' v='Sketch by hand, archive folder 12' />
+    <tag k='source:name' v='Local archive citation, 1957' />
+    <tag k='start_date' v='1950' />
+    <tag k='end_date' v='1960' />
+  </node>
+  <node id='9000005' visible='true' version='1' lat='0.0' lon='0.4'>
+    <!-- Same shape on an enumerated source:N / source:N:name pair. -->
+    <tag k='name' v='Conflict B — non-URL source:1 with existing source:1:name' />
+    <tag k='source' v='https://example.org/primary' />
+    <tag k='source:1' v='Hand-copied notes from city archives' />
+    <tag k='source:1:name' v='Original archive title; do not overwrite' />
+    <tag k='start_date' v='1965' />
+    <tag k='end_date' v='1980' />
+  </node>
 </osm>
