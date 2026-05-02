@@ -410,14 +410,28 @@ public class TagConsistencyTest extends Test {
             errors.add(builder.build());
         }
 
-        // Rule: named feature without any source*.
-        if (!hasAnySourceTag(p)) {
+        // Rule: named feature without any source*. Skips type=chronology
+        // relations: they're aggregator wrappers around member relations
+        // (each of which has its own source provenance), so requiring a
+        // top-level source tag on the chronology adds noise without
+        // signal — see issue #23.
+        if (!hasAnySourceTag(p) && !isChronologyRelation(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_SOURCE)
                 .message(tr("[ohm] Missing tag - source on named feature; unfixable, please review and add"),
                          marktr("other mappers are lost without it."))
                 .primitives(p)
                 .build());
         }
+    }
+
+    /**
+     * True if the primitive is a relation with {@code type=chronology}.
+     * Used to suppress rules that don't make sense on chronology aggregators
+     * (which exist to bundle member relations representing the same entity
+     * across time, and inherit semantic content from those members).
+     */
+    private static boolean isChronologyRelation(OsmPrimitive p) {
+        return p instanceof Relation && "chronology".equals(p.get("type"));
     }
 
     // --- Helpers -------------------------------------------------------------

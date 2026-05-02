@@ -239,4 +239,28 @@
     <tag k='end_date:raw' v='2099-12-31 (machine-generated, do not lose)' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <!-- Chronology relation suppression probes (issue #23). The named
+       chronology has no source tag, but the missing-source rule (4303)
+       must skip it because chronologies are aggregator wrappers. The
+       member nodes (9000027, 9000028) have their own source tags. -->
+  <node id='9000027' visible='true' version='1' lat='0.0' lon='2.5'>
+    <tag k='name' v='Chronology member 1' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+    <tag k='source' v='https://example.org/source-1800' />
+  </node>
+  <node id='9000028' visible='true' version='1' lat='0.0' lon='2.6'>
+    <tag k='name' v='Chronology member 2' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source-1850' />
+  </node>
+  <relation id='9000026' visible='true' version='1'>
+    <member type='node' ref='9000027' role='' />
+    <member type='node' ref='9000028' role='' />
+    <tag k='name' v='Chronology probe — type=chronology no source 4303 must NOT fire' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </relation>
 </osm>

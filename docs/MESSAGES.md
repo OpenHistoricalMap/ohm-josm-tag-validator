@@ -549,7 +549,7 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 
 **4302 description:** _Wikidata QIDs help link OHM data to other databases._
 
-**4303 trigger:** Named feature has no `source*` tag of any kind.  
+**4303 trigger:** Named feature has no `source*` tag of any kind. As of v0.4.0, `type=chronology` relations are exempt — they're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal.  
 **4303 description:** _other mappers are lost without it._
 
 **4302 example (no autofix):**  

@@ -275,6 +275,7 @@ E   r/2893868   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   r/2893869   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   end_date=/2013 ? end_date=2013, end_date:edtf=/2013
 E   r/2893869   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=/1963 ? start_date=1963, start_date:edtf=/1963
 E   r/2893869   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9000026   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/9100020   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   r/9100720   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=2200-05-32: day 32 is out of range. Trim to 2200-05?
@@ -1005,15 +1006,12 @@ W   r/2796293   [ohm] Missing tag - source on named feature; unfixable, please r
 W   r/2796293   [ohm] Suspicious member - role=label; unfixable, please review   OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ? Download parent relations / ways). role=label members on this relation: n/2110642148.
 W   r/2849295   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   r/2849516   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2887877   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   r/2890388   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   r/2890388   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=bunker: confirm the entity has actually passed into history before applying this tag.
 W   r/2893864   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893864 of chronology relation r/2893869 has neither start_date nor end_date.
 W   r/2893865   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893865 of chronology relation r/2893869 has neither start_date nor end_date.
 W   r/2893866   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893866 of chronology relation r/2893868 has neither start_date nor end_date.
 W   r/2893867   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893867 of chronology relation r/2893868 has neither start_date nor end_date.
-W   r/2893868   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2893869   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   r/9100090   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
 W   r/9100100   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
 W   r/9100110   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?

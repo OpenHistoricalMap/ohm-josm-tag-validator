@@ -31,6 +31,10 @@ The fix splits each affected rule into two paths: autofix when destination slots
 
 The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
+## Suppression: 4303 (`Missing tag - source on named feature`) skips chronology relations
+
+Per [issue #23](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/23), `type=chronology` relations are now exempt from the missing-source warning. They're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal. ~3 chronology relations in the regression dataset stop firing this warning.
+
 ## Behavior change: 4212 / 4213 are now unfixable
 
 `[ohm] Suspicious date - 01-01 start_date` (4212) and `[ohm] Suspicious date - 12-31 end_date` (4213) previously offered a one-click autofix to trim to the bare year (`start_date=1875-01-01` → `start_date=1875`). Per [issue #28](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/28), these are now unfixable WARNINGs. Jan 1 and Dec 31 are legitimate real dates often enough (laws taking effect, treaties signed, terms ending, fiscal year boundaries) that even an opt-in autofix proved too easy to apply by mistake when batch-fixing. The descriptions still suggest the manual trim for the false-precision case.
