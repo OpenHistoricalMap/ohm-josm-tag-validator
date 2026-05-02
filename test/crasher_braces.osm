@@ -164,4 +164,59 @@
     <tag k='end_date' v='-1' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000018' visible='true' version='1' lat='0.0' lon='1.7'>
+    <!-- YYYY/YY abbreviated-tail range probe (start_date variant). The
+         2-digit suffix replaces the last two digits of the year.
+         Pre-fix, edtf-java accepted the short form and produced
+         end_date=5299 for end_date=1850/52. Post-fix expands to the
+         full pair and uses min for start_date, max for end_date. -->
+    <tag k='name' v='range probe — start_date 1850/52 abbreviated tail' />
+    <tag k='start_date' v='1850/52' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000019' visible='true' version='1' lat='0.0' lon='1.8'>
+    <!-- Same shape on end_date — the corruption-tier case. Pre-fix:
+         end_date=5299 from edtf-java misinterpretation. Post-fix:
+         end_date=1852 (the max of the expanded pair). -->
+    <tag k='name' v='range probe — end_date 1850/52 abbreviated tail' />
+    <tag k='start_date' v='1840' />
+    <tag k='end_date' v='1850/52' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000020' visible='true' version='1' lat='0.0' lon='1.9'>
+    <!-- Wrap case: 1899/01 would expand to 1801, less than the start.
+         The autofix is gated on year2 >= year1, so this falls through
+         to the pre-existing pipeline rather than producing a backwards
+         range. -->
+    <tag k='name' v='range probe — start_date 1899/01 wrap fallthrough' />
+    <tag k='start_date' v='1899/01' />
+    <tag k='end_date' v='1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000021' visible='true' version='1' lat='0.0' lon='2.0'>
+    <!-- 0000..YYYY implausibly-ancient probe (start_date variant).
+         When the upper bound > 400, the leading zeros are treated as a
+         placeholder rather than literal year-zero, and the autofix
+         collapses to the open-start /YYYY form. -->
+    <tag k='name' v='range probe — start_date 0000..1850 implausibly ancient' />
+    <tag k='start_date' v='0000..1850' />
+    <tag k='end_date' v='1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000022' visible='true' version='1' lat='0.0' lon='2.1'>
+    <!-- end_date variant of the same shape. -->
+    <tag k='name' v='range probe — end_date 0000..1900 implausibly ancient' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='0000..1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000023' visible='true' version='1' lat='0.0' lon='2.2'>
+    <!-- Sub-threshold case: upper bound <= 400 could be a real ancient
+         range; falls through. -->
+    <tag k='name' v='range probe — start_date 0000..0050 below threshold fallthrough' />
+    <tag k='start_date' v='0000..0050' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

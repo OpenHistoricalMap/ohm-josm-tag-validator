@@ -1,7 +1,6 @@
-# v0.3.3 — fix JOSM crash on tag values containing `{` or `}`
+# v0.4.0 — JOSM crash hotfix, autofix-safety guards, normalization wins
 
-Hotfix release for [#26](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/26).
-No new rules, no changed rules; bug fix and regression coverage only.
+Originally scoped as a v0.3.3 hotfix for [#26](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/26) (a JOSM crash on tag values containing `{` or `}`). Bumped to v0.4.0 once the audit it triggered surfaced a class of autofix-safety bugs and the testing pass uncovered several normalization wins worth shipping in the same release.
 
 ## What was crashing
 
@@ -31,11 +30,21 @@ The fix splits each affected rule into two paths: autofix when destination slots
 
 The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
+## Also fixed: abbreviated-tail and implausibly-ancient range normalization
+
+Two normalization fixes that surfaced during testing:
+
+- **`YYYY/YY` abbreviated-tail range** (e.g. `1716/17`, `1850/52`). Pre-fix, edtf-java accepted the short form as valid EDTF and produced wildly wrong base values — `end_date=1850/52` came out as `end_date=5299`. Now expanded to the full pair before normalization: `end_date=1850/52` → `end_date=1852, :edtf=1850/1852, :raw=1850/52`. For `start_date`, the base is the lower year; for `end_date`, the upper. Wrap cases like `1899/01` (where the suffix would resolve to a year less than the start) deliberately fall through and are not autofixed.
+
+- **`0000..YYYY` implausibly-ancient range** (e.g. `0..1850`, `00..1900`). When the upper bound `YYYY > 400`, the validator now collapses the leading-zeros placeholder to the open-start EDTF form `/YYYY` and uses `YYYY` as the base. `start_date=0..1850` → `start_date=1850, :edtf=/1850, :raw=0..1850`. Below the threshold the input could be a real ancient range; falls through.
+
+Dozens of rows in real OHM data flip from broken or ambiguous output to clean form on these two paths alone.
+
 ## Also fixed: cYYYY shorthand normalization
 
 Pre-fix, the compact `cYYYY` shorthand (e.g. `start_date=c1920`) flowed through the existing decade/century pipeline and produced **invalid EDTF output** like `start_date:edtf=1919XX` — a malformed string that JOSM's downstream EDTF check would then re-flag, leaving the user worse off than before they accepted the fix.
 
-The validator now handles `cYYYY` shorthand in three magnitude bands:
+The validator now handles `cYYYY` shorthand in five magnitude/sign cases:
 
 - **`abs(YYYY) >= 100`** — unambiguous "circa year": rewrite to the canonical EDTF `~YYYY` triple. `c1920` → `start_date=1920, :edtf=1920~, :raw=c1920`. `c-1500` → `start_date=-1500, :edtf=-1500~`. `c1920bc` flips the sign directly with no N-1 offset → `start_date=-1920, :edtf=-1920~`.
 - **`22 <= YYYY <= 99`** — ambiguous between "circa year YY" and "the YYth century". Fires the new **4241** unfixable warning. Manual review required to pick one.

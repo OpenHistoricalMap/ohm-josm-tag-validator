@@ -269,6 +269,23 @@ public class DateTagTest extends Test {
     private static final Pattern AMBIGUOUS_CENTURY_DECADE =
         Pattern.compile("^~?\\d+00s( BCE?)?$");
 
+    /**
+     * Abbreviated-tail range like {@code 1716/17} (meaning {@code 1716/1717})
+     * or {@code 1850/52} (meaning {@code 1850/1852}). 4-digit start year then
+     * 2-digit suffix sharing the same century-decade prefix. Captures the
+     * 4-digit year (group 1) and the 2-digit tail (group 2).
+     */
+    private static final Pattern SLASH_TAIL_RANGE =
+        Pattern.compile("^(\\d{4})/(\\d{2})$");
+
+    /**
+     * Implausibly-ancient-start range like {@code 0000..1850} or
+     * {@code 00..1850}. One or more leading zeros, "..", then a 1-4 digit
+     * year. Captures the upper-bound year (group 1).
+     */
+    private static final Pattern ZERO_DOTS_RANGE =
+        Pattern.compile("^0+\\.\\.(\\d{1,4})$");
+
     /** The bot username trusted to have authored correct {@code :raw} values. */
     private static final String TRUSTED_BOT_USER = "tagcleanupbot";
 
@@ -1494,6 +1511,69 @@ public class DateTagTest extends Test {
                 .primitives(p)
                 .build());
             return;
+        }
+
+        // Path 0b: "YYYY/YY" abbreviated-tail range (e.g. "1716/17",
+        //   "1850/52"). The 2-digit suffix replaces the last two digits of
+        //   the 4-digit year, so "1850/52" expands to "1850/1852". Common
+        //   in OHM contributors' input. Pre-fix, edtf-java accepted the
+        //   short form as valid EDTF and produced wrong values:
+        //   end_date=1850/52 came out as end_date=5299. Now we expand
+        //   first and route through the existing triple-fix pipeline.
+        //
+        //   Only fires when the resulting end >= start — otherwise the
+        //   suffix wraps a century boundary (e.g. "1899/01" would expand
+        //   to "1801", less than the start). Wrap cases fall through to
+        //   whatever the existing pipeline does.
+        Matcher slashTail = SLASH_TAIL_RANGE.matcher(base);
+        if (slashTail.matches()) {
+            int year1 = Integer.parseInt(slashTail.group(1));
+            int suffix2 = Integer.parseInt(slashTail.group(2));
+            int year2 = (year1 / 100) * 100 + suffix2;
+            if (year2 >= year1) {
+                String year1Str = String.format("%04d", year1);
+                String year2Str = String.format("%04d", year2);
+                String fullEdtf = year1Str + "/" + year2Str;
+                String newBase = "start_date".equals(baseKey) ? year1Str : year2Str;
+                Command fix = buildTripleFix(p, baseKey, newBase, fullEdtf, base);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: abbreviated-tail range; rewrite as {0}={2}, "
+                                + "{0}:edtf={3}, {0}:raw={1}?"),
+                                baseKey, base, newBase, fullEdtf)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
+        }
+
+        // Path 0c: "0000..YYYY" implausibly-ancient-start range. The leading
+        //   zeros are typically a placeholder/error rather than a literal
+        //   year-zero claim, so when YYYY > 400 (clearly post-classical) we
+        //   collapse to the open-start EDTF "/YYYY" form. Both start_date
+        //   and end_date use YYYY as the base value (per OHM convention,
+        //   the only well-defined year in the input becomes the date).
+        //
+        //   Below the YYYY > 400 threshold the input could be a real
+        //   ancient range; falls through.
+        Matcher zeroDots = ZERO_DOTS_RANGE.matcher(base);
+        if (zeroDots.matches()) {
+            int upperYear = Integer.parseInt(zeroDots.group(1));
+            if (upperYear > 400) {
+                String upperYearStr = String.format("%04d", upperYear);
+                String fullEdtf = "/" + upperYearStr;
+                Command fix = buildTripleFix(p, baseKey, upperYearStr, fullEdtf, base);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: implausibly-ancient leading zeros; rewrite as "
+                                + "{0}={2}, {0}:edtf={3}, {0}:raw={1}?"),
+                                baseKey, base, upperYearStr, fullEdtf)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
         }
 
         // Path 0: Julian calendar or Julian day number.

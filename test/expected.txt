@@ -222,6 +222,13 @@ E   n/9000014   [ohm] Invalid date - *_date; fixable, please review   end_date=1
 E   n/9000015   [ohm] Invalid date - *_date; fixable, please review   start_date=c19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=c19
 E   n/9000016   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
 E   n/9000017   [ohm] Invalid date - *_date; fixable, please review   end_date=-1 ? end_date=-0001, end_date:edtf=-0001, end_date:raw=-1
+E   n/9000018   [ohm] Invalid date - *_date; fixable, please review   start_date=1850/52: abbreviated-tail range; rewrite as start_date=1850, start_date:edtf=1850/1852, start_date:raw=1850/52?
+E   n/9000019   [ohm] Invalid date - *_date; fixable, please review   end_date=1850/52: abbreviated-tail range; rewrite as end_date=1852, end_date:edtf=1850/1852, end_date:raw=1850/52?
+E   n/9000020   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1899/01 ? start_date=1899, start_date:edtf=1899/01
+E   n/9000021   [ohm] Invalid date - *_date; fixable, please review   start_date=0000..1850: implausibly-ancient leading zeros; rewrite as start_date=1850, start_date:edtf=/1850, start_date:raw=0000..1850?
+E   n/9000022   [ohm] Invalid date - *_date; fixable, please review   end_date=0000..1900: implausibly-ancient leading zeros; rewrite as end_date=1900, end_date:edtf=/1900, end_date:raw=0000..1900?
+E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
+E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   start_date=0000..0050 ? start_date=0000, start_date:edtf=0000/0050, start_date:raw=0000..0050
 E   n/9100011   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   n/9100221   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
 E   n/9100222   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
@@ -249,7 +256,7 @@ E   r/2742420   [ohm] Invalid date - *_date; fixable, please review   end_date=2
 E   r/2742420   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2747751   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920 ? start_date=1920, start_date:edtf=1920~, start_date:raw=c1920
 E   r/2747751   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   r/2796293   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1716/17 ? start_date=1716, start_date:edtf=1716/17
+E   r/2796293   [ohm] Invalid date - *_date; fixable, please review   start_date=1716/17: abbreviated-tail range; rewrite as start_date=1716, start_date:edtf=1716/1717, start_date:raw=1716/17?
 E   r/2796293   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2825526   [ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY   end_date=1959-90-15: month 90 is out of range. Trim to 1959?
 E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630 ? end_date=0630, end_date:edtf=1930/0630, end_date:raw=1930-0630
@@ -289,16 +296,16 @@ E   w/198179715   [ohm] Invalid date - *_date; fixable, please review   end_date
 E   w/198180597   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=Present means an ongoing feature. Clear base and :edtf, mark with :raw=Present?
 E   w/198182337   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=Present means an ongoing feature. Clear base and :edtf, mark with :raw=Present?
 E   w/198182338   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=Present means an ongoing feature. Clear base and :edtf, mark with :raw=Present?
-E   w/198190290   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198199202   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1800 ? start_date=0000, start_date:edtf=0000/1800, start_date:raw=0..1800
-E   w/198199203   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823 ? start_date=0000, start_date:edtf=0000/1823, start_date:raw=0..1823
-E   w/198199204   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198199205   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823 ? start_date=0000, start_date:edtf=0000/1823, start_date:raw=0..1823
-E   w/198199206   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823 ? start_date=0000, start_date:edtf=0000/1823, start_date:raw=0..1823
-E   w/198199207   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823 ? start_date=0000, start_date:edtf=0000/1823, start_date:raw=0..1823
-E   w/198199209   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198199210   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823 ? start_date=0000, start_date:edtf=0000/1823, start_date:raw=0..1823
-E   w/198199211   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823 ? start_date=0000, start_date:edtf=0000/1823, start_date:raw=0..1823
+E   w/198190290   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198199202   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1800: implausibly-ancient leading zeros; rewrite as start_date=1800, start_date:edtf=/1800, start_date:raw=0..1800?
+E   w/198199203   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823: implausibly-ancient leading zeros; rewrite as start_date=1823, start_date:edtf=/1823, start_date:raw=0..1823?
+E   w/198199204   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198199205   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823: implausibly-ancient leading zeros; rewrite as start_date=1823, start_date:edtf=/1823, start_date:raw=0..1823?
+E   w/198199206   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823: implausibly-ancient leading zeros; rewrite as start_date=1823, start_date:edtf=/1823, start_date:raw=0..1823?
+E   w/198199207   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823: implausibly-ancient leading zeros; rewrite as start_date=1823, start_date:edtf=/1823, start_date:raw=0..1823?
+E   w/198199209   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198199210   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823: implausibly-ancient leading zeros; rewrite as start_date=1823, start_date:edtf=/1823, start_date:raw=0..1823?
+E   w/198199211   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1823: implausibly-ancient leading zeros; rewrite as start_date=1823, start_date:edtf=/1823, start_date:raw=0..1823?
 E   w/198200297   [ohm] Invalid date - *_date; fixable, please review   start_date=2008-04..2008-09 ? start_date=2008-04, start_date:edtf=2008-04/2008-09, start_date:raw=2008-04..2008-09
 E   w/198200313   [ohm] Invalid date - *_date; fixable, please review   end_date=2011..2012-03-06 ? end_date=2012-03-06, end_date:edtf=2011/2012-03-06, end_date:raw=2011..2012-03-06
 E   w/198200314   [ohm] Invalid date - *_date; fixable, please review   end_date=2011..2012-03-06 ? end_date=2012-03-06, end_date:edtf=2011/2012-03-06, end_date:raw=2011..2012-03-06
@@ -308,12 +315,12 @@ E   w/198201100   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/198201103   [ohm] Invalid date - *_date; fixable, please review   start_date=1970..1971-12 ? start_date=1970, start_date:edtf=1970/1971-12, start_date:raw=1970..1971-12
 E   w/198201104   [ohm] Invalid date - *_date; fixable, please review   start_date=1970..1971-12 ? start_date=1970, start_date:edtf=1970/1971-12, start_date:raw=1970..1971-12
 E   w/198201106   [ohm] Invalid date - *_date; fixable, please review   start_date=1970..1971-12 ? start_date=1970, start_date:edtf=1970/1971-12, start_date:raw=1970..1971-12
-E   w/198201248   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198201255   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198201496   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198201497   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198201498   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198201499   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
+E   w/198201248   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198201255   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198201496   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198201497   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198201498   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198201499   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198201626   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=end 12 cannot be normalized.
 E   w/198201626   [ohm] Invalid date - *_date; fixable, please review   end_date=mid C20 ? end_date=1970, end_date:edtf=1930~/1970~, end_date:raw=mid C20
 E   w/198201790   [ohm] Invalid date - *_date; fixable, please review   start_date=1902/2018 ? start_date=1902, start_date:edtf=1902/2018, start_date:raw=1902/2018
@@ -323,11 +330,11 @@ E   w/198258773   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/198258774   [ohm] Invalid date - *_date; fixable, please review   start_date=1953..1960-09-16 ? start_date=1953, start_date:edtf=1953/1960-09-16, start_date:raw=1953..1960-09-16
 E   w/198258775   [ohm] Invalid date - *_date; fixable, please review   start_date=1960-09-16..1963 ? start_date=1960-09-16, start_date:edtf=1960-09-16/1963, start_date:raw=1960-09-16..1963
 E   w/198265842   [ohm] Invalid date - *_date; fixable, please review   start_date=1960-09-16..1963 ? start_date=1960-09-16, start_date:edtf=1960-09-16/1963, start_date:raw=1960-09-16..1963
-E   w/198286014   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900 ? start_date=0000, start_date:edtf=0000/1900, start_date:raw=0..1900
-E   w/198286085   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1500 ? start_date=0000, start_date:edtf=0000/1500, start_date:raw=0..1500
-E   w/198286144   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198286145   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1885 ? start_date=0000, start_date:edtf=0000/1885, start_date:raw=0..1885
-E   w/198286146   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
+E   w/198286014   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900: implausibly-ancient leading zeros; rewrite as start_date=1900, start_date:edtf=/1900, start_date:raw=0..1900?
+E   w/198286085   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1500: implausibly-ancient leading zeros; rewrite as start_date=1500, start_date:edtf=/1500, start_date:raw=0..1500?
+E   w/198286144   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198286145   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1885: implausibly-ancient leading zeros; rewrite as start_date=1885, start_date:edtf=/1885, start_date:raw=0..1885?
+E   w/198286146   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198286949   [ohm] Invalid date - *_date; fixable, please review   start_date=1890-07-27..1915 ? start_date=1890-07-27, start_date:edtf=1890-07-27/1915, start_date:raw=1890-07-27..1915
 E   w/198289840   [ohm] Invalid date - *_date; fixable, please review   start_date=1724? ? start_date=1724, start_date:edtf=1724?, start_date:raw=1724?
 E   w/198292477   [ohm] Invalid date - *_date; fixable, please review   start_date=1750? ? start_date=1750, start_date:edtf=1750?, start_date:raw=1750?
@@ -341,10 +348,10 @@ E   w/198533016   [ohm] Invalid date - *_date; fixable, please review   end_date
 E   w/198533018   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=2019-07-27, end_date:raw=Jul 27, 2019
 E   w/198540418   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   w/198542607   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
-E   w/198544317   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900 ? start_date=0000, start_date:edtf=0000/1900, start_date:raw=0..1900
-E   w/198544318   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900 ? start_date=0000, start_date:edtf=0000/1900, start_date:raw=0..1900
-E   w/198544532   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
-E   w/198544533   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802 ? start_date=0000, start_date:edtf=0000/1802, start_date:raw=0..1802
+E   w/198544317   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900: implausibly-ancient leading zeros; rewrite as start_date=1900, start_date:edtf=/1900, start_date:raw=0..1900?
+E   w/198544318   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900: implausibly-ancient leading zeros; rewrite as start_date=1900, start_date:edtf=/1900, start_date:raw=0..1900?
+E   w/198544532   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
+E   w/198544533   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198556160   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=?998 cannot be normalized.
 E   w/198556397   [ohm] Invalid date - *_date; fixable, please review   start_date=1980-1990 ? start_date=1980, start_date:edtf=1980/1990, start_date:raw=1980-1990
 E   w/198556532   [ohm] Invalid date - *_date; fixable, please review   start_date=1850-1970 ? start_date=1850, start_date:edtf=1850/1970, start_date:raw=1850-1970
@@ -558,7 +565,7 @@ E   w/200871890   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/200914282   [ohm] Invalid date - *_date; fixable, please review   start_date=2018 Dec ? start_date=2018-12, start_date:edtf=2018-12, start_date:raw=2018 Dec
 E   w/200914298   [ohm] Invalid date - *_date; fixable, please review   start_date=1896 / 1910 ? start_date=1896, start_date:edtf=1896/1910, start_date:raw=1896 / 1910
 E   w/200914312   [ohm] Invalid date - *_date; fixable, please review   start_date=1544 / 1700 ? start_date=1544, start_date:edtf=1544/1700, start_date:raw=1544 / 1700
-E   w/200914318   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1905/06 ? start_date=1905, start_date:edtf=1905/06
+E   w/200914318   [ohm] Invalid date - *_date; fixable, please review   start_date=1905/06: abbreviated-tail range; rewrite as start_date=1905, start_date:edtf=1905/1906, start_date:raw=1905/06?
 E   w/200924284   [ohm] Invalid date - *_date; fixable, please review   start_date=1632 / 1687 ? start_date=1632, start_date:edtf=1632/1687, start_date:raw=1632 / 1687
 E   w/200924642   [ohm] Invalid date - *_date; fixable, please review   start_date=2024-Feb-15 ? start_date=2024-02-15, start_date:edtf=2024-02-15, start_date:raw=2024-Feb-15
 E   w/200943805   [ohm] Invalid date - *_date; fixable, please review   start_date=1880/1891 ? start_date=1880, start_date:edtf=1880/1891, start_date:raw=1880/1891
@@ -689,7 +696,7 @@ E   w/201820417   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/201840135   [ohm] Invalid date - *_date; fixable, please review   start_date=first half of 1940 ? start_date=1940-01, start_date:edtf=1940-01/1940-06, start_date:raw=first half of 1940
 E   w/201840136   [ohm] Invalid date - *_date; fixable, please review   start_date=first half of 1940 ? start_date=1940-01, start_date:edtf=1940-01/1940-06, start_date:raw=first half of 1940
 E   w/201864304   [ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY   start_date=1993-20-21: month 20 is out of range. Trim to 1993?
-E   w/201921254   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1910/11 ? start_date=1910, start_date:edtf=1910/11
+E   w/201921254   [ohm] Invalid date - *_date; fixable, please review   start_date=1910/11: abbreviated-tail range; rewrite as start_date=1910, start_date:edtf=1910/1911, start_date:raw=1910/11?
 E   w/201921824   [ohm] Invalid date - *_date; fixable, please review   end_date=1972/2002 ? end_date=2002, end_date:edtf=1972/2002, end_date:raw=1972/2002
 E   w/201921825   [ohm] Invalid date - *_date; fixable, please review   end_date=1972/2002 ? end_date=2002, end_date:edtf=1972/2002, end_date:raw=1972/2002
 E   w/201983599   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=1953-07-26;1975-05-31 cannot be normalized.

@@ -278,6 +278,16 @@ Suggested manual fix: replace with a real date or remove the tag.
 Before: `start_date=fall of 1814`  
 After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23 = fall), `start_date:raw=fall of 1814`.
 
+**4202 — abbreviated-tail range (`YYYY/YY`):** OHM contributors sometimes write a short form for ranges that share a century-decade prefix, e.g. `start_date=1716/17` for "1716/1717" or `end_date=1850/52` for "1850/1852". The validator expands the 2-digit suffix and writes a full triple. For `start_date`, the base is the lower year; for `end_date`, the upper year. Pre-fix, edtf-java accepted the short form as valid EDTF and produced gibberish base values (e.g. `end_date=1850/52` came out as `end_date=5299`). Wrap cases like `1899/01` (where the suffix would resolve to a year less than the start) deliberately fall through and are not autofixed.
+
+Before: `end_date=1850/52`  
+After autofix: `end_date=1852`, `end_date:edtf=1850/1852`, `end_date:raw=1850/52`.
+
+**4202 — implausibly-ancient leading zeros (`0000..YYYY`):** Inputs like `start_date=0000..1850` or `end_date=00..1900` are common when a contributor wanted to express "no known start" but wrote a placeholder year zero. When the upper bound `YYYY > 400` (clearly post-classical), the validator collapses to the open-start EDTF form `/YYYY` and uses `YYYY` as the base for both `start_date` and `end_date`. Below the threshold the input could be a real ancient range; falls through.
+
+Before: `start_date=0000..1850`  
+After autofix: `start_date=1850`, `start_date:edtf=/1850`, `start_date:raw=0000..1850`.
+
 ---
 
 ### Invalid date — *_date:edtf invalid
