@@ -487,30 +487,37 @@ public class DateTagTest extends Test {
         boolean isDec31 = month == 12 && day == 31;
 
         if (isStart && isJan1) {
-            // Possible false precision: start of year. We do not autofix
-            // because Jan 1 is also a legitimate date for many real
-            // events (laws taking effect, fiscal year boundaries, etc.);
-            // forum feedback flagged the auto-removal as too aggressive.
+            // Possible false precision: start of year. Unfixable per the
+            // 2026-04 forum feedback (auto-removal was too aggressive)
+            // and the v0.4.0 follow-up (issue #28: even an opt-in
+            // autofix is too easy to apply by mistake when batch-fixing,
+            // and Jan 1 is a legitimate real date often enough that the
+            // autofix shouldn't sit there as a one-click default).
             String yearStr = padAstronomicalYear(year);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_START)
-                .message(tr("[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01"),
-                         marktr("{0}={1} → {0}={2}"),
+                .message(tr("[ohm] Suspicious date - 01-01 start_date; unfixable, please review"),
+                         marktr("{0}={1}: Jan 1 is suspicious as a start_date — often "
+                            + "an artifact of false precision (someone typed YYYY-01-01 "
+                            + "when they meant YYYY) but also a legitimate date for many "
+                            + "real events (laws taking effect, fiscal year boundaries, "
+                            + "etc.). If the exact day is unknown, manually trim to "
+                            + "{0}={2}."),
                             baseKey, value, yearStr)
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isEnd && isDec31) {
             // Possible false precision: end of year. Same reasoning as
             // above — Dec 31 is a real date too often to autofix.
             String yearStr = padAstronomicalYear(year);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_END)
-                .message(tr("[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31"),
-                         marktr("{0}={1} → {0}={2}"),
+                .message(tr("[ohm] Suspicious date - 12-31 end_date; unfixable, please review"),
+                         marktr("{0}={1}: Dec 31 is suspicious as an end_date — often "
+                            + "an artifact of false precision (someone typed YYYY-12-31 "
+                            + "when they meant YYYY) but also a legitimate end date for "
+                            + "many real events (treaties signed, terms ending, etc.). "
+                            + "If the exact day is unknown, manually trim to {0}={2}."),
                             baseKey, value, yearStr)
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isStart && isDec31) {
             // Off-by-one: start on last day of year N almost certainly means year N+1.

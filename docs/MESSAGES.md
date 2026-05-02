@@ -110,22 +110,22 @@ Suggested manual fix: rewrite as `~50` if "circa year 50" was intended, or as a 
 
 | Code | Title |
 |------|-------|
-| 4212 | `[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01` |
-| 4213 | `[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31` |
+| 4212 | `[ohm] Suspicious date - 01-01 start_date; unfixable, please review` |
+| 4213 | `[ohm] Suspicious date - 12-31 end_date; unfixable, please review` |
 | 4214 | `[ohm] Suspicious date - 12-31 start_date; unfixable, please review` |
 | 4214 | `[ohm] Suspicious date - 01-01 end_date; unfixable, please review` |
 
-**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — at the year boundary that matches the role. Under OHM's conservative year-only convention, `start_date=YYYY` already starts at Jan 1 and `end_date=YYYY` already ends Dec 31, so the explicit form is functionally redundant.  
-**4212/4213 fix:** Trim to the bare year (e.g. `start_date=1875-01-01` → `start_date=1875`).  
-**4212/4213 description:** _{key}={value} → {key}={year}_
+**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — at the year boundary that matches the role. Under OHM's conservative year-only convention, `start_date=YYYY` already starts at Jan 1 and `end_date=YYYY` already ends Dec 31, so the explicit form is often functionally redundant. But Jan 1 / Dec 31 are also legitimate real dates often enough (laws taking effect, treaties signed, terms ending, fiscal year boundaries) that the autofix can't safely run on its own.  
+**4212/4213 fix:** None. As of v0.4.0 these are unfixable; even an opt-in autofix proved too easy to apply by mistake when batch-fixing. If the exact day is unknown, manually trim to the bare year.  
+**4212/4213 description:** _{key}={value}: Jan 1 / Dec 31 is suspicious as start_date / end_date — often false precision but also a legitimate real date. If the exact day is unknown, manually trim to {key}={year}._
 
 **4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — at the *opposite* year boundary for the role. Could be a typo (next/previous year intended) or a legitimate event-day boundary (e.g. a treaty signed Dec 31). Ambiguous; manual review only.  
 **4214 fix:** None.  
 **4214 description:** _{key}={value}: end-of-year used as start_date / start-of-year used as end_date. If the exact day is unknown, manually change to {key}={year} (the year this date falls in) or {key}={shifted} (next/previous year, if a typo)._
 
 **4212/4213 example:**  
-Before: `start_date=1875-01-01`  
-After autofix: `start_date=1875`.
+Trigger: `start_date=1875-01-01`.  
+Suggested manual fix: if the start was genuinely on Jan 1, 1875 (e.g. a law taking effect that day), leave alone; otherwise change to `start_date=1875` (the year only, dropping the false-precision day).
 
 **4214 example:**  
 Trigger: `start_date=1875-12-31`.  
