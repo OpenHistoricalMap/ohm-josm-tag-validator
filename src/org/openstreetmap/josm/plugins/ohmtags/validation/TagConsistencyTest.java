@@ -71,44 +71,49 @@ import org.openstreetmap.josm.data.validation.TestError;
  *       history before applying the tag (4319). Unfixable.</li>
  * </ul>
  *
- * <p><b>Source.</b>
+ * <p><b>Source.</b> The slot contract (loosened in v0.5):
+ * <ul>
+ *   <li>{@code source} (and numeric variants {@code source:N}) — URL or
+ *       text. Both placements are valid.</li>
+ *   <li>{@code source:name} (and {@code source:N:name}) — text only.</li>
+ *   <li>{@code source:url} (and {@code source:N:url}) — URL only.</li>
+ * </ul>
+ *
+ * <p>Concretely:
  * <ul>
  *   <li>Named features without any {@code source*} tag are warned — named
  *       features should document the provenance of their geometry and
  *       metadata.</li>
- *   <li>{@code source} or numeric-variant {@code source:N} set to the
- *       literal value {@code Wikipedia} or {@code Wikidata} (any case) is
- *       warned with a specific message — these aren't acceptable primary
- *       geometry sources regardless of whether companion
- *       {@code wikipedia=*} or {@code wikidata=*} tags exist.</li>
- *   <li>{@code source} / {@code source:N} set to a URL-like value missing
- *       a scheme ({@code example.com/page}) is warned with an autofix
- *       prepending {@code https://}.</li>
- *   <li>{@code source} / {@code source:N} set to any other non-URL value
- *       is warned with an autofix renaming the key to {@code source:name}
- *       / {@code source:N:name} and clearing the original — the user then
- *       supplies a proper URL.</li>
- *   <li>{@code source:N:name} without a matching {@code source:N} is
- *       warned — the URL slot is empty.</li>
+ *   <li>{@code source} / {@code source:N} set to the literal value
+ *       {@code Wikipedia} or {@code Wikidata} (any case) is warned —
+ *       these aren't acceptable primary geometry sources regardless of
+ *       whether companion {@code wikipedia=*} / {@code wikidata=*} tags
+ *       exist.</li>
+ *   <li>Any {@code source[:N]?[:url]?} key set to a URL-like value
+ *       missing a scheme ({@code example.com/page}) is warned with an
+ *       autofix prepending {@code https://} (rule 4307).</li>
+ *   <li>{@code source[:N]?:name} containing a URL (rule 4324) is moved
+ *       to {@code source[:N]?:url} when that slot is empty; otherwise
+ *       flagged for manual review.</li>
+ *   <li>{@code source[:N]?:url} containing non-URL text (rule 4325) is
+ *       moved through a fallback chain: companion {@code source[:N]?},
+ *       then {@code source[:N]?:name}, then {@code source[:N]?:note};
+ *       if all three are full, flagged for manual review.</li>
+ *   <li>When {@code source} and {@code source:url} both hold URLs but
+ *       differ (rule 4312), the {@code :url} value is moved to the next
+ *       available {@code source:N} slot.</li>
+ *   <li>When a {@code source} value contains semicolons,
+ *       {@link #checkSemicolonSeparatedSource} splits the items: 1 URL
+ *       + 1 text → {@code source=text}, {@code source:url=URL}
+ *       (rule 4314, autofixable); multiple URLs → enumerated into
+ *       {@code source:N} slots past the highest existing index
+ *       (rule 4315, autofixable); multiple text strings → warn only,
+ *       semicolons may be legitimate punctuation in a single citation
+ *       (rule 4316, unfixable); 3+ mixed items → warn only (rule 4317).</li>
  *   <li>Any attribute-scoped source ({@code <attr>:source}, e.g.
  *       {@code start_date:source}) set to {@code Wikipedia} requires a
  *       companion {@code wikipedia=*} tag; similarly {@code Wikidata}
  *       requires {@code wikidata=*}. Otherwise warned.</li>
- *   <li>When both {@code source} and {@code source:url} exist,
- *       {@link #checkSourceUrlConsolidation} folds them together: if the
- *       two values are identical, the redundant {@code source:url} is
- *       deleted; otherwise the existing {@code source} is moved to
- *       {@code source:name} (appended with {@code ;} if {@code source:name}
- *       already exists), {@code source:url} is renamed to {@code source},
- *       and {@code source:url} is deleted.</li>
- *   <li>When a {@code source} value contains semicolons,
- *       {@link #checkSemicolonSeparatedSource} splits the items based on
- *       their shape: exactly-one-URL + exactly-one-text is split into
- *       {@code source} and {@code source:name}; multiple URLs are
- *       enumerated into {@code source}, {@code source:1}, etc.; multiple
- *       text items are enumerated into {@code source:name},
- *       {@code source:1:name}, etc.; 3+ mixed items get a warning without
- *       autofix.</li>
  *   <li>Sub-keys {@code source:id}, {@code source:archive_url}, and
  *       {@code source:wikidata} are not flagged — they are recognized
  *       legitimate source-related tags.</li>
@@ -123,15 +128,14 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_MISSING_SOURCE = 4303;
     protected static final int CODE_SOURCE_IS_WIKIPEDIA = 4304;
     protected static final int CODE_SOURCE_IS_WIKIDATA = 4305;
-    protected static final int CODE_SOURCE_NOT_URL = 4306;
+    // 4306: retired in v0.5 — non-URL `source` is now valid (slot typing loosened).
     protected static final int CODE_SOURCE_MISSING_SCHEME = 4307;
     protected static final int CODE_ATTR_SOURCE_WIKIPEDIA = 4308;
     protected static final int CODE_ATTR_SOURCE_WIKIDATA = 4309;
-    protected static final int CODE_SOURCE_NAME_WITHOUT_URL = 4310;
-    // New error codes for this revision.
-    protected static final int CODE_SOURCE_URL_REDUNDANT = 4311;
+    // 4310: retired in v0.5 — `source:name` without companion is a valid state.
+    // 4311: retired in v0.5 — duplicate values in source/source:url are harmless.
     protected static final int CODE_SOURCE_URL_CONFLICTS = 4312;
-    protected static final int CODE_SOURCE_URL_WITH_NAME = 4313;
+    // 4313: retired in v0.5 — `source` text + `source:url` URL is a valid layout.
     protected static final int CODE_SOURCE_SEMICOLON_URL_TEXT = 4314;
     protected static final int CODE_SOURCE_SEMICOLON_MULTI_URL = 4315;
     protected static final int CODE_SOURCE_SEMICOLON_MULTI_TEXT = 4316;
@@ -139,9 +143,11 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_RELATION_LABEL_MEMBER = 4318;
     protected static final int CODE_HISTORIC_SUSPICIOUS = 4319;
     protected static final int CODE_NAME_HAS_HISTORIC = 4320;
-    protected static final int CODE_SOURCE_NAME_CONFLICT = 4321;
-    protected static final int CODE_SOURCE_SEMICOLON_MULTI_URL_CONFLICT = 4322;
-    protected static final int CODE_SOURCE_SEMICOLON_MULTI_TEXT_CONFLICT = 4323;
+    // 4321: retired in v0.5 — non-URL `source` is now valid even with :name.
+    // 4322: retired in v0.5 — multi-URL split now always appends past max source:N.
+    // 4323: retired in v0.5 — multi-text split now always appends past max source:N.
+    protected static final int CODE_SOURCE_NAME_HAS_URL = 4324;
+    protected static final int CODE_SOURCE_URL_HAS_TEXT = 4325;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -302,6 +308,7 @@ public class TagConsistencyTest extends Test {
         // Source:url consolidation runs before the per-key source check so
         // that if it fires, it does so against the un-processed state.
         checkSourceUrlConsolidation(p);
+        checkSourceNameContents(p);
 
         // Suspicious historic=*. OHM convention is that historic=* applies
         // to entities that have actually passed into history; using it on
@@ -361,23 +368,6 @@ public class TagConsistencyTest extends Test {
                 && !SOURCE_NAME_KEY.matcher(key).matches()) {
                 checkAttrSourceTag(p, key, p.get(key), attrSourceMatch.group(1));
                 continue;
-            }
-
-            Matcher sourceNameMatch = SOURCE_NAME_KEY.matcher(key);
-            if (sourceNameMatch.matches()) {
-                String numIdx = sourceNameMatch.group(1);
-                String companionSourceKey = numIdx == null
-                    ? "source" : "source:" + numIdx;
-                if (p.get(companionSourceKey) == null
-                    || p.get(companionSourceKey).isEmpty()) {
-                    errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_WITHOUT_URL)
-                        .message(tr("[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review"),
-                                 marktr("{0}={1} is set, but {2} is empty. "
-                                    + "Would you like to add a URL for the source?"),
-                                    key, p.get(key), companionSourceKey)
-                        .primitives(p)
-                        .build());
-                }
             }
         }
 
@@ -607,8 +597,9 @@ public class TagConsistencyTest extends Test {
      *
      * <p>If the value contains semicolons, hand off to
      * {@link #checkSemicolonSeparatedSource} for the split logic. Otherwise
-     * run the single-value checks (Wikipedia/Wikidata, URL with/without
-     * scheme, non-URL rename-to-:name).
+     * the single-value checks: Wikipedia/Wikidata literals (4304/4305) and
+     * URL missing scheme (4307). Plain text in {@code source} is valid under
+     * the v0.5 contract — no rule fires for that case.
      */
     private void checkSourceTag(OsmPrimitive p, String key, String value, String numIdx) {
         if (value == null || value.isEmpty()) return;
@@ -645,59 +636,53 @@ public class TagConsistencyTest extends Test {
             return;
         }
 
-        // Already a proper URL? Nothing to flag.
-        if (URL_WITH_SCHEME.matcher(value).matches()) return;
-
-        // URL-shaped but missing scheme? Offer to prepend https://
-        if (URL_MISSING_SCHEME.matcher(value).matches()) {
-            String fixed = "https://" + value;
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_MISSING_SCHEME)
-                .message(tr("[ohm] Source optimization - repair URL missing ''http[s]://''"),
-                         marktr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?"),
-                            key, value)
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
-            return;
+        // URL-shaped but missing scheme? Offer to prepend https://. (4307
+        // also runs against source:url / source:N:url in checkSourceUrlPair.)
+        if (!URL_WITH_SCHEME.matcher(value).matches()
+            && URL_MISSING_SCHEME.matcher(value).matches()) {
+            emitMissingSchemeFix(p, key, value);
         }
+        // Otherwise — URL or plain text — both valid in the source slot.
+    }
 
-        // Non-URL, non-Wikipedia/Wikidata source. We want to move the value
-        // into the companion :name slot and clear the URL slot. But if the
-        // companion :name already holds a value, the move would silently
-        // overwrite it — so split into two paths: fixable when :name is empty,
-        // unfixable when :name is occupied (manual review required to decide
-        // whether to merge, replace, or move to an enumerated slot).
-        String renamedKey = numIdx == null
-            ? "source:name" : "source:" + numIdx + ":name";
-        String existingRenamedValue = p.get(renamedKey);
-        boolean renamedTargetOccupied =
-            existingRenamedValue != null && !existingRenamedValue.isEmpty();
-
-        if (renamedTargetOccupied) {
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_CONFLICT)
-                .message(tr("[ohm] Source mismatch - non-URL source with existing :name companion; unfixable, please review"),
-                         marktr("{0}={1} is not a URL but {2}={3} already holds a value. "
-                            + "Manual review needed: merge, replace, or move to an "
-                            + "enumerated source:N:name slot."),
-                            key, value, renamedKey, existingRenamedValue)
-                .primitives(p)
-                .build());
-            return;
-        }
-
-        List<Command> cmds = new ArrayList<>();
-        cmds.add(new ChangePropertyCommand(Arrays.asList(p), renamedKey, value));
-        cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
-        Command fix = new SequenceCommand(tr("Rename {0} to {1}", key, renamedKey), cmds);
-        errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NOT_URL)
-            .message(tr("[ohm] Source optimization - move non-URL source tags to source:name"),
-                     marktr("{0}={1} is not a URL. Move to {2} and leave {0} blank "
-                        + "for a URL?"),
-                        key, value, renamedKey)
+    /**
+     * Emit the rule 4307 finding (URL missing scheme) with autofix that
+     * prepends {@code https://}. Used by both {@link #checkSourceTag}
+     * (for {@code source} / {@code source:N}) and
+     * {@link #checkSourceUrlPair} (for {@code source:url} / {@code source:N:url}).
+     */
+    private void emitMissingSchemeFix(OsmPrimitive p, String key, String value) {
+        String fixed = "https://" + value;
+        Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_MISSING_SCHEME)
+            .message(tr("[ohm] Source optimization - repair URL missing ''http[s]://''"),
+                     marktr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?"),
+                        key, value)
             .primitives(p)
             .fix(() -> fix)
             .build());
+    }
+
+    /**
+     * Compute the next available {@code source:N} index on a primitive.
+     * Scans all keys matching {@code ^source:(\d+)$}, returns
+     * {@code max + 1}, or {@code 1} if no such keys exist.
+     *
+     * <p>Used by autofixes that need to enumerate values into numbered
+     * {@code source} slots: rule 4312 case 2 (different URLs in
+     * {@code source} and {@code source:url}), rule 4315 (multi-URL split),
+     * rule 4316 (multi-text split). Always placing past the existing
+     * maximum guarantees no clobbering and tolerates gaps.
+     */
+    private static int nextSourceIndex(OsmPrimitive p) {
+        return p.keySet().stream()
+            .map(SOURCE_KEY::matcher)
+            .filter(Matcher::matches)
+            .map(m -> m.group(1))
+            .filter(g -> g != null)
+            .mapToInt(Integer::parseInt)
+            .max()
+            .orElse(0) + 1;
     }
 
     /**
@@ -705,14 +690,19 @@ public class TagConsistencyTest extends Test {
      *
      * <p>Cases, based on classification of each semicolon-separated item:
      * <ul>
-     *   <li><b>2 items, one URL + one text.</b> Warn with autofix: URL →
-     *       {@code source}, text → {@code source:name}.</li>
-     *   <li><b>2+ items, all URLs.</b> Warn with autofix enumerating into
-     *       {@code source}, {@code source:1}, {@code source:2}, etc.</li>
-     *   <li><b>2+ items, all text.</b> Warn with autofix enumerating into
-     *       {@code source:name}, {@code source:1:name}, etc. (existing
-     *       {@code source} untouched.)</li>
-     *   <li><b>3+ items, mixed URL and text.</b> Warn, no autofix.</li>
+     *   <li><b>2 items, one URL + one text.</b> Rule 4314: write
+     *       {@code source=text} and {@code source:url=URL}. If
+     *       {@code source:url} already holds a different value, emit
+     *       unfixable variant under the same code.</li>
+     *   <li><b>2+ items, all URLs.</b> Rule 4315: enumerate into
+     *       {@code source}, {@code source:N+1}, ... using the shared
+     *       enumeration convention (always appendable past max-existing
+     *       index).</li>
+     *   <li><b>2+ items, all text.</b> Rule 4316: same enumeration
+     *       convention into {@code source} slots (text now valid in
+     *       {@code source}).</li>
+     *   <li><b>3+ items, mixed URL and text.</b> Rule 4317: warn, no
+     *       autofix.</li>
      * </ul>
      *
      * <p>Semicolons inside a URL (e.g. {@code jsessionid=XXX}) will be
@@ -738,130 +728,67 @@ public class TagConsistencyTest extends Test {
             }
         }
 
-        // Case: exactly 2 items, one URL + one text.
+        // Case: exactly 2 items, one URL + one text. Under v0.5 contract:
+        // source=text, source:url=URL.
         if (items.size() == 2 && urlCount == 1 && textCount == 1) {
             String urlPart = URL_WITH_SCHEME.matcher(items.get(0)).matches()
                 ? items.get(0) : items.get(1);
             String textPart = urlPart.equals(items.get(0)) ? items.get(1) : items.get(0);
+
+            String existingUrl = p.get("source:url");
+            boolean urlSlotEmpty = existingUrl == null || existingUrl.isEmpty();
+            boolean urlSlotMatches = urlPart.equals(existingUrl);
+
+            if (!urlSlotEmpty && !urlSlotMatches) {
+                // source:url already holds a different URL — autofix would
+                // clobber it.
+                errors.add(TestError.builder(this, Severity.WARNING,
+                                             CODE_SOURCE_SEMICOLON_URL_TEXT)
+                    .message(tr("[ohm] Source mismatch - source contains 1 URL & 1 text string but source:url already holds a different value; unfixable, please review"),
+                             marktr("{0}={1}: cannot split into source={2} and source:url={3} "
+                                + "because source:url already holds {4}. Manual review needed."),
+                                key, value, textPart, urlPart, existingUrl)
+                    .primitives(p)
+                    .build());
+                return;
+            }
+
             List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, urlPart));
-            // Respect existing source:name if present — use the append logic
-            // consistent with source:url consolidation.
-            String existingName = p.get("source:name");
-            String newName = (existingName == null || existingName.isEmpty())
-                ? textPart
-                : existingName + ";" + textPart;
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:name", newName));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, textPart));
+            if (urlSlotEmpty) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", urlPart));
+            }
             Command fix = new SequenceCommand(
-                tr("Split source into URL and name"), cmds);
+                tr("Split source into text and source:url"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_URL_TEXT)
-                .message(tr("[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name"),
-                         marktr("{0}={1}: move URL to source and text to source:name?"), key, value)
+                .message(tr("[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url"),
+                         marktr("{0}={1}: move text to source and URL to source:url?"), key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
             return;
         }
 
-        // Case: all URLs (2+).
+        // Case: all URLs (2+). Enumerate per the shared convention.
         if (urlCount == items.size()) {
-            // Enumerated targets: items.get(1) -> source:1, ..., items.get(N-1) -> source:N-1.
-            // The source -> items.get(0) write is a self-overwrite of the
-            // semicolon-list value being split, so it's intentional. The
-            // enumerated targets must not already hold values, or we'd
-            // silently clobber them.
-            String firstOccupied = null;
-            String firstOccupiedValue = null;
-            for (int i = 1; i < items.size(); i++) {
-                String slot = "source:" + i;
-                String existing = p.get(slot);
-                if (existing != null && !existing.isEmpty()) {
-                    firstOccupied = slot;
-                    firstOccupiedValue = existing;
-                    break;
-                }
-            }
-            if (firstOccupied != null) {
-                errors.add(TestError.builder(this, Severity.WARNING,
-                                             CODE_SOURCE_SEMICOLON_MULTI_URL_CONFLICT)
-                    .message(tr("[ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review"),
-                             marktr("{0}={1}: cannot enumerate into source, source:1, ... "
-                                + "because {2}={3} already holds a value. Manual review needed: "
-                                + "merge, replace, or shift to higher source:# slots."),
-                                key, value, firstOccupied, firstOccupiedValue)
-                    .primitives(p)
-                    .build());
-                return;
-            }
-            List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", items.get(0)));
-            for (int i = 1; i < items.size(); i++) {
-                cmds.add(new ChangePropertyCommand(Arrays.asList(p),
-                                                   "source:" + i, items.get(i)));
-            }
-            Command fix = new SequenceCommand(tr("Enumerate source URLs"), cmds);
-            errors.add(TestError.builder(this, Severity.WARNING,
-                                         CODE_SOURCE_SEMICOLON_MULTI_URL)
-                .message(tr("[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys"),
-                         marktr("{0}={1}: enumerate into source, source:1, source:2, ...?"),
-                            key, value)
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
+            emitMultiUrlSplit(p, key, value, items);
             return;
         }
 
-        // Case: all text (2+).
+        // Case: all text (2+). Warn only — semicolons in text are
+        // ambiguous: they may be legitimate punctuation, not a multi-source
+        // delimiter. Manual review required.
         if (textCount == items.size()) {
-            // Targets: items.get(0) -> source:name, items.get(1) -> source:1:name,
-            // ..., items.get(N-1) -> source:N-1:name. None of these is a
-            // self-overwrite of `key` (the source tag), so every target slot
-            // must be checked for an existing value.
-            String firstOccupied = null;
-            String firstOccupiedValue = null;
-            for (int i = 0; i < items.size(); i++) {
-                String slot = (i == 0) ? "source:name" : "source:" + i + ":name";
-                String existing = p.get(slot);
-                if (existing != null && !existing.isEmpty()) {
-                    firstOccupied = slot;
-                    firstOccupiedValue = existing;
-                    break;
-                }
-            }
-            if (firstOccupied != null) {
-                errors.add(TestError.builder(this, Severity.WARNING,
-                                             CODE_SOURCE_SEMICOLON_MULTI_TEXT_CONFLICT)
-                    .message(tr("[ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review"),
-                             marktr("{0}={1}: cannot enumerate into source:name, source:1:name, ... "
-                                + "because {2}={3} already holds a value. Manual review needed: "
-                                + "merge, replace, or shift to higher source:#:name slots."),
-                                key, value, firstOccupied, firstOccupiedValue)
-                    .primitives(p)
-                    .build());
-                return;
-            }
-            List<Command> cmds = new ArrayList<>();
-            // Existing source tag is untouched per spec. Text items go into
-            // source:name (and enumerated source:N:name variants).
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p),
-                                               "source:name", items.get(0)));
-            for (int i = 1; i < items.size(); i++) {
-                cmds.add(new ChangePropertyCommand(Arrays.asList(p),
-                                                   "source:" + i + ":name", items.get(i)));
-            }
-            // Clear the combined-value source tag since the pieces are now
-            // redistributed. The slot-conflict check above ensures no
-            // destination key is overwritten.
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
-            Command fix = new SequenceCommand(tr("Enumerate source names"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_MULTI_TEXT)
-                .message(tr("[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys"),
-                         marktr("{0}={1}: enumerate into source:name, source:1:name, ...?"),
+                .message(tr("[ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review"),
+                         marktr("{0}={1}: semicolons in text are ambiguous. "
+                            + "If these are separate sources, split manually into "
+                            + "source, source:1, source:2, …; if the semicolons are "
+                            + "punctuation in a single citation, leave alone."),
                             key, value)
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
             return;
         }
@@ -872,32 +799,71 @@ public class TagConsistencyTest extends Test {
             .message(tr("[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review"),
                      marktr("{0}={1}: 3 or more items mixing URLs and text. "
                       + "Manual review needed — split into source, source:N, "
-                      + "source:name, source:N:name as appropriate."),
+                      + "source:url, source:N:url as appropriate."),
                         key, value)
             .primitives(p)
             .build());
     }
 
     /**
-     * Detect and fix cases where a feature has both a {@code source[:N]?}
-     * key and its companion {@code source[:N]?:url} key. Iterates every
-     * {@code source[:N]?:url} present on the primitive (per issue #27 — the
-     * pre-v0.4.0 implementation only handled the literal pair
-     * {@code source} / {@code source:url}). For each pair, applies the
-     * four sub-cases in {@link #checkSourceUrlPair}.
+     * Autofix for rule 4315 (multi-URL split). If the primitive has no
+     * enumerated {@code source:N} keys, the bare {@code source} key is
+     * overwritten with the first item and the rest go into {@code source:1},
+     * {@code source:2}, …
      *
-     * <p>Per-pair sub-cases:
+     * <p>Otherwise (one or more {@code source:N} already exist), the
+     * combined {@code source} value is cleared and all items are appended
+     * starting at {@code source:(M+1)}, where M is the highest existing
+     * numeric index. This matches the shared enumeration convention.
+     */
+    private void emitMultiUrlSplit(OsmPrimitive p, String key, String value, List<String> items) {
+        boolean hasExistingEnumerated = p.keySet().stream()
+            .map(SOURCE_KEY::matcher)
+            .filter(Matcher::matches)
+            .anyMatch(m -> m.group(1) != null);
+
+        List<Command> cmds = new ArrayList<>();
+        if (!hasExistingEnumerated) {
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", items.get(0)));
+            for (int i = 1; i < items.size(); i++) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p),
+                                                   "source:" + i, items.get(i)));
+            }
+        } else {
+            int start = nextSourceIndex(p);
+            // Clear the combined-value source tag — items are being relocated.
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
+            for (int i = 0; i < items.size(); i++) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p),
+                                                   "source:" + (start + i), items.get(i)));
+            }
+        }
+
+        Command fix = new SequenceCommand(tr("Enumerate source URLs"), cmds);
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_SEMICOLON_MULTI_URL)
+            .message(tr("[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys"),
+                     marktr("{0}={1}: enumerate into source, source:1, source:2, ...?"),
+                        key, value)
+            .primitives(p)
+            .fix(() -> fix)
+            .build());
+    }
+
+    /**
+     * Per-pair check for every {@code source[:N]?:url} key on a primitive.
+     * Under the v0.5 contract:
      * <ul>
-     *   <li>Companion is blank: rename {@code *:url} to companion.</li>
-     *   <li>Companion equals {@code *:url}: delete the redundant
-     *       {@code *:url}.</li>
-     *   <li>Both are URLs but differ: move {@code *:url} to the next
-     *       available {@code source:N} slot.</li>
-     *   <li>Companion is non-URL text: swap — companion becomes
-     *       {@code companion:name} (append-merging when companion:name
-     *       already exists), {@code *:url} becomes companion, and
-     *       {@code *:url} is deleted.</li>
+     *   <li>Scheme-missing URL in {@code :url} fires rule 4307 with the
+     *       {@code https://} prepend autofix.</li>
+     *   <li>Non-URL text in {@code :url} fires rule 4325, with a fallback
+     *       chain for the autofix target ({@code source} → {@code source:name}
+     *       → {@code source:note}). All three full → unfixable.</li>
+     *   <li>Both companion and {@code :url} hold valid URLs but differ
+     *       fires rule 4312 with autofix moving {@code :url} to the next
+     *       numbered {@code source:N} slot.</li>
      * </ul>
+     * (Codes 4311 and 4313 are retired; identical URLs and text-companion
+     * + URL-in-:url are valid layouts under the new contract.)
      */
     private void checkSourceUrlConsolidation(OsmPrimitive p) {
         // Snapshot all url-shaped keys before invoking per-pair checks. We
@@ -918,92 +884,146 @@ public class TagConsistencyTest extends Test {
     }
 
     /**
-     * Per-pair logic invoked by {@link #checkSourceUrlConsolidation} for
-     * each {@code source[:N]?:url} key. {@code urlKey} is the URL-shaped
-     * key (e.g. {@code source:url} or {@code source:1:url});
-     * {@code companionKey} is the matching shaped companion (e.g.
-     * {@code source} or {@code source:1}).
+     * Per-pair logic for one {@code source[:N]?:url} key and its companion
+     * {@code source[:N]?}. See {@link #checkSourceUrlConsolidation} for the
+     * rules.
      */
     private void checkSourceUrlPair(OsmPrimitive p, String urlKey, String companionKey) {
         String source = p.get(companionKey);
         String sourceUrl = p.get(urlKey);
         if (sourceUrl == null || sourceUrl.isEmpty()) return;
+
+        // 4307: URL missing scheme in :url. Autofix prepends https://.
+        if (!URL_WITH_SCHEME.matcher(sourceUrl).matches()
+            && URL_MISSING_SCHEME.matcher(sourceUrl).matches()) {
+            emitMissingSchemeFix(p, urlKey, sourceUrl);
+            return;
+        }
+
+        // 4325: non-URL text in :url. Fallback chain: source / source:name
+        // / source:note.
+        if (!URL_WITH_SCHEME.matcher(sourceUrl).matches()) {
+            emitTextInUrlFix(p, urlKey, sourceUrl, companionKey);
+            return;
+        }
+
+        // sourceUrl is now a valid URL with scheme.
         // If companion has semicolons, defer to the semicolon handler.
         if (source != null && source.contains(";")) return;
-        // If companion is blank, just rename urlKey to companionKey.
-        if (source == null || source.isEmpty()) {
-            List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), companionKey, sourceUrl));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
-            Command fix = new SequenceCommand(tr("Rename {0} to {1}", urlKey, companionKey), cmds);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
-                .message(tr("[ohm] Source mismatch - no source tag and valid source:url tag; autofix by moving *:url value to source="),
-                         marktr("{0}={1} should live in {2}."), urlKey, sourceUrl, companionKey)
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
-            return;
-        }
 
-        // Case 1: identical values. Redundant.
-        if (source.equals(sourceUrl)) {
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), urlKey, null);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_REDUNDANT)
-                .message(tr("[ohm] Source keys with duplicate values - source=source:url; autofix by deleting source:url"),
-                         marktr("{0} and {1} hold the same value. Delete {0}?"),
-                            urlKey, companionKey)
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
-            return;
-        }
-
-        boolean sourceIsUrl = URL_WITH_SCHEME.matcher(source).matches();
-
-        if (sourceIsUrl) {
-            // Case 2: companion and urlKey are both URLs but differ.
-            // Move urlKey value to the next available source:N slot.
+        // 4312: both slots hold URLs but differ — move :url to next source:N.
+        // (Identical URLs and text-companion + URL-in-:url are both valid
+        // under the v0.5 contract; no warning.)
+        if (source != null && !source.isEmpty()
+            && !source.equals(sourceUrl)
+            && URL_WITH_SCHEME.matcher(source).matches()) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_CONFLICTS)
-                .message(tr("[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N"),
+                .message(tr("[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#"),
                          marktr("{0}={1} and {2}={3} are different URLs. Move {2} to the next numbered source key?"),
                             companionKey, source, urlKey, sourceUrl)
                 .primitives(p)
                 .fix(() -> {
-                    int maxN = p.keySet().stream()
-                        .map(k -> SOURCE_KEY.matcher(k))
-                        .filter(java.util.regex.Matcher::matches)
-                        .map(m -> m.group(1))
-                        .filter(g -> g != null)
-                        .mapToInt(Integer::parseInt)
-                        .max()
-                        .orElse(0);
-                    String newKey = "source:" + (maxN + 1);
+                    String newKey = "source:" + nextSourceIndex(p);
                     List<Command> moveCmds = new ArrayList<>();
                     moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), newKey, sourceUrl));
                     moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
                     return new SequenceCommand(tr("Move {0} to {1}", urlKey, newKey), moveCmds);
                 })
                 .build());
-        } else {
-            // Case 3: companion is text, urlKey is a URL — swap them.
-            // Name target is companion + ":name" (so source -> source:name,
-            // source:N -> source:N:name).
-            String nameKey = companionKey + ":name";
-            String existingName = p.get(nameKey);
-            String newName = (existingName == null || existingName.isEmpty())
-                ? source : existingName + ";" + source;
-            List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), nameKey, newName));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), companionKey, sourceUrl));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
-            Command fix = new SequenceCommand(tr("Consolidate {0} and {1}", companionKey, urlKey), cmds);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
-                .message(tr("[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these"),
-                         marktr("Consolidate: {0} \u2192 {1}, {1} \u2192 {2}?"),
-                            urlKey, companionKey, nameKey)
+        }
+    }
+
+    /**
+     * Emit rule 4325 (text value in {@code source:url}) with a tiered
+     * fallback for the autofix target: companion {@code source[:N]?} -&gt;
+     * companion {@code source[:N]?:name} -&gt; companion
+     * {@code source[:N]?:note}. If all three are full, no autofix.
+     */
+    private void emitTextInUrlFix(OsmPrimitive p, String urlKey, String value, String companionKey) {
+        String nameKey = companionKey + ":name";
+        String noteKey = companionKey + ":note";
+
+        String target = null;
+        String src = p.get(companionKey);
+        if (src == null || src.isEmpty()) {
+            target = companionKey;
+        } else if (p.get(nameKey) == null || p.get(nameKey).isEmpty()) {
+            target = nameKey;
+        } else if (p.get(noteKey) == null || p.get(noteKey).isEmpty()) {
+            target = noteKey;
+        }
+
+        if (target == null) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_HAS_TEXT)
+                .message(tr("[ohm] Source mismatch - text value in source:url and all sibling slots full; unfixable, please review"),
+                         marktr("{0}={1} is not a URL but {2}, {3}, and {4} all hold values. "
+                            + "Manual review needed."),
+                            urlKey, value, companionKey, nameKey, noteKey)
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
+            return;
+        }
+
+        final String moveTo = target;
+        List<Command> cmds = new ArrayList<>();
+        cmds.add(new ChangePropertyCommand(Arrays.asList(p), moveTo, value));
+        cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+        Command fix = new SequenceCommand(tr("Move {0} to {1}", urlKey, moveTo), cmds);
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_HAS_TEXT)
+            .message(tr("[ohm] Source mismatch - text value in source:url; autofix by moving to source / source:name / source:note"),
+                     marktr("{0}={1} is not a URL. Move to {2}?"),
+                        urlKey, value, moveTo)
+            .primitives(p)
+            .fix(() -> fix)
+            .build());
+    }
+
+    /**
+     * Iterate {@code source[:N]?:name} keys and flag any whose value is
+     * a URL (rule 4324). Autofix moves the URL to the matching
+     * {@code source[:N]?:url} slot when that slot is empty; otherwise
+     * unfixable.
+     */
+    private void checkSourceNameContents(OsmPrimitive p) {
+        List<String[]> hits = new ArrayList<>();
+        for (String key : p.keySet()) {
+            Matcher m = SOURCE_NAME_KEY.matcher(key);
+            if (!m.matches()) continue;
+            String value = p.get(key);
+            if (value == null || value.isEmpty()) continue;
+            if (!URL_WITH_SCHEME.matcher(value).matches()) continue;
+            String numIdx = m.group(1);
+            String urlKey = (numIdx == null) ? "source:url" : "source:" + numIdx + ":url";
+            hits.add(new String[] { key, value, urlKey });
+        }
+        for (String[] hit : hits) {
+            String nameKey = hit[0];
+            String value = hit[1];
+            String urlKey = hit[2];
+            String existingUrl = p.get(urlKey);
+
+            if (existingUrl == null || existingUrl.isEmpty()) {
+                List<Command> cmds = new ArrayList<>();
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, value));
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), nameKey, null));
+                Command fix = new SequenceCommand(tr("Move {0} to {1}", nameKey, urlKey), cmds);
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_HAS_URL)
+                    .message(tr("[ohm] Source mismatch - URL value in source:name; autofix by moving to source:url"),
+                             marktr("{0}={1} is a URL. Move to {2}?"), nameKey, value, urlKey)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+            } else if (!existingUrl.equals(value)) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_HAS_URL)
+                    .message(tr("[ohm] Source mismatch - URL in source:name and source:url already set; unfixable, please review"),
+                             marktr("{0}={1} is a URL but {2}={3} already holds a different URL. "
+                                + "Manual review needed."),
+                                nameKey, value, urlKey, existingUrl)
+                    .primitives(p)
+                    .build());
+            }
+            // existingUrl equals value -> both slots hold same URL,
+            // harmless redundancy under the v0.5 contract. Don't fire.
         }
     }
 
