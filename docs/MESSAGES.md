@@ -106,7 +106,11 @@ After autofix: `start_date=-1920`, `start_date:edtf=-1920~`, `start_date:raw=c19
 
 Wrap to standard ISO: `start_date=1875-1031` → `start_date=1875-10-31`. The 1200/1000 thresholds avoid silently rewriting old or borderline-ambiguous inputs.
 
-When autofix is held back (year too old, or implied MM-DD invalid like `1875-1131` (Nov 31) or `1875-0229` (Feb 29 in a non-leap year)) but the input still looks like a packed-date attempt (`YYYY > MMDD`), code **4244** fires the unfixable variant.
+When autofix is held back, code **4244** fires the unfixable variant whenever the input still looks like a packed-date attempt. The "looks like an attempt" heuristic fires in either of two sub-cases:
+- The implied MM-DD (or M-DD) **is** a real calendar date but the year is below the autofix threshold — e.g. `0500-1031` (May 31 of year 500), `0900-731` (July 31 of year 900).
+- The implied MM-DD (or M-DD) is **not** a real calendar date AND the year is the larger of the two halves — e.g. `1875-1131` (Nov 31 doesn't exist), `1500-732` (July 32 doesn't exist).
+
+Both 4-digit (`YYYY-MMDD`) and 3-digit (`YYYY-MDD`) suffixes get the same treatment. Inputs where the implied MM-DD is invalid AND the year is the smaller half (e.g. `0001-2024`) deliberately fall through — they're more plausibly some other shape entirely.
 
 **4202 example (packed-date autofix):**  
 Before: `end_date=1930-0630`.  

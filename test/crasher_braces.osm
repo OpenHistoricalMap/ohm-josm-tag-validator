@@ -411,4 +411,31 @@
     <tag k='end_date' v='1875-0229' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <!-- Edge cases for the widened 4244 condition (initial spec only fired
+       when YYYY > MMDD; widened to also fire when MM-DD is a valid
+       calendar date, regardless of YYYY vs MMDD comparison). -->
+  <node id='9000067' visible='true' version='1' lat='0.0' lon='4.1'>
+    <!-- 4-digit edge: year < MMDD but MM-DD valid (Oct 31 of year 500).
+         Pre-widening: silently fell through. Post-widening: 4244. -->
+    <tag k='name' v='packed-date edge — 0500-1031 valid MD year less than MMDD' />
+    <tag k='start_date' v='0500-1031' />
+    <tag k='end_date' v='1600' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000068' visible='true' version='1' lat='0.0' lon='4.2'>
+    <!-- 3-digit edge: year > MDD but M-DD invalid (July 32). Pre-widening:
+         silently fell through (3-digit had no unfixable variant at all).
+         Post-widening: 4244. -->
+    <tag k='name' v='packed-date edge — 1500-732 3-digit invalid MD' />
+    <tag k='start_date' v='1500-732' />
+    <tag k='end_date' v='1600' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000069' visible='true' version='1' lat='0.0' lon='4.3'>
+    <!-- 3-digit edge: valid M-DD but year < 1000 threshold. Post-widening: 4244. -->
+    <tag k='name' v='packed-date edge — 0900-731 3-digit valid year below threshold' />
+    <tag k='start_date' v='0900-731' />
+    <tag k='end_date' v='1000' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

@@ -1647,7 +1647,8 @@ public class DateTagTest extends Test {
             int mm = Integer.parseInt(mmddStr.substring(0, 2));
             int dd = Integer.parseInt(mmddStr.substring(2, 4));
             int mmdd = Integer.parseInt(mmddStr);
-            if (year > 1200 && isValidMonthDay(year, mm, dd)) {
+            boolean validMD = isValidMonthDay(year, mm, dd);
+            if (year > 1200 && validMD) {
                 String fixed = String.format("%04d-%02d-%02d", year, mm, dd);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
@@ -1658,7 +1659,18 @@ public class DateTagTest extends Test {
                     .fix(() -> fix)
                     .build());
                 return;
-            } else if (year > mmdd) {
+            } else if (validMD || year > mmdd) {
+                // Fires when the input looks like a packed-date attempt but
+                // can't be safely autofixed. Two sub-cases:
+                //   - validMD true, year <= 1200: MM-DD is real but the
+                //     year is too old for the autofix threshold
+                //     (e.g. 0500-1031 = May 31 of year 500).
+                //   - validMD false, year > mmdd: MM-DD isn't a real
+                //     calendar date but the input is shaped like a typo
+                //     (e.g. 1875-1131 — Nov 31 doesn't exist).
+                // We deliberately do NOT fire when validMD is false AND
+                // year <= mmdd (e.g. 0001-2024, where MM=20 invalid AND
+                // year < MMDD) — that's likely some other shape entirely.
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_PACKED_DATE_INVALID)
                     .message(tr("[ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review"),
                              marktr("{0}={1}: looks like a packed YYYY-MMDD date with the month-day "
@@ -1679,7 +1691,9 @@ public class DateTagTest extends Test {
             String mddStr = packed3.group(2);
             int m = Integer.parseInt(mddStr.substring(0, 1));
             int dd = Integer.parseInt(mddStr.substring(1, 3));
-            if (year > 1000 && isValidMonthDay(year, m, dd)) {
+            int mdd = Integer.parseInt(mddStr);
+            boolean validMD = isValidMonthDay(year, m, dd);
+            if (year > 1000 && validMD) {
                 String fixed = String.format("%04d-%02d-%02d", year, m, dd);
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
@@ -1688,6 +1702,24 @@ public class DateTagTest extends Test {
                                 baseKey, base, fixed)
                     .primitives(p)
                     .fix(() -> fix)
+                    .build());
+                return;
+            } else if (validMD || year > mdd) {
+                // Same shape as the 4-digit unfixable above, parameterized
+                // for the 3-digit MDD form. Catches e.g. 0900-731 (year
+                // 900 < 1000 threshold, valid M-DD) and 1500-732 (year
+                // > 1000 but M-DD invalid).
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_PACKED_DATE_INVALID)
+                    .message(tr("[ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review"),
+                             marktr("{0}={1}: looks like a packed YYYY-MDD date (3-digit suffix, "
+                                + "leading zero on the month omitted) with the month-day hyphen "
+                                + "missing, but the autofix is held back (year is below the 1000 "
+                                + "threshold for packed-date autofixes, or the implied M-DD is not "
+                                + "a real calendar date). Manual review needed: rewrite to "
+                                + "{0}=YYYY-MM-DD or trim to {0}=YYYY if the day-precision was "
+                                + "unintentional."),
+                                baseKey, base)
+                    .primitives(p)
                     .build());
                 return;
             }
