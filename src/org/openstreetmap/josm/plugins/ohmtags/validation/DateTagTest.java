@@ -226,6 +226,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_C_SHORTHAND_AMBIGUOUS = 4241;
     protected static final int CODE_RAW_CONFLICT = 4242;
     protected static final int CODE_BOUNDARY_CHRONOLOGY_NON_RELATION = 4243;
+    protected static final int CODE_PACKED_DATE_INVALID = 4244;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -287,6 +288,22 @@ public class DateTagTest extends Test {
      */
     private static final Pattern ZERO_DOTS_RANGE =
         Pattern.compile("^0+\\.\\.(\\d{1,4})$");
+
+    /**
+     * Packed date with the month-day hyphen missing: {@code YYYY-MMDD}
+     * (4-digit suffix). Captures the year (group 1) and the MMDD packed
+     * pair (group 2).
+     */
+    private static final Pattern PACKED_DATE_MMDD =
+        Pattern.compile("^(\\d{4})-(\\d{4})$");
+
+    /**
+     * Packed date with the month-day hyphen missing AND a 1-digit month:
+     * {@code YYYY-MDD} (3-digit suffix). Captures the year (group 1) and
+     * the MDD packed pair (group 2).
+     */
+    private static final Pattern PACKED_DATE_MDD =
+        Pattern.compile("^(\\d{4})-(\\d{3})$");
 
     /** The bot username trusted to have authored correct {@code :raw} values. */
     private static final String TRUSTED_BOT_USER = "tagcleanupbot";
@@ -1615,6 +1632,67 @@ public class DateTagTest extends Test {
             }
         }
 
+        // Path 0d: packed-date typo (missing hyphen between month and day).
+        //   YYYY-MMDD (4-digit suffix): autofix when YYYY > 1200 AND MM-DD is
+        //     a real calendar date for that year. If neither is true but
+        //     YYYY > MMDD, the user clearly intended a packed date but the
+        //     components don't form a real one — fire 4244 unfixable.
+        //   YYYY-MDD (3-digit, leading zero on the month omitted): autofix
+        //     when YYYY > 1000 AND M-DD is a real calendar date. No
+        //     unfixable variant for 3-digit per spec.
+        Matcher packed4 = PACKED_DATE_MMDD.matcher(base);
+        if (packed4.matches()) {
+            int year = Integer.parseInt(packed4.group(1));
+            String mmddStr = packed4.group(2);
+            int mm = Integer.parseInt(mmddStr.substring(0, 2));
+            int dd = Integer.parseInt(mmddStr.substring(2, 4));
+            int mmdd = Integer.parseInt(mmddStr);
+            if (year > 1200 && isValidMonthDay(year, mm, dd)) {
+                String fixed = String.format("%04d-%02d-%02d", year, mm, dd);
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: missing hyphen between month and day; rewrite as {0}={2}?"),
+                                baseKey, base, fixed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            } else if (year > mmdd) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_PACKED_DATE_INVALID)
+                    .message(tr("[ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review"),
+                             marktr("{0}={1}: looks like a packed YYYY-MMDD date with the month-day "
+                                + "hyphen missing, but the autofix is held back (year is below the "
+                                + "1200 threshold for packed-date autofixes, or the implied MM-DD is "
+                                + "not a real calendar date). Manual review needed: rewrite to "
+                                + "{0}=YYYY-MM-DD or trim to {0}=YYYY if the day-precision was "
+                                + "unintentional."),
+                                baseKey, base)
+                    .primitives(p)
+                    .build());
+                return;
+            }
+        }
+        Matcher packed3 = PACKED_DATE_MDD.matcher(base);
+        if (packed3.matches()) {
+            int year = Integer.parseInt(packed3.group(1));
+            String mddStr = packed3.group(2);
+            int m = Integer.parseInt(mddStr.substring(0, 1));
+            int dd = Integer.parseInt(mddStr.substring(1, 3));
+            if (year > 1000 && isValidMonthDay(year, m, dd)) {
+                String fixed = String.format("%04d-%02d-%02d", year, m, dd);
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: missing hyphen between month and day; rewrite as {0}={2}?"),
+                                baseKey, base, fixed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
+        }
+
         // Path 0: Julian calendar or Julian day number.
         Optional<String> julianGregorian = DateNormalizer.tryConvertJulian(base);
         if (julianGregorian.isPresent()) {
@@ -2454,6 +2532,23 @@ public class DateTagTest extends Test {
     }
 
     /** Compact "n/123", "w/456", "r/789" form for description text. */
+    /**
+     * True if (year, month, day) form a real Gregorian calendar date.
+     * Wraps {@link java.time.LocalDate#of} so leap-year handling and
+     * month-length checks come from the JDK rather than an in-house
+     * lookup table.
+     */
+    private static boolean isValidMonthDay(int year, int month, int day) {
+        if (month < 1 || month > 12) return false;
+        if (day < 1 || day > 31) return false;
+        try {
+            java.time.LocalDate.of(year, month, day);
+            return true;
+        } catch (java.time.DateTimeException e) {
+            return false;
+        }
+    }
+
     /**
      * English ordinal suffix for an integer: "1st", "2nd", "3rd", "11th",
      * "21st", "22nd", "100th". Negative values keep the leading minus

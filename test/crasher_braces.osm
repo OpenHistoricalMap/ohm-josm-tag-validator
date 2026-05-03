@@ -368,4 +368,47 @@
     <tag k='start_date' v='1900' />
     <tag k='end_date' v='1950' />
   </node>
+  <!-- Packed-date probes (start_date=YYYY-MMDD or YYYY-MDD with the
+       month-day hyphen missing). Pre-v0.4.0, these flowed through the
+       slash-range pipeline and produced base=0630 with a malformed
+       :edtf=1930/0630, which lost the year as the base. Now handled
+       as a typo-fix when year > 1200 (4-digit suffix) or > 1000
+       (3-digit) AND MM-DD is a real calendar date. Bad cases (year
+       > MMDD but MM-DD invalid OR year below threshold) fire 4244. -->
+  <node id='9000061' visible='true' version='1' lat='0.0' lon='3.5'>
+    <tag k='name' v='packed-date probe — YYYY-MMDD valid autofix' />
+    <tag k='start_date' v='1875-1031' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000062' visible='true' version='1' lat='0.0' lon='3.6'>
+    <tag k='name' v='packed-date probe — YYYY-MDD 3-digit valid autofix' />
+    <tag k='start_date' v='1500-731' />
+    <tag k='end_date' v='1600' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000063' visible='true' version='1' lat='0.0' lon='3.7'>
+    <tag k='name' v='packed-date probe — Feb 29 leap year valid' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2000-0229' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000064' visible='true' version='1' lat='0.0' lon='3.8'>
+    <tag k='name' v='packed-date probe — Nov 31 invalid 4244' />
+    <tag k='start_date' v='1875-1131' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000065' visible='true' version='1' lat='0.0' lon='3.9'>
+    <tag k='name' v='packed-date probe — year below threshold 4244' />
+    <tag k='start_date' v='1100-1031' />
+    <tag k='end_date' v='1200' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000066' visible='true' version='1' lat='0.0' lon='4.0'>
+    <tag k='name' v='packed-date probe — Feb 29 non-leap invalid 4244' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1875-0229' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

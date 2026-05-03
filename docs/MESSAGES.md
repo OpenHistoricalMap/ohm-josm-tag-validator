@@ -100,6 +100,22 @@ After autofix: `start_date=1920`, `start_date:edtf=1920~`, `start_date:raw=c1920
 Before: `start_date=c1920bc`  
 After autofix: `start_date=-1920`, `start_date:edtf=-1920~`, `start_date:raw=c1920bc`.
 
+**4202 — packed-date typo (`YYYY-MMDD` or `YYYY-MDD`):** Common typo where the user wrote a packed date with the month-day hyphen missing. The validator autofixes when:
+- Input matches `^YYYY-MMDD$` AND `YYYY > 1200` AND the implied `MM-DD` is a real calendar date for that year (leap-year-aware).
+- Input matches `^YYYY-MDD$` (3-digit suffix; leading zero on the month) AND `YYYY > 1000` AND the implied `M-DD` is a real calendar date.
+
+Wrap to standard ISO: `start_date=1875-1031` → `start_date=1875-10-31`. The 1200/1000 thresholds avoid silently rewriting old or borderline-ambiguous inputs.
+
+When autofix is held back (year too old, or implied MM-DD invalid like `1875-1131` (Nov 31) or `1875-0229` (Feb 29 in a non-leap year)) but the input still looks like a packed-date attempt (`YYYY > MMDD`), code **4244** fires the unfixable variant.
+
+**4202 example (packed-date autofix):**  
+Before: `end_date=1930-0630`.  
+After autofix: `end_date=1930-06-30`.
+
+**4244 example:**  
+Trigger: `start_date=1875-1131` (Nov 31 doesn't exist).  
+Suggested manual fix: rewrite to a real `start_date=YYYY-MM-DD` or trim to `start_date=YYYY` if the day-precision was unintentional.
+
 **4241 example:**  
 Trigger: `start_date=c50`.  
 Suggested manual fix: rewrite as `~50` if "circa year 50" was intended, or as a century form if "century 50" was intended.

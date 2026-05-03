@@ -229,6 +229,9 @@ E   n/9000021   [ohm] Invalid date - *_date; fixable, please review   start_date
 E   n/9000022   [ohm] Invalid date - *_date; fixable, please review   end_date=0000..1900: implausibly-ancient leading zeros; rewrite as end_date=1900, end_date:edtf=/1900, end_date:raw=0000..1900?
 E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
 E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   start_date=0000..0050 ? start_date=0000, start_date:edtf=0000/0050, start_date:raw=0000..0050
+E   n/9000061   [ohm] Invalid date - *_date; fixable, please review   start_date=1875-1031: missing hyphen between month and day; rewrite as start_date=1875-10-31?
+E   n/9000062   [ohm] Invalid date - *_date; fixable, please review   start_date=1500-731: missing hyphen between month and day; rewrite as start_date=1500-07-31?
+E   n/9000063   [ohm] Invalid date - *_date; fixable, please review   end_date=2000-0229: missing hyphen between month and day; rewrite as end_date=2000-02-29?
 E   n/9100011   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   n/9100221   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
 E   n/9100222   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
@@ -259,10 +262,10 @@ E   r/2747751   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   r/2796293   [ohm] Invalid date - *_date; fixable, please review   start_date=1716/17: abbreviated-tail range; rewrite as start_date=1716, start_date:edtf=1716/1717, start_date:raw=1716/17?
 E   r/2796293   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2825526   [ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY   end_date=1959-90-15: month 90 is out of range. Trim to 1959?
-E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630 ? end_date=0630, end_date:edtf=1930/0630, end_date:raw=1930-0630
+E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630: missing hyphen between month and day; rewrite as end_date=1930-06-30?
 E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=0000, start_date:raw=0
 E   r/2849295   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   r/2849516   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630 ? end_date=0630, end_date:edtf=1930/0630, end_date:raw=1930-0630
+E   r/2849516   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630: missing hyphen between month and day; rewrite as end_date=1930-06-30?
 E   r/2849516   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=0000, start_date:raw=0
 E   r/2849516   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2867823   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=199x ? start_date=1990, start_date:edtf=199X
@@ -650,7 +653,7 @@ E   w/201216915   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/201216916   [ohm] Invalid date - *_date; fixable, please review   start_date=1500 / 1550 ? start_date=1500, start_date:edtf=1500/1550, start_date:raw=1500 / 1550
 E   w/201216917   [ohm] Invalid date - *_date; fixable, please review   start_date=1550 / 1600 ? start_date=1550, start_date:edtf=1550/1600, start_date:raw=1550 / 1600
 E   w/201216928   [ohm] Invalid date - *_date; fixable, please review   start_date=1523 / 1700 ? start_date=1523, start_date:edtf=1523/1700, start_date:raw=1523 / 1700
-E   w/201218451   [ohm] Invalid date - *_date; fixable, please review   end_date=2025-0718 ? end_date=0718, end_date:edtf=2025/0718, end_date:raw=2025-0718
+E   w/201218451   [ohm] Invalid date - *_date; fixable, please review   end_date=2025-0718: missing hyphen between month and day; rewrite as end_date=2025-07-18?
 E   w/201226727   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=2016-summer cannot be normalized.
 E   w/201231540   [ohm] Invalid date - *_date; fixable, please review   start_date=1290 - 1490 ? start_date=1290, start_date:edtf=1290/1490, start_date:raw=1290 - 1490
 E   w/201258996   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=?/1897 cannot be normalized.
@@ -991,6 +994,9 @@ W   n/9000052   [ohm] Source keys with duplicate values - source=source:url; aut
 W   n/9000053   [ohm] Source optimization - move non-URL source tags to source:name   source:1=Local archive notes (probe) is not a URL. Move to source:1:name and leave source:1 blank for a URL?
 W   n/9000053   [ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these   Consolidate: source:1:url ? source:1, source:1 ? source:1:name?
 W   n/9000054   [ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N   source:2=https://example.org/two-a and source:2:url=https://example.org/two-b are different URLs. Move source:2:url to the next numbered source key?
+W   n/9000064   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=1875-1131: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
+W   n/9000065   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=1100-1031: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
+W   n/9000066   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   end_date=1875-0229: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to end_date=YYYY-MM-DD or trim to end_date=YYYY if the day-precision was unintentional.
 W   n/9100011   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
 W   n/9100021   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
 W   n/9100021   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100021 (1800..1850) and n/9100022 (1840..1900) have overlapping date ranges in chronology relation r/9100030.

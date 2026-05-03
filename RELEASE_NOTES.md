@@ -60,6 +60,16 @@ Per [issue #23](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issu
 
 `[ohm] Suspicious date - 01-01 start_date` (4212) and `[ohm] Suspicious date - 12-31 end_date` (4213) previously offered a one-click autofix to trim to the bare year (`start_date=1875-01-01` → `start_date=1875`). Per [issue #28](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/28), these are now unfixable WARNINGs. Jan 1 and Dec 31 are legitimate real dates often enough (laws taking effect, treaties signed, terms ending, fiscal year boundaries) that even an opt-in autofix proved too easy to apply by mistake when batch-fixing. The descriptions still suggest the manual trim for the false-precision case.
 
+## Also fixed: packed-date typo (`YYYY-MMDD` / `YYYY-MDD`)
+
+Common typo where the user wrote a packed date with the month-day hyphen missing (e.g. `end_date=1930-0630` for `1930-06-30`). Pre-fix, these flowed through the slash-range pipeline as if they were ranges, producing wrong base values like `end_date=0630` with `:edtf=1930/0630`. Now handled as a typo-fix:
+
+- **`YYYY-MMDD`** (4-digit suffix) → autofix to `YYYY-MM-DD` when `YYYY > 1200` AND the implied `MM-DD` is a real calendar date (leap-year-aware via `java.time.LocalDate`).
+- **`YYYY-MDD`** (3-digit suffix; leading zero on the month omitted) → autofix to `YYYY-0M-DD` when `YYYY > 1000` AND the implied `M-DD` is real.
+- **Held-back cases** — year below the 1200 threshold, or the implied MM-DD isn't a real calendar date (`1875-1131`, `1875-0229` on a non-leap year), but the input still looks like a packed-date attempt (`YYYY > MMDD`) — fire the new **4244** unfixable warning.
+
+Three real-world rows in `test_data.osm` flip from broken slash-range output to clean ISO triples on this fix alone.
+
 ## Also fixed: abbreviated-tail and implausibly-ancient range normalization
 
 Two normalization fixes that surfaced during testing:
