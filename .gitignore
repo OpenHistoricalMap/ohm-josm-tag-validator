@@ -8,10 +8,16 @@ lib/
 
 # Test output
 test/results.txt
+test/results.txt.stderr
 
 # Large local regression fixtures (OHM relation extracts, fetched on demand;
 # kept out of the repo to avoid bloating clones — naming convention r<id>_*.osm)
 test/r*.osm
+
+# Local JOSM crash-dump fixtures (e.g. josm_crasher_*.osm) — kept out of
+# the repo because they're typically large user data exports. Minimal
+# extracted reproducers belong under test/crasher_*.osm and are tracked.
+test/josm_*.osm
 
 # macOS
 .DS_Store

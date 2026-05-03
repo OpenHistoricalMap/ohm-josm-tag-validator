@@ -25,10 +25,15 @@ import org.openstreetmap.josm.plugins.ohmtags.validation.DateTagTest;
 import org.openstreetmap.josm.plugins.ohmtags.validation.TagConsistencyTest;
 
 /**
- * Standalone regression harness. Loads test/test_data.osm, runs both
- * validator tests headlessly, and prints one tab-separated line per finding:
+ * Standalone regression harness. Loads one or more OSM files, runs both
+ * validator tests against each, and prints one line per finding:
  *
- *   SEVERITY  CODE  TITLE  TYPE/ID  DESCRIPTION
+ *   SEVERITY  TYPE/ID  TITLE  DESCRIPTION
+ *
+ * If no files are given on the command line, defaults to
+ * {@code test/test_data.osm} and {@code test/crasher_braces.osm}. Findings
+ * from all fixtures are merged and sorted before printing, so the output
+ * is deterministic and suitable for golden-file diffing.
  *
  * Exit 0 on success (findings in the data are expected). Non-zero means the
  * harness itself crashed.
@@ -41,32 +46,40 @@ public class RunTests {
         I18n.set("en");
         ProjectionRegistry.setProjection(Projections.getProjectionByCode("EPSG:4326"));
 
-        String osmFile = args.length > 0 ? args[0] : "test/test_data.osm";
+        String[] osmFiles = args.length > 0 ? args : new String[] {
+            "test/test_data.osm",
+            "test/crasher_braces.osm"
+        };
 
-        DataSet ds;
-        try (InputStream in = new FileInputStream(osmFile)) {
-            ds = OsmReader.parseDataSet(in, NullProgressMonitor.INSTANCE);
-        }
-
-        List<Test> tests = Arrays.asList(new DateTagTest(), new TagConsistencyTest());
         List<String> lines = new ArrayList<>();
 
-        for (Test test : tests) {
-            test.startTest(NullProgressMonitor.INSTANCE);
-            for (Node n : ds.getNodes()) test.visit(n);
-            for (Way w : ds.getWays()) test.visit(w);
-            for (Relation r : ds.getRelations()) test.visit(r);
-            test.endTest();
+        for (String osmFile : osmFiles) {
+            DataSet ds;
+            try (InputStream in = new FileInputStream(osmFile)) {
+                ds = OsmReader.parseDataSet(in, NullProgressMonitor.INSTANCE);
+            }
 
-            for (TestError e : test.getErrors()) {
-                Collection<? extends OsmPrimitive> prims = e.getPrimitives();
-                Stream<String> rows;
-                if (prims.isEmpty()) {
-                    rows = Stream.of(formatLine(e, null));
-                } else {
-                    rows = prims.stream().map(p -> formatLine(e, p));
+            // Fresh test instances per fixture so error state doesn't leak
+            // across files.
+            List<Test> tests = Arrays.asList(new DateTagTest(), new TagConsistencyTest());
+
+            for (Test test : tests) {
+                test.startTest(NullProgressMonitor.INSTANCE);
+                for (Node n : ds.getNodes()) test.visit(n);
+                for (Way w : ds.getWays()) test.visit(w);
+                for (Relation r : ds.getRelations()) test.visit(r);
+                test.endTest();
+
+                for (TestError e : test.getErrors()) {
+                    Collection<? extends OsmPrimitive> prims = e.getPrimitives();
+                    Stream<String> rows;
+                    if (prims.isEmpty()) {
+                        rows = Stream.of(formatLine(e, null));
+                    } else {
+                        rows = prims.stream().map(p -> formatLine(e, p));
+                    }
+                    rows.forEach(lines::add);
                 }
-                rows.forEach(lines::add);
             }
         }
 

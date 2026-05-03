@@ -1,6 +1,7 @@
 // License: GPL v2 or later. For details, see LICENSE file.
 package org.openstreetmap.josm.plugins.ohmtags.validation;
 
+import static org.openstreetmap.josm.tools.I18n.marktr;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.net.URI;
@@ -138,6 +139,9 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_RELATION_LABEL_MEMBER = 4318;
     protected static final int CODE_HISTORIC_SUSPICIOUS = 4319;
     protected static final int CODE_NAME_HAS_HISTORIC = 4320;
+    protected static final int CODE_SOURCE_NAME_CONFLICT = 4321;
+    protected static final int CODE_SOURCE_SEMICOLON_MULTI_URL_CONFLICT = 4322;
+    protected static final int CODE_SOURCE_SEMICOLON_MULTI_TEXT_CONFLICT = 4323;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -214,6 +218,15 @@ public class TagConsistencyTest extends Test {
         Pattern.compile("^source(?::(\\d+))?:name$");
 
     /**
+     * Matches a source-URL key: {@code source:url} or {@code source:N:url}.
+     * Captures the optional numeric sub-index (group 1). Used by
+     * {@link #checkSourceUrlConsolidation} to enumerate all url-shaped
+     * keys for per-pair consolidation.
+     */
+    private static final Pattern SOURCE_URL_KEY =
+        Pattern.compile("^source(?::(\\d+))?:url$");
+
+    /**
      * Matches any attribute-scoped source key: anything ending in
      * {@code :source} that is NOT itself {@code source:N} (those are covered
      * by {@link #SOURCE_KEY}). Captures the attribute prefix (group 1).
@@ -274,11 +287,11 @@ public class TagConsistencyTest extends Test {
 
         errors.add(TestError.builder(this, Severity.WARNING, CODE_RELATION_LABEL_MEMBER)
             .message(tr("[ohm] Suspicious member - role=label; unfixable, please review"),
-                     tr("OHM servers automatically generate label points; only use these "
+                     marktr("OHM servers automatically generate label points; only use these "
                         + "when necessary. To verify, download all parent relations of "
                         + "this label object (File ▸ Download parent relations / ways). "
-                        + "role=label members on this relation: {0}.",
-                        String.join(", ", labels)))
+                        + "role=label members on this relation: {0}."),
+                        String.join(", ", labels))
             .primitives(r)
             .build());
     }
@@ -298,9 +311,9 @@ public class TagConsistencyTest extends Test {
         if (historic != null) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_HISTORIC_SUSPICIOUS)
                 .message(tr("[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic"),
-                         tr("historic={0}: confirm the entity has actually passed into "
-                            + "history before applying this tag.",
-                            historic))
+                         marktr("historic={0}: confirm the entity has actually passed into "
+                            + "history before applying this tag."),
+                            historic)
                 .primitives(p)
                 .build());
         }
@@ -316,20 +329,20 @@ public class TagConsistencyTest extends Test {
                 if (value != null && containsDateInParens(value)) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
                         .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
-                                 tr("{0}={1}: dates in parentheses are discouraged in names; "
-                                    + "move the date to start_date / end_date instead.",
-                                    key, value))
+                                 marktr("{0}={1}: dates in parentheses are discouraged in names; "
+                                    + "move the date to start_date / end_date instead."),
+                                    key, value)
                         .primitives(p)
                         .build());
                 }
                 if (value != null && HISTORIC_IN_NAME.matcher(value).find()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_HISTORIC)
                         .message(tr("[ohm] Name warning - \"historic\" in name; unfixable, please review if this is date appropriate"),
-                                 tr("{0}={1}: \"historic\" in a name often reflects a "
+                                 marktr("{0}={1}: \"historic\" in a name often reflects a "
                                     + "present-day perspective. In OHM, confirm the "
                                     + "entity was actually called this at the time it "
-                                    + "existed.",
-                                    key, value))
+                                    + "existed."),
+                                    key, value)
                         .primitives(p)
                         .build());
                 }
@@ -359,9 +372,9 @@ public class TagConsistencyTest extends Test {
                     || p.get(companionSourceKey).isEmpty()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_WITHOUT_URL)
                         .message(tr("[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review"),
-                                 tr("{0}={1} is set, but {2} is empty. "
-                                    + "Would you like to add a URL for the source?",
-                                    key, p.get(key), companionSourceKey))
+                                 marktr("{0}={1} is set, but {2} is empty. "
+                                    + "Would you like to add a URL for the source?"),
+                                    key, p.get(key), companionSourceKey)
                         .primitives(p)
                         .build());
                 }
@@ -377,9 +390,9 @@ public class TagConsistencyTest extends Test {
         if (!hasPlainName && !isRouteRelation(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_PLAIN_NAME)
                 .message(tr("[ohm] Missing tag - name=*; unfixable, please review"),
-                         tr("Feature has name-family keys ({0}, etc.) but no plain "
-                            + "''name'' key. Please add a canonical name.",
-                            firstNameFamilyKeyFound(p)))
+                         marktr("Feature has name-family keys ({0}, etc.) but no plain "
+                            + "''name'' key. Please add a canonical name."),
+                            firstNameFamilyKeyFound(p))
                 .primitives(p)
                 .build());
         }
@@ -393,7 +406,7 @@ public class TagConsistencyTest extends Test {
         if (p.get("wikidata") == null && hasNotabilitySignal(p)) {
             TestError.Builder builder = TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
                 .message(tr("[ohm] Missing tag - wikidata; unfixable, please review"),
-                         tr("Wikidata QIDs help link OHM data to other databases."))
+                         marktr("Wikidata QIDs help link OHM data to other databases."))
                 .primitives(p);
             String wikipediaValue = p.get("wikipedia");
             if (wikipediaValue != null) {
@@ -406,14 +419,28 @@ public class TagConsistencyTest extends Test {
             errors.add(builder.build());
         }
 
-        // Rule: named feature without any source*.
-        if (!hasAnySourceTag(p)) {
+        // Rule: named feature without any source*. Skips type=chronology
+        // relations: they're aggregator wrappers around member relations
+        // (each of which has its own source provenance), so requiring a
+        // top-level source tag on the chronology adds noise without
+        // signal — see issue #23.
+        if (!hasAnySourceTag(p) && !isChronologyRelation(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_SOURCE)
                 .message(tr("[ohm] Missing tag - source on named feature; unfixable, please review and add"),
-                         tr("other mappers are lost without it."))
+                         marktr("other mappers are lost without it."))
                 .primitives(p)
                 .build());
         }
+    }
+
+    /**
+     * True if the primitive is a relation with {@code type=chronology}.
+     * Used to suppress rules that don't make sense on chronology aggregators
+     * (which exist to bundle member relations representing the same entity
+     * across time, and inherit semantic content from those members).
+     */
+    private static boolean isChronologyRelation(OsmPrimitive p) {
+        return p instanceof Relation && "chronology".equals(p.get("type"));
     }
 
     // --- Helpers -------------------------------------------------------------
@@ -598,10 +625,10 @@ public class TagConsistencyTest extends Test {
         if ("wikipedia".equalsIgnoreCase(value)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIPEDIA)
                 .message(tr("[ohm] Suspicious source - source=wikipedia; unfixable, please review"),
-                         tr("{0}={1}: Wikipedia is not a reasonable source for "
+                         marktr("{0}={1}: Wikipedia is not a reasonable source for "
                             + "geometry claims. Please link to an actual map, image, "
-                            + "or other primary source.",
-                            key, value))
+                            + "or other primary source."),
+                            key, value)
                 .primitives(p)
                 .build());
             return;
@@ -609,10 +636,10 @@ public class TagConsistencyTest extends Test {
         if ("wikidata".equalsIgnoreCase(value)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIDATA)
                 .message(tr("[ohm] Suspicious source - source=wikidata; unfixable, please review"),
-                         tr("{0}={1}: Wikidata is not a reasonable source for "
+                         marktr("{0}={1}: Wikidata is not a reasonable source for "
                             + "geometry claims. Please link to an actual map, image, "
-                            + "or other primary source.",
-                            key, value))
+                            + "or other primary source."),
+                            key, value)
                 .primitives(p)
                 .build());
             return;
@@ -627,26 +654,47 @@ public class TagConsistencyTest extends Test {
             Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_MISSING_SCHEME)
                 .message(tr("[ohm] Source optimization - repair URL missing ''http[s]://''"),
-                         tr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?",
-                            key, value))
+                         marktr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?"),
+                            key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
             return;
         }
 
-        // Non-URL, non-Wikipedia/Wikidata source. Offer to rename to :name.
+        // Non-URL, non-Wikipedia/Wikidata source. We want to move the value
+        // into the companion :name slot and clear the URL slot. But if the
+        // companion :name already holds a value, the move would silently
+        // overwrite it — so split into two paths: fixable when :name is empty,
+        // unfixable when :name is occupied (manual review required to decide
+        // whether to merge, replace, or move to an enumerated slot).
         String renamedKey = numIdx == null
             ? "source:name" : "source:" + numIdx + ":name";
+        String existingRenamedValue = p.get(renamedKey);
+        boolean renamedTargetOccupied =
+            existingRenamedValue != null && !existingRenamedValue.isEmpty();
+
+        if (renamedTargetOccupied) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_CONFLICT)
+                .message(tr("[ohm] Source mismatch - non-URL source with existing :name companion; unfixable, please review"),
+                         marktr("{0}={1} is not a URL but {2}={3} already holds a value. "
+                            + "Manual review needed: merge, replace, or move to an "
+                            + "enumerated source:N:name slot."),
+                            key, value, renamedKey, existingRenamedValue)
+                .primitives(p)
+                .build());
+            return;
+        }
+
         List<Command> cmds = new ArrayList<>();
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), renamedKey, value));
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
         Command fix = new SequenceCommand(tr("Rename {0} to {1}", key, renamedKey), cmds);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NOT_URL)
             .message(tr("[ohm] Source optimization - move non-URL source tags to source:name"),
-                     tr("{0}={1} is not a URL. Move to {2} and leave {0} blank "
-                        + "for a URL?",
-                        key, value, renamedKey))
+                     marktr("{0}={1} is not a URL. Move to {2} and leave {0} blank "
+                        + "for a URL?"),
+                        key, value, renamedKey)
             .primitives(p)
             .fix(() -> fix)
             .build());
@@ -709,7 +757,7 @@ public class TagConsistencyTest extends Test {
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_URL_TEXT)
                 .message(tr("[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name"),
-                         tr("{0}={1}: move URL to source and text to source:name?", key, value))
+                         marktr("{0}={1}: move URL to source and text to source:name?"), key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -718,6 +766,34 @@ public class TagConsistencyTest extends Test {
 
         // Case: all URLs (2+).
         if (urlCount == items.size()) {
+            // Enumerated targets: items.get(1) -> source:1, ..., items.get(N-1) -> source:N-1.
+            // The source -> items.get(0) write is a self-overwrite of the
+            // semicolon-list value being split, so it's intentional. The
+            // enumerated targets must not already hold values, or we'd
+            // silently clobber them.
+            String firstOccupied = null;
+            String firstOccupiedValue = null;
+            for (int i = 1; i < items.size(); i++) {
+                String slot = "source:" + i;
+                String existing = p.get(slot);
+                if (existing != null && !existing.isEmpty()) {
+                    firstOccupied = slot;
+                    firstOccupiedValue = existing;
+                    break;
+                }
+            }
+            if (firstOccupied != null) {
+                errors.add(TestError.builder(this, Severity.WARNING,
+                                             CODE_SOURCE_SEMICOLON_MULTI_URL_CONFLICT)
+                    .message(tr("[ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review"),
+                             marktr("{0}={1}: cannot enumerate into source, source:1, ... "
+                                + "because {2}={3} already holds a value. Manual review needed: "
+                                + "merge, replace, or shift to higher source:# slots."),
+                                key, value, firstOccupied, firstOccupiedValue)
+                    .primitives(p)
+                    .build());
+                return;
+            }
             List<Command> cmds = new ArrayList<>();
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", items.get(0)));
             for (int i = 1; i < items.size(); i++) {
@@ -728,8 +804,8 @@ public class TagConsistencyTest extends Test {
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_MULTI_URL)
                 .message(tr("[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys"),
-                         tr("{0}={1}: enumerate into source, source:1, source:2, ...?",
-                            key, value))
+                         marktr("{0}={1}: enumerate into source, source:1, source:2, ...?"),
+                            key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -738,6 +814,33 @@ public class TagConsistencyTest extends Test {
 
         // Case: all text (2+).
         if (textCount == items.size()) {
+            // Targets: items.get(0) -> source:name, items.get(1) -> source:1:name,
+            // ..., items.get(N-1) -> source:N-1:name. None of these is a
+            // self-overwrite of `key` (the source tag), so every target slot
+            // must be checked for an existing value.
+            String firstOccupied = null;
+            String firstOccupiedValue = null;
+            for (int i = 0; i < items.size(); i++) {
+                String slot = (i == 0) ? "source:name" : "source:" + i + ":name";
+                String existing = p.get(slot);
+                if (existing != null && !existing.isEmpty()) {
+                    firstOccupied = slot;
+                    firstOccupiedValue = existing;
+                    break;
+                }
+            }
+            if (firstOccupied != null) {
+                errors.add(TestError.builder(this, Severity.WARNING,
+                                             CODE_SOURCE_SEMICOLON_MULTI_TEXT_CONFLICT)
+                    .message(tr("[ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review"),
+                             marktr("{0}={1}: cannot enumerate into source:name, source:1:name, ... "
+                                + "because {2}={3} already holds a value. Manual review needed: "
+                                + "merge, replace, or shift to higher source:#:name slots."),
+                                key, value, firstOccupied, firstOccupiedValue)
+                    .primitives(p)
+                    .build());
+                return;
+            }
             List<Command> cmds = new ArrayList<>();
             // Existing source tag is untouched per spec. Text items go into
             // source:name (and enumerated source:N:name variants).
@@ -748,15 +851,15 @@ public class TagConsistencyTest extends Test {
                                                    "source:" + i + ":name", items.get(i)));
             }
             // Clear the combined-value source tag since the pieces are now
-            // redistributed. But only if it matches what we're splitting —
-            // don't clobber if something changed since.
+            // redistributed. The slot-conflict check above ensures no
+            // destination key is overwritten.
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
             Command fix = new SequenceCommand(tr("Enumerate source names"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_MULTI_TEXT)
                 .message(tr("[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys"),
-                         tr("{0}={1}: enumerate into source:name, source:1:name, ...?",
-                            key, value))
+                         marktr("{0}={1}: enumerate into source:name, source:1:name, ...?"),
+                            key, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -767,48 +870,75 @@ public class TagConsistencyTest extends Test {
         errors.add(TestError.builder(this, Severity.WARNING,
                                      CODE_SOURCE_SEMICOLON_MIXED)
             .message(tr("[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review"),
-                     tr("{0}={1}: 3 or more items mixing URLs and text. "
+                     marktr("{0}={1}: 3 or more items mixing URLs and text. "
                       + "Manual review needed — split into source, source:N, "
-                      + "source:name, source:N:name as appropriate.",
-                        key, value))
+                      + "source:name, source:N:name as appropriate."),
+                        key, value)
             .primitives(p)
             .build());
     }
 
     /**
-     * Detect and fix the (common) case where a feature has both
-     * {@code source} and {@code source:url} tags. Three sub-cases:
+     * Detect and fix cases where a feature has both a {@code source[:N]?}
+     * key and its companion {@code source[:N]?:url} key. Iterates every
+     * {@code source[:N]?:url} present on the primitive (per issue #27 — the
+     * pre-v0.4.0 implementation only handled the literal pair
+     * {@code source} / {@code source:url}). For each pair, applies the
+     * four sub-cases in {@link #checkSourceUrlPair}.
      *
+     * <p>Per-pair sub-cases:
      * <ul>
-     *   <li><b>{@code source} value equals {@code source:url} value.</b>
-     *       Delete the redundant {@code source:url}.</li>
-     *   <li><b>{@code source} is a URL differing from {@code source:url}.</b>
-     *       Three-step rewrite: existing {@code source} → {@code source:name},
-     *       {@code source:url} → {@code source}, delete {@code source:url}.
-     *       If {@code source:name} already exists, append the existing
-     *       {@code source} value to it with {@code ;} separator.</li>
-     *   <li><b>{@code source} is non-URL text.</b> Three-step rewrite as above:
-     *       existing {@code source} → {@code source:name} (with append logic
-     *       if {@code source:name} already exists), {@code source:url} →
-     *       {@code source}, delete {@code source:url}.</li>
+     *   <li>Companion is blank: rename {@code *:url} to companion.</li>
+     *   <li>Companion equals {@code *:url}: delete the redundant
+     *       {@code *:url}.</li>
+     *   <li>Both are URLs but differ: move {@code *:url} to the next
+     *       available {@code source:N} slot.</li>
+     *   <li>Companion is non-URL text: swap — companion becomes
+     *       {@code companion:name} (append-merging when companion:name
+     *       already exists), {@code *:url} becomes companion, and
+     *       {@code *:url} is deleted.</li>
      * </ul>
      */
     private void checkSourceUrlConsolidation(OsmPrimitive p) {
-        String source = p.get("source");
-        String sourceUrl = p.get("source:url");
+        // Snapshot all url-shaped keys before invoking per-pair checks. We
+        // only read keys (not modifying the primitive) so iteration is safe;
+        // a snapshot avoids any future surprise.
+        List<String[]> pairs = new ArrayList<>();
+        for (String key : p.keySet()) {
+            Matcher m = SOURCE_URL_KEY.matcher(key);
+            if (m.matches()) {
+                String numIdx = m.group(1);
+                String companionKey = (numIdx == null) ? "source" : "source:" + numIdx;
+                pairs.add(new String[] { key, companionKey });
+            }
+        }
+        for (String[] pair : pairs) {
+            checkSourceUrlPair(p, pair[0], pair[1]);
+        }
+    }
+
+    /**
+     * Per-pair logic invoked by {@link #checkSourceUrlConsolidation} for
+     * each {@code source[:N]?:url} key. {@code urlKey} is the URL-shaped
+     * key (e.g. {@code source:url} or {@code source:1:url});
+     * {@code companionKey} is the matching shaped companion (e.g.
+     * {@code source} or {@code source:1}).
+     */
+    private void checkSourceUrlPair(OsmPrimitive p, String urlKey, String companionKey) {
+        String source = p.get(companionKey);
+        String sourceUrl = p.get(urlKey);
         if (sourceUrl == null || sourceUrl.isEmpty()) return;
-        // If source has semicolons, defer to the semicolon handler — don't
-        // treat a multi-value source as a single value here.
+        // If companion has semicolons, defer to the semicolon handler.
         if (source != null && source.contains(";")) return;
-        // If source is blank, just rename source:url → source.
+        // If companion is blank, just rename urlKey to companionKey.
         if (source == null || source.isEmpty()) {
             List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", sourceUrl));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", null));
-            Command fix = new SequenceCommand(tr("Rename source:url to source"), cmds);
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), companionKey, sourceUrl));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+            Command fix = new SequenceCommand(tr("Rename {0} to {1}", urlKey, companionKey), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
                 .message(tr("[ohm] Source mismatch - no source tag and valid source:url tag; autofix by moving *:url value to source="),
-                         tr("source:url={0} should live in source.", sourceUrl))
+                         marktr("{0}={1} should live in {2}."), urlKey, sourceUrl, companionKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -817,11 +947,11 @@ public class TagConsistencyTest extends Test {
 
         // Case 1: identical values. Redundant.
         if (source.equals(sourceUrl)) {
-            Command fix = new ChangePropertyCommand(Arrays.asList(p),
-                                                    "source:url", null);
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), urlKey, null);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_REDUNDANT)
                 .message(tr("[ohm] Source keys with duplicate values - source=source:url; autofix by deleting source:url"),
-                         tr("source and source:url hold the same value. Delete source:url?"))
+                         marktr("{0} and {1} hold the same value. Delete {0}?"),
+                            urlKey, companionKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -831,12 +961,12 @@ public class TagConsistencyTest extends Test {
         boolean sourceIsUrl = URL_WITH_SCHEME.matcher(source).matches();
 
         if (sourceIsUrl) {
-            // Case 2: both source and source:url are URLs but differ.
-            // Move source:url to the next available source:N slot.
+            // Case 2: companion and urlKey are both URLs but differ.
+            // Move urlKey value to the next available source:N slot.
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_CONFLICTS)
                 .message(tr("[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N"),
-                         tr("source={0} and source:url={1} are different URLs. Move source:url to the next numbered source key?",
-                            source, sourceUrl))
+                         marktr("{0}={1} and {2}={3} are different URLs. Move {2} to the next numbered source key?"),
+                            companionKey, source, urlKey, sourceUrl)
                 .primitives(p)
                 .fix(() -> {
                     int maxN = p.keySet().stream()
@@ -850,23 +980,27 @@ public class TagConsistencyTest extends Test {
                     String newKey = "source:" + (maxN + 1);
                     List<Command> moveCmds = new ArrayList<>();
                     moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), newKey, sourceUrl));
-                    moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", null));
-                    return new SequenceCommand(tr("Move source:url to {0}", newKey), moveCmds);
+                    moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+                    return new SequenceCommand(tr("Move {0} to {1}", urlKey, newKey), moveCmds);
                 })
                 .build());
         } else {
-            // Case 3: source is text, source:url is a URL — swap them.
-            String existingName = p.get("source:name");
+            // Case 3: companion is text, urlKey is a URL — swap them.
+            // Name target is companion + ":name" (so source -> source:name,
+            // source:N -> source:N:name).
+            String nameKey = companionKey + ":name";
+            String existingName = p.get(nameKey);
             String newName = (existingName == null || existingName.isEmpty())
                 ? source : existingName + ";" + source;
             List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:name", newName));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", sourceUrl));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", null));
-            Command fix = new SequenceCommand(tr("Consolidate source and source:url"), cmds);
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), nameKey, newName));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), companionKey, sourceUrl));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
+            Command fix = new SequenceCommand(tr("Consolidate {0} and {1}", companionKey, urlKey), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_WITH_NAME)
                 .message(tr("[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these"),
-                         tr("Consolidate: source:url \u2192 source, source \u2192 source:name?"))
+                         marktr("Consolidate: {0} \u2192 {1}, {1} \u2192 {2}?"),
+                            urlKey, companionKey, nameKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -885,8 +1019,8 @@ public class TagConsistencyTest extends Test {
             if (!hasAnyKeyStartingWith(p, "wikipedia")) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
                     .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag"),
-                             tr("{0}={1}: please add an appropriate ''wikipedia'' tag.",
-                                key, value))
+                             marktr("{0}={1}: please add an appropriate ''wikipedia'' tag."),
+                                key, value)
                     .primitives(p)
                     .build());
             }
@@ -896,8 +1030,8 @@ public class TagConsistencyTest extends Test {
             if (p.get("wikidata") == null) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
                     .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag"),
-                             tr("{0}={1}: please add an appropriate ''wikidata'' tag.",
-                                key, value))
+                             marktr("{0}={1}: please add an appropriate ''wikidata'' tag."),
+                                key, value)
                     .primitives(p)
                     .build());
             }

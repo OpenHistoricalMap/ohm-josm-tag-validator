@@ -1,0 +1,463 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='ohm-tag-validator-test'>
+  <!--
+    Minimal regression fixture for issue #26 (v0.3.3).
+
+    Each node carries a tag value containing literal '{' / '}' that the
+    validator interpolates into a description message. Pre-fix, this
+    crashed JOSM via java.text.MessageFormat parsing the substituted
+    string. Post-fix, the validator must produce normal warnings.
+
+    Don't mutate values without understanding which rules each one
+    exercises — replacing the braces defeats the regression coverage.
+  -->
+  <node id='9000001' visible='true' version='1' lat='0.0' lon='0.0'>
+    <!-- Triggers checkSourceUrlConsolidation when source is absent but
+         source:url is present and is a URL with '{z}/{x}/{y}' tile
+         placeholders. This is the exact shape that crashed JOSM in #26. -->
+    <tag k='name' v='Crasher A — bare source:url with tile placeholders' />
+    <tag k='source:url' v='https://mapwarper.net/maps/tile/86360/{z}/{x}/{y}.png' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </node>
+  <node id='9000002' visible='true' version='1' lat='0.0' lon='0.1'>
+    <!-- Triggers the non-URL source rename rule with a value containing
+         literal '{' / '}'. Different code path from -1, same crash class. -->
+    <tag k='name' v='Crasher B — non-URL source with literal braces' />
+    <tag k='source' v='Sketch {hand-drawn}, archive folder 12' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1875' />
+  </node>
+  <node id='9000003' visible='true' version='1' lat='0.0' lon='0.2'>
+    <!-- Triggers checkSourceUrlConsolidation case 2 (both source and
+         source:url are URLs but differ); both URLs contain braces. -->
+    <tag k='name' v='Crasher C — two differing URLs both with placeholders' />
+    <tag k='source' v='https://example.org/tile/{z}/{x}/{y}' />
+    <tag k='source:url' v='https://example.com/raster/{z}-{x}-{y}.png' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000004' visible='true' version='1' lat='0.0' lon='0.3'>
+    <!-- Regression for the 4321 / source:name conflict path: a non-URL
+         source value AND a pre-existing source:name. The pre-fix autofix
+         silently overwrote source:name with the source value, which is
+         data loss. The fixed validator must instead emit an unfixable
+         warning. -->
+    <tag k='name' v='Conflict A — non-URL source with existing source:name' />
+    <tag k='source' v='Sketch by hand, archive folder 12' />
+    <tag k='source:name' v='Local archive citation, 1957' />
+    <tag k='start_date' v='1950' />
+    <tag k='end_date' v='1960' />
+  </node>
+  <node id='9000005' visible='true' version='1' lat='0.0' lon='0.4'>
+    <!-- Same shape on an enumerated source:N / source:N:name pair. -->
+    <tag k='name' v='Conflict B — non-URL source:1 with existing source:1:name' />
+    <tag k='source' v='https://example.org/primary' />
+    <tag k='source:1' v='Hand-copied notes from city archives' />
+    <tag k='source:1:name' v='Original archive title; do not overwrite' />
+    <tag k='start_date' v='1965' />
+    <tag k='end_date' v='1980' />
+  </node>
+  <node id='9000006' visible='true' version='1' lat='0.0' lon='0.5'>
+    <!-- Regression for the 4322 / multi-URL enumeration conflict path:
+         source has 3 URLs to enumerate AND source:1 already holds a
+         value. Pre-fix autofix silently overwrote source:1. The fixed
+         validator must instead emit an unfixable warning. -->
+    <tag k='name' v='Conflict C — multi-URL source split into already-occupied source:1' />
+    <tag k='source' v='https://example.org/a;https://example.org/b;https://example.org/c' />
+    <tag k='source:1' v='https://existing.example.org/preserved' />
+    <tag k='start_date' v='1990' />
+    <tag k='end_date' v='2000' />
+  </node>
+  <node id='9000007' visible='true' version='1' lat='0.0' lon='0.6'>
+    <!-- Regression for the 4323 / multi-text enumeration conflict path:
+         source has 2 text strings to enumerate into source:name and
+         source:1:name; source:name already holds a value. Pre-fix
+         autofix silently overwrote source:name. -->
+    <tag k='name' v='Conflict D — multi-text source split into already-occupied source:name' />
+    <tag k='source' v='Archive folder 12; Field notes 1923' />
+    <tag k='source:name' v='Pre-existing citation; do not lose' />
+    <tag k='start_date' v='1920' />
+    <tag k='end_date' v='1925' />
+  </node>
+  <node id='9000008' visible='true' version='1' lat='0.0' lon='0.7'>
+    <!-- Regression for the 4240 / Julian :note conflict path: a Julian
+         date that would otherwise be autofixed AND a pre-existing
+         user-authored start_date:note. Pre-fix autofix silently
+         overwrote the user's note with "Converted from j:1582-10-15".
+         The fixed validator must emit an unfixable warning instead. -->
+    <tag k='name' v='Conflict E — Julian date with existing :note' />
+    <tag k='start_date' v='j:1582-10-15' />
+    <tag k='start_date:note' v='Hand-authored: archival entry says ten days adjustment per Gregorian rollover' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <!--
+    cYYYY shorthand probes (post-fix). Three bands by abs(year):
+      >=100   → unambiguous circa, autofix to ~YYYY
+      22..99  → ambiguous, unfixable warning (4241)
+      <=21    → highly probable century, existing rule handles
+    Pre-fix, the >=100 band produced invalid EDTF like "1919XX". Post-fix,
+    the validator must produce clean ~YYYY output. The 22-99 band is the
+    new unfixable code; the <=21 band is exercised here only as a
+    sanity check that we didn't break the existing century shorthand rule.
+  -->
+  <node id='9000009' visible='true' version='1' lat='0.0' lon='0.8'>
+    <tag k='name' v='cYYYY band 1 probe — c1920 autofix circa' />
+    <tag k='start_date' v='c1920' />
+    <tag k='end_date' v='1950' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000010' visible='true' version='1' lat='0.0' lon='0.9'>
+    <tag k='name' v='cYYYY band 1 probe — c minus 1500 BCE via negative' />
+    <tag k='start_date' v='c-1500' />
+    <tag k='end_date' v='-1400' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000011' visible='true' version='1' lat='0.0' lon='1.0'>
+    <tag k='name' v='cYYYY band 1 probe — c1920bc BCE via suffix' />
+    <tag k='start_date' v='c1920bc' />
+    <tag k='end_date' v='-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000012' visible='true' version='1' lat='0.0' lon='1.1'>
+    <tag k='name' v='cYYYY band 1 probe — c100 boundary' />
+    <tag k='start_date' v='c100' />
+    <tag k='end_date' v='200' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000013' visible='true' version='1' lat='0.0' lon='1.2'>
+    <tag k='name' v='cYYYY band 2 probe — c50 ambiguous unfixable' />
+    <tag k='start_date' v='c50' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000014' visible='true' version='1' lat='0.0' lon='1.3'>
+    <tag k='name' v='cYYYY band 2 probe — c22 lower boundary of ambiguous' />
+    <tag k='start_date' v='c22' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000015' visible='true' version='1' lat='0.0' lon='1.4'>
+    <tag k='name' v='cYYYY band 3 probe — c19 existing century rule unchanged' />
+    <tag k='start_date' v='c19' />
+    <tag k='end_date' v='1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000016' visible='true' version='1' lat='0.0' lon='1.5'>
+    <!-- Edge case: c0 is degenerate (year zero / century zero are both
+         nonsense in OHM convention). Pre-fix produced invalid EDTF
+         "-1XX". Post-fix: 4241 unfixable. -->
+    <tag k='name' v='cYYYY edge probe — c0 degenerate' />
+    <tag k='start_date' v='c0' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000017' visible='true' version='1' lat='0.0' lon='1.6'>
+    <!-- Edge case: negative band-3 (c-19). Pre-fix the existing CN
+         pipeline stripped the negative sign and produced century 19 CE
+         (start_date=1800), the wrong direction. Post-fix: 4241
+         unfixable, since neither circa year nor century has a safe
+         autofix path for negative magnitudes <= 21 in the current
+         pipeline. -->
+    <tag k='name' v='cYYYY edge probe — c-19 negative band 3 sign protection' />
+    <tag k='start_date' v='c-19' />
+    <tag k='end_date' v='-1' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000018' visible='true' version='1' lat='0.0' lon='1.7'>
+    <!-- YYYY/YY abbreviated-tail range probe (start_date variant). The
+         2-digit suffix replaces the last two digits of the year.
+         Pre-fix, edtf-java accepted the short form and produced
+         end_date=5299 for end_date=1850/52. Post-fix expands to the
+         full pair and uses min for start_date, max for end_date. -->
+    <tag k='name' v='range probe — start_date 1850/52 abbreviated tail' />
+    <tag k='start_date' v='1850/52' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000019' visible='true' version='1' lat='0.0' lon='1.8'>
+    <!-- Same shape on end_date — the corruption-tier case. Pre-fix:
+         end_date=5299 from edtf-java misinterpretation. Post-fix:
+         end_date=1852 (the max of the expanded pair). -->
+    <tag k='name' v='range probe — end_date 1850/52 abbreviated tail' />
+    <tag k='start_date' v='1840' />
+    <tag k='end_date' v='1850/52' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000020' visible='true' version='1' lat='0.0' lon='1.9'>
+    <!-- Wrap case: 1899/01 would expand to 1801, less than the start.
+         The autofix is gated on year2 >= year1, so this falls through
+         to the pre-existing pipeline rather than producing a backwards
+         range. -->
+    <tag k='name' v='range probe — start_date 1899/01 wrap fallthrough' />
+    <tag k='start_date' v='1899/01' />
+    <tag k='end_date' v='1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000021' visible='true' version='1' lat='0.0' lon='2.0'>
+    <!-- 0000..YYYY implausibly-ancient probe (start_date variant).
+         When the upper bound > 400, the leading zeros are treated as a
+         placeholder rather than literal year-zero, and the autofix
+         collapses to the open-start /YYYY form. -->
+    <tag k='name' v='range probe — start_date 0000..1850 implausibly ancient' />
+    <tag k='start_date' v='0000..1850' />
+    <tag k='end_date' v='1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000022' visible='true' version='1' lat='0.0' lon='2.1'>
+    <!-- end_date variant of the same shape. -->
+    <tag k='name' v='range probe — end_date 0000..1900 implausibly ancient' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='0000..1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000023' visible='true' version='1' lat='0.0' lon='2.2'>
+    <!-- Sub-threshold case: upper bound <= 400 could be a real ancient
+         range; falls through. -->
+    <tag k='name' v='range probe — start_date 0000..0050 below threshold fallthrough' />
+    <tag k='start_date' v='0000..0050' />
+    <tag k='end_date' v='100' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000024' visible='true' version='1' lat='0.0' lon='2.3'>
+    <!-- 4242 :raw clobber probe (decade/century path). 1800s would
+         autofix as decade or century, both writing :raw=1800s; the
+         pre-existing user :raw should not be silently overwritten. -->
+    <tag k='name' v='raw conflict probe — 1800s with hand-authored :raw' />
+    <tag k='start_date' v='1800s' />
+    <tag k='start_date:raw' v='around 1800 (hand-authored)' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000025' visible='true' version='1' lat='0.0' lon='2.4'>
+    <!-- 4242 :raw clobber probe (end_date=present path). Pre-fix the
+         autofix would overwrite :raw=2099-12-31 with :raw=present.
+         Post-fix: unfixable warning instead. -->
+    <tag k='name' v='raw conflict probe — end_date=present with hand-authored :raw' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='present' />
+    <tag k='end_date:raw' v='2099-12-31 (machine-generated, do not lose)' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <!-- Chronology relation suppression probes (issue #23). The named
+       chronology has no source tag, but the missing-source rule (4303)
+       must skip it because chronologies are aggregator wrappers. The
+       member nodes (9000027, 9000028) have their own source tags. -->
+  <node id='9000027' visible='true' version='1' lat='0.0' lon='2.5'>
+    <tag k='name' v='Chronology member 1' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+    <tag k='source' v='https://example.org/source-1800' />
+  </node>
+  <node id='9000028' visible='true' version='1' lat='0.0' lon='2.6'>
+    <tag k='name' v='Chronology member 2' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source-1850' />
+  </node>
+  <relation id='9000026' visible='true' version='1'>
+    <member type='node' ref='9000027' role='' />
+    <member type='node' ref='9000028' role='' />
+    <tag k='name' v='Chronology probe — type=chronology no source 4303 must NOT fire' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+  </relation>
+  <!-- Chronology boundary gap probe (issue #22). Parent declares
+       1500..2000 but members only cover 1800..1900, so 4236 should
+       fire twice: once for the leading gap (parent start 1500 vs
+       oldest member start 1800) and once for the trailing gap
+       (latest member end 1900 vs parent end 2000). -->
+  <node id='9000031' visible='true' version='1' lat='0.0' lon='2.7'>
+    <tag k='name' v='Boundary gap member 1' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000032' visible='true' version='1' lat='0.0' lon='2.8'>
+    <tag k='name' v='Boundary gap member 2' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <relation id='9000030' visible='true' version='1'>
+    <member type='node' ref='9000031' role='' />
+    <member type='node' ref='9000032' role='' />
+    <tag k='name' v='Chronology probe — boundary gap parent extends beyond members' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1500' />
+    <tag k='end_date' v='2000' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
+  <!-- Boundary-chronology non-relation members probe (issue #21).
+       Boundary chronologies (chronology with 2+ type=boundary relation
+       members) should only contain relations. Attaching a way directly
+       indicates the contributor mistakenly bypassed the member
+       boundary relations. 4243 must fire. -->
+  <node id='9000041' visible='true' version='1' lat='0.0' lon='2.9' />
+  <node id='9000042' visible='true' version='1' lat='0.0' lon='3.0' />
+  <node id='9000043' visible='true' version='1' lat='0.1' lon='3.0' />
+  <way id='9000044' visible='true' version='1'>
+    <nd ref='9000041' />
+    <nd ref='9000042' />
+    <nd ref='9000043' />
+    <tag k='name' v='Stray way attached directly to boundary chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </way>
+  <relation id='9000045' visible='true' version='1'>
+    <member type='way' ref='9000044' role='outer' />
+    <tag k='name' v='Boundary chronology member 1 1800-1850' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1850' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
+  <relation id='9000046' visible='true' version='1'>
+    <member type='way' ref='9000044' role='outer' />
+    <tag k='name' v='Boundary chronology member 2 1850-1900' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
+  <relation id='9000040' visible='true' version='1'>
+    <member type='relation' ref='9000045' role='' />
+    <member type='relation' ref='9000046' role='' />
+    <member type='way' ref='9000044' role='' />
+    <tag k='name' v='Boundary chronology probe with stray way member' />
+    <tag k='type' v='chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </relation>
+  <!-- source:N:url generalization probes (issue #27). Pre-v0.4.0 only
+       the literal pair source/source:url was checked; now every
+       source[:N]?:url key gets paired with its companion. -->
+  <node id='9000051' visible='true' version='1' lat='0.0' lon='3.1'>
+    <tag k='name' v='source:1:url probe — blank companion rename' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:1:url' v='https://example.org/secondary' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000052' visible='true' version='1' lat='0.0' lon='3.2'>
+    <tag k='name' v='source:1 == source:1:url duplicate probe' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:1' v='https://example.org/dup' />
+    <tag k='source:1:url' v='https://example.org/dup' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000053' visible='true' version='1' lat='0.0' lon='3.3'>
+    <tag k='name' v='source:1 text source:1:url URL swap probe' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:1' v='Local archive notes (probe)' />
+    <tag k='source:1:url' v='https://example.org/url' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <node id='9000054' visible='true' version='1' lat='0.0' lon='3.4'>
+    <tag k='name' v='source:2 and source:2:url both URLs differ probe' />
+    <tag k='source' v='https://primary.example.com' />
+    <tag k='source:2' v='https://example.org/two-a' />
+    <tag k='source:2:url' v='https://example.org/two-b' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1950' />
+  </node>
+  <!-- Packed-date probes (start_date=YYYY-MMDD or YYYY-MDD with the
+       month-day hyphen missing). Pre-v0.4.0, these flowed through the
+       slash-range pipeline and produced base=0630 with a malformed
+       :edtf=1930/0630, which lost the year as the base. Now handled
+       as a typo-fix when year > 1200 (4-digit suffix) or > 1000
+       (3-digit) AND MM-DD is a real calendar date. Bad cases (year
+       > MMDD but MM-DD invalid OR year below threshold) fire 4244. -->
+  <node id='9000061' visible='true' version='1' lat='0.0' lon='3.5'>
+    <tag k='name' v='packed-date probe — YYYY-MMDD valid autofix' />
+    <tag k='start_date' v='1875-1031' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000062' visible='true' version='1' lat='0.0' lon='3.6'>
+    <tag k='name' v='packed-date probe — YYYY-MDD 3-digit valid autofix' />
+    <tag k='start_date' v='1500-731' />
+    <tag k='end_date' v='1600' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000063' visible='true' version='1' lat='0.0' lon='3.7'>
+    <tag k='name' v='packed-date probe — Feb 29 leap year valid' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2000-0229' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000064' visible='true' version='1' lat='0.0' lon='3.8'>
+    <tag k='name' v='packed-date probe — Nov 31 invalid 4244' />
+    <tag k='start_date' v='1875-1131' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000065' visible='true' version='1' lat='0.0' lon='3.9'>
+    <tag k='name' v='packed-date probe — year below threshold 4244' />
+    <tag k='start_date' v='1100-1031' />
+    <tag k='end_date' v='1200' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000066' visible='true' version='1' lat='0.0' lon='4.0'>
+    <tag k='name' v='packed-date probe — Feb 29 non-leap invalid 4244' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1875-0229' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <!-- Edge cases for the widened 4244 condition (initial spec only fired
+       when YYYY > MMDD; widened to also fire when MM-DD is a valid
+       calendar date, regardless of YYYY vs MMDD comparison). -->
+  <node id='9000067' visible='true' version='1' lat='0.0' lon='4.1'>
+    <!-- 4-digit edge: year < MMDD but MM-DD valid (Oct 31 of year 500).
+         Pre-widening: silently fell through. Post-widening: 4244. -->
+    <tag k='name' v='packed-date edge — 0500-1031 valid MD year less than MMDD' />
+    <tag k='start_date' v='0500-1031' />
+    <tag k='end_date' v='1600' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000068' visible='true' version='1' lat='0.0' lon='4.2'>
+    <!-- 3-digit edge: year > MDD but M-DD invalid (July 32). Pre-widening:
+         silently fell through (3-digit had no unfixable variant at all).
+         Post-widening: 4244. -->
+    <tag k='name' v='packed-date edge — 1500-732 3-digit invalid MD' />
+    <tag k='start_date' v='1500-732' />
+    <tag k='end_date' v='1600' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000069' visible='true' version='1' lat='0.0' lon='4.3'>
+    <!-- 3-digit edge: valid M-DD but year < 1000 threshold. Post-widening: 4244. -->
+    <tag k='name' v='packed-date edge — 0900-731 3-digit valid year below threshold' />
+    <tag k='start_date' v='0900-731' />
+    <tag k='end_date' v='1000' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <!-- Packed-features (4245) probes. Semicolon-delimited matched sets
+       of start_date/end_date that almost certainly represent N
+       features merged into one. -->
+  <node id='9000071' visible='true' version='1' lat='0.0' lon='4.4'>
+    <tag k='name' v='packed-features probe — 3 year-only entries autofix' />
+    <tag k='start_date' v='1850;1900;1950' />
+    <tag k='end_date' v='1899;1949;2000' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000072' visible='true' version='1' lat='0.0' lon='4.5'>
+    <tag k='name' v='packed-features probe — 2 entries mixed precision autofix' />
+    <tag k='start_date' v='1850-03;1900-06-15' />
+    <tag k='end_date' v='1899-12-31;1949' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000073' visible='true' version='1' lat='0.0' lon='4.6'>
+    <tag k='name' v='packed-features probe — :raw conflict warning unfixable' />
+    <tag k='start_date' v='1850;1900' />
+    <tag k='end_date' v='1899;1949' />
+    <tag k='start_date:raw' v='hand-authored note about start' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+</osm>

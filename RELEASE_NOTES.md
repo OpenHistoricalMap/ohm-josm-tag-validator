@@ -1,3 +1,120 @@
+# v0.4.0 — JOSM crash hotfix, autofix-safety guards, normalization wins
+
+Originally scoped as a v0.3.3 hotfix for [#26](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/26) (a JOSM crash on tag values containing `{` or `}`). Bumped to v0.4.0 once the audit it triggered surfaced a class of autofix-safety bugs and the testing pass uncovered several normalization wins worth shipping in the same release.
+
+## What was crashing
+
+JOSM crashed (with `IllegalArgumentException: can't parse argument number: z`) whenever the validator examined a feature whose tag value contained literal `{` or `}` — most commonly tile-template URLs like `https://mapwarper.net/maps/tile/{tileset}/{z}/{x}/{y}.png`. The crash bubbled up to JOSM's bug-report dialog and aborted the validation run.
+
+## Why it happened
+
+The plugin was using JOSM's `TestError.Builder.message(String, String, Object...)` API incorrectly. The 2nd argument is supposed to be a `marktr(...)`-style format template with `{0}` placeholders, with the substitution values passed as the variadic 3rd-onward args; JOSM then runs `MessageFormat` once with the args inserted post-parse, so braces in values are safe. The plugin was instead calling `tr(format, args)` itself and passing the *already-substituted* string to `.message(...)` as the description format. JOSM then ran `MessageFormat` on that pre-substituted string, and any literal `{` introduced by an interpolated tag value (most visibly `{z}` in tile URLs) crashed the `MessageFormat` constructor.
+
+## What changed
+
+- **All 64 `.message(...)` call sites** in `DateTagTest` and `TagConsistencyTest` rewritten from `.message(title, tr(format, args))` to `.message(title, marktr(format), args)` — the JOSM-correct idiom.
+- **Build-time guard** (`test/MessageApiAuditor.java`, run by `ant test`) scans both validator source files and fails the build if the broken pattern is reintroduced.
+- **Regression fixture** at `test/crasher_braces.osm` carries three primitives whose tag values exercise the previously-crashing description paths (bare `source:url` with `{z}/{x}/{y}`, non-URL `source` value with literal braces, two differing brace-bearing URLs).
+- **Golden-file diff.** `ant test` now redirects RunTests' findings to `test/results.txt` and diffs against the committed `test/expected.txt`. Any drift in finding count, ordering, or text fails the build with a unified diff.
+
+## Also fixed: source-family autofixes no longer silently overwrite existing keys
+
+Companion bug class surfaced during the audit. Three rules wrote into source-family keys without checking whether the destination slot already held content. On features that had both the source being fixed AND a real value at the destination key, the autofix silently lost the destination value.
+
+The fix splits each affected rule into two paths: autofix when destination slots are clear, unfixable warning when any destination slot is occupied. New codes 4321 / 4322 / 4323 carry the unfixable variants:
+
+- **4306 (`move non-URL source tags to source:name`)** now only autofixes when the companion `source:name` (or `source:N:name`) is empty. The new **4321** fires the unfixable variant when it isn't.
+- **4315 (`source contains multiple URLs; autofix by enumerating source:# keys`)** now only autofixes when none of the target `source:1`, `source:2`, … slots is occupied. The new **4322** fires the unfixable variant when any is.
+- **4316 (`source contains multiple text strings; autofix by enumerating source:#:name keys`)** now only autofixes when none of the target `source:name`, `source:1:name`, … slots is occupied. The new **4323** fires the unfixable variant when any is.
+- **4233 (`Invalid date - Julian date`)** now only autofixes when the target `*_date:note` is empty. The autofix writes a synthesised calendar-conversion note into `:note`, and `:note` is OHM's slot for human-meaningful annotation, so an existing value is exactly the kind of content that must not be silently overwritten. The new **4240** fires the unfixable variant when `:note` is already populated.
+- **4203 / 4204 (decade/century normalization)** and **4221 (`end_date=present`)** now check the target `*_date:raw` slot before writing. If it already holds a different value, the new **4242** fires the unfixable variant. Same shape as 4321/4322/4323/4240: name both the proposed and existing values so the editor can decide.
+
+The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
+
+## New: 4245 — packed-features warning ("1 feature that should be N")
+
+When `start_date` and `end_date` both contain semicolon-delimited entries with the same count (≥ 2 each) and every entry parses as a strict ISO date, the feature is almost certainly an attempt to encode N temporally-distinct features in one — e.g. a building rebuilt twice, recorded as one feature with three start/end pairs.
+
+The new **4245** warning fires "1 feature that should be N; please review and consider splitting" with an autofix that:
+
+- Collapses `start_date` to the minimum of the start values
+- Collapses `end_date` to the maximum of the end values
+- Preserves the original semicolon strings in `start_date:raw` and `end_date:raw`
+- Adds `fixme=split into multiple features` so the editor remembers to do the actual split manually
+
+When the autofix would clobber an existing `:raw` (same protection as 4242), the warning fires unfixable. When 4245 fires with or without autofix, the per-key date checks for `start_date` and `end_date` are suppressed on this primitive — they'd otherwise produce noisy "cannot be read" warnings against the same semicolon strings the new rule already explains.
+
+Real-world impact: 4 primitives in the regression dataset (one node, three ways) flip from opaque "cannot be read" warnings to the new actionable autofix.
+
+## New: 4243 — boundary chronology has non-relation members
+
+Per [issue #21](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/21), a "boundary chronology" — defined as a `type=chronology` relation with 2 or more `type=boundary` relations as members — must contain only relation members. Non-relation members (ways, nodes attached directly) indicate the contributor mistakenly bypassed the member boundary relations and attached the geometry to the chronology instead. Severity ERROR.
+
+The 2+ threshold avoids flagging single-boundary chronologies (degenerate cases the editor probably hasn't finished assembling).
+
+## New: 4236 boundary-gap variants
+
+Per [issue #22](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/22), the chronology gap rule (4236) now fires for **two new boundary cases** in addition to the existing "gap between consecutive members":
+
+- **Gap between parent `start_date` and the oldest member's `start_date`**, when the gap exceeds 1 unit at the coarser shared precision. e.g. chronology declares `start_date=0100` but the oldest member relation starts at `0300` — 199-year gap at the start.
+- **Gap between the latest member's `end_date` and parent `end_date`**, same threshold. Skipped entirely if any eligible member is open-ended (no `end_date`), since open-ended coverage extends to infinity.
+
+Both variants use the same code (4236), severity, and overall description shape as the original consecutive-pair gap. The titles differentiate the three cases. Real OHM data turns out to have plenty of these — ~14 boundary gaps fire across the regression dataset.
+
+## Generalization: source/source:url consolidation now handles every `source[:N]?:url`
+
+Per [issue #27](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/27), rules 4311 / 4312 / 4313 (`source` vs `source:url` consolidation) now apply to every `source[:N]?:url` key on a primitive, not just the literal `source:url`. So a feature with `source:1:url=https://...` gets paired against `source:1`, `source:7:url` against `source:7`, etc. Per-pair, the four existing sub-cases (blank companion → rename, identical values → delete duplicate, both URLs → move to next free `source:N` slot, text companion → swap with `:name`) run independently.
+
+The fix descriptions name the actual key pair so the editor sees `source:1:url=... should live in source:1` rather than the static `source:url should live in source`. The autofix targets are derived per-pair: text→name swap on `source:1` writes to `source:1:name` (not `source:name`).
+
+## Suppression: 4303 (`Missing tag - source on named feature`) skips chronology relations
+
+Per [issue #23](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/23), `type=chronology` relations are now exempt from the missing-source warning. They're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal. ~3 chronology relations in the regression dataset stop firing this warning.
+
+## Behavior change: 4212 / 4213 are now unfixable
+
+`[ohm] Suspicious date - 01-01 start_date` (4212) and `[ohm] Suspicious date - 12-31 end_date` (4213) previously offered a one-click autofix to trim to the bare year (`start_date=1875-01-01` → `start_date=1875`). Per [issue #28](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/28), these are now unfixable WARNINGs. Jan 1 and Dec 31 are legitimate real dates often enough (laws taking effect, treaties signed, terms ending, fiscal year boundaries) that even an opt-in autofix proved too easy to apply by mistake when batch-fixing. The descriptions still suggest the manual trim for the false-precision case.
+
+## Also fixed: packed-date typo (`YYYY-MMDD` / `YYYY-MDD`)
+
+Common typo where the user wrote a packed date with the month-day hyphen missing (e.g. `end_date=1930-0630` for `1930-06-30`). Pre-fix, these flowed through the slash-range pipeline as if they were ranges, producing wrong base values like `end_date=0630` with `:edtf=1930/0630`. Now handled as a typo-fix:
+
+- **`YYYY-MMDD`** (4-digit suffix) → autofix to `YYYY-MM-DD` when `YYYY > 1200` AND the implied `MM-DD` is a real calendar date (leap-year-aware via `java.time.LocalDate`).
+- **`YYYY-MDD`** (3-digit suffix; leading zero on the month omitted) → autofix to `YYYY-0M-DD` when `YYYY > 1000` AND the implied `M-DD` is real.
+- **Held-back cases** — year below the 1200 threshold, or the implied MM-DD isn't a real calendar date (`1875-1131`, `1875-0229` on a non-leap year), but the input still looks like a packed-date attempt (`YYYY > MMDD`) — fire the new **4244** unfixable warning.
+
+Three real-world rows in `test_data.osm` flip from broken slash-range output to clean ISO triples on this fix alone.
+
+## Also fixed: abbreviated-tail and implausibly-ancient range normalization
+
+Two normalization fixes that surfaced during testing:
+
+- **`YYYY/YY` abbreviated-tail range** (e.g. `1716/17`, `1850/52`). Pre-fix, edtf-java accepted the short form as valid EDTF and produced wildly wrong base values — `end_date=1850/52` came out as `end_date=5299`. Now expanded to the full pair before normalization: `end_date=1850/52` → `end_date=1852, :edtf=1850/1852, :raw=1850/52`. For `start_date`, the base is the lower year; for `end_date`, the upper. Wrap cases like `1899/01` (where the suffix would resolve to a year less than the start) deliberately fall through and are not autofixed.
+
+- **`0000..YYYY` implausibly-ancient range** (e.g. `0..1850`, `00..1900`). When the upper bound `YYYY > 400`, the validator now collapses the leading-zeros placeholder to the open-start EDTF form `/YYYY` and uses `YYYY` as the base. `start_date=0..1850` → `start_date=1850, :edtf=/1850, :raw=0..1850`. Below the threshold the input could be a real ancient range; falls through.
+
+Dozens of rows in real OHM data flip from broken or ambiguous output to clean form on these two paths alone.
+
+## Also fixed: cYYYY shorthand normalization
+
+Pre-fix, the compact `cYYYY` shorthand (e.g. `start_date=c1920`) flowed through the existing decade/century pipeline and produced **invalid EDTF output** like `start_date:edtf=1919XX` — a malformed string that JOSM's downstream EDTF check would then re-flag, leaving the user worse off than before they accepted the fix.
+
+The validator now handles `cYYYY` shorthand in five magnitude/sign cases:
+
+- **`abs(YYYY) >= 100`** — unambiguous "circa year": rewrite to the canonical EDTF `~YYYY` triple. `c1920` → `start_date=1920, :edtf=1920~, :raw=c1920`. `c-1500` → `start_date=-1500, :edtf=-1500~`. `c1920bc` flips the sign directly with no N-1 offset → `start_date=-1920, :edtf=-1920~`.
+- **`22 <= YYYY <= 99`** — ambiguous between "circa year YY" and "the YYth century". Fires the new **4241** unfixable warning. Manual review required to pick one.
+- **`1 <= YYYY <= 21`** — highly probable positive century shorthand. Continues to flow through the existing CN/YY00s century pipeline unchanged (so `c19` is still treated the same as `1800s`).
+- **`-99 <= YYYY <= -1`** — negative magnitudes ≤ 21 (e.g. `c-19`) and the full negative ambiguous band. The existing CN pipeline silently strips the sign and produces a CE century, so these values now fire **4241** as well.
+- **`YYYY == 0`** (`c0`, `c-0`, `c0bc`) — degenerate. Year zero / century zero are both nonsense in OHM's astronomical-year convention. Fires **4241**.
+
+The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix.
+
+## Side benefit: apostrophes are now rendered correctly
+
+The old double-`MessageFormat` path was silently stripping apostrophes from message text — both from format-string literals (e.g. `'https://'` came out as `https://`) and from tag values that contained apostrophes (e.g. `d'ouvrage` → `douvrage`). The single-pass path renders these correctly. ~20 finding descriptions across the regression dataset now read more naturally; no wording was deliberately changed.
+
+---
+
 # v0.3.2 — wikidata rule detune, historic-tag and historic-in-name warnings, year-boundary swap, icon polish
 
 ## New: `[ohm] Name warning - "historic" in name` (4320, WARNING)

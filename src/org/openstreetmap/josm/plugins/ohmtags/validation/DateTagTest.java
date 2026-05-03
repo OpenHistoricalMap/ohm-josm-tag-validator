@@ -1,6 +1,7 @@
 // License: GPL v2 or later. For details, see LICENSE file.
 package org.openstreetmap.josm.plugins.ohmtags.validation;
 
+import static org.openstreetmap.josm.tools.I18n.marktr;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.time.LocalDate;
@@ -221,6 +222,12 @@ public class DateTagTest extends Test {
     protected static final int CODE_CHRONOLOGY_MISSING_DATE = 4237;
     protected static final int CODE_CHRONOLOGY_DUPLICATE = 4238;
     protected static final int CODE_CHRONOLOGY_MEMBER_NO_DATES = 4239;
+    protected static final int CODE_JULIAN_NOTE_CONFLICT = 4240;
+    protected static final int CODE_C_SHORTHAND_AMBIGUOUS = 4241;
+    protected static final int CODE_RAW_CONFLICT = 4242;
+    protected static final int CODE_BOUNDARY_CHRONOLOGY_NON_RELATION = 4243;
+    protected static final int CODE_PACKED_DATE_INVALID = 4244;
+    protected static final int CODE_PACKED_FEATURE_SET = 4245;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -266,6 +273,39 @@ public class DateTagTest extends Test {
     private static final Pattern AMBIGUOUS_CENTURY_DECADE =
         Pattern.compile("^~?\\d+00s( BCE?)?$");
 
+    /**
+     * Abbreviated-tail range like {@code 1716/17} (meaning {@code 1716/1717})
+     * or {@code 1850/52} (meaning {@code 1850/1852}). 4-digit start year then
+     * 2-digit suffix sharing the same century-decade prefix. Captures the
+     * 4-digit year (group 1) and the 2-digit tail (group 2).
+     */
+    private static final Pattern SLASH_TAIL_RANGE =
+        Pattern.compile("^(\\d{4})/(\\d{2})$");
+
+    /**
+     * Implausibly-ancient-start range like {@code 0000..1850} or
+     * {@code 00..1850}. One or more leading zeros, "..", then a 1-4 digit
+     * year. Captures the upper-bound year (group 1).
+     */
+    private static final Pattern ZERO_DOTS_RANGE =
+        Pattern.compile("^0+\\.\\.(\\d{1,4})$");
+
+    /**
+     * Packed date with the month-day hyphen missing: {@code YYYY-MMDD}
+     * (4-digit suffix). Captures the year (group 1) and the MMDD packed
+     * pair (group 2).
+     */
+    private static final Pattern PACKED_DATE_MMDD =
+        Pattern.compile("^(\\d{4})-(\\d{4})$");
+
+    /**
+     * Packed date with the month-day hyphen missing AND a 1-digit month:
+     * {@code YYYY-MDD} (3-digit suffix). Captures the year (group 1) and
+     * the MDD packed pair (group 2).
+     */
+    private static final Pattern PACKED_DATE_MDD =
+        Pattern.compile("^(\\d{4})-(\\d{3})$");
+
     /** The bot username trusted to have authored correct {@code :raw} values. */
     private static final String TRUSTED_BOT_USER = "tagcleanupbot";
 
@@ -309,23 +349,124 @@ public class DateTagTest extends Test {
         // warnings on r/2828412 / British Empire 1921-1922).
         if (p.get("start_date") == null && isManMade(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_START_DATE)
-                .message(tr("[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source"),
-                         tr(""))
+                .message(tr("[ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source"))
                 .primitives(p)
                 .build());
         }
 
-        for (String baseKey : BASE_KEYS) {
-            checkAmbiguousTrailingHyphen(p, baseKey);
-            checkDateFamily(p, baseKey);
-            checkMoreSpecificBase(p, baseKey);
-            checkSuspiciousYearBoundary(p, baseKey);
-            checkInvalidComponents(p, baseKey);
-            checkFutureEndDate(p, baseKey);
+        // Detect "merged-features" — semicolon-delimited matched sets of
+        // start_date and end_date — before the per-key checks. If this rule
+        // fires, it offers a single autofix that collapses to min/max while
+        // adding a fixme for the editor to split into separate features.
+        // When it fires we suppress the per-key + cross-key date checks for
+        // this primitive: those would otherwise produce noisy "cannot be
+        // read" warnings against the same semicolon strings the packed-
+        // features rule already explains. checkAllEdtfKeys still runs since
+        // it operates on :edtf siblings (orthogonal to the packed sets).
+        boolean packedFeatures = checkPackedFeatureSet(p);
+        if (!packedFeatures) {
+            for (String baseKey : BASE_KEYS) {
+                checkAmbiguousTrailingHyphen(p, baseKey);
+                checkDateFamily(p, baseKey);
+                checkMoreSpecificBase(p, baseKey);
+                checkSuspiciousYearBoundary(p, baseKey);
+                checkInvalidComponents(p, baseKey);
+                checkFutureEndDate(p, baseKey);
+            }
+            checkStartAfterEnd(p);
+            checkStartEndEqualityAndBackslash(p);
         }
-        checkStartAfterEnd(p);
-        checkStartEndEqualityAndBackslash(p);
         checkAllEdtfKeys(p);
+    }
+
+    /**
+     * Rule 4245: when {@code start_date} and {@code end_date} both contain
+     * the same number of semicolon-delimited entries (each parseable as a
+     * strict ISO date), the feature is almost certainly an attempt to encode
+     * N features in one. Offers a per-feature autofix that collapses the
+     * sets to min(start) / max(end), preserves the original semicolon
+     * strings in {@code start_date:raw} and {@code end_date:raw}, and adds
+     * {@code fixme=split into multiple features} so the editor remembers
+     * the manual follow-up.
+     *
+     * <p>Skips when either side is unparseable (can't compute min/max), when
+     * counts don't match (the rule is about matched pairs), or when the
+     * autofix would clobber an existing {@code :raw} on either side (fires
+     * the unfixable variant in that case so the editor reconciles
+     * :raw manually first).
+     *
+     * <p>Returns {@code true} if the rule fired (with or without autofix),
+     * so the caller can suppress redundant per-key date checks for this
+     * primitive.
+     */
+    private boolean checkPackedFeatureSet(OsmPrimitive p) {
+        String startVal = p.get("start_date");
+        String endVal = p.get("end_date");
+        if (startVal == null || endVal == null) return false;
+        if (!startVal.contains(";") || !endVal.contains(";")) return false;
+
+        String[] startParts = startVal.split(";");
+        String[] endParts = endVal.split(";");
+        if (startParts.length != endParts.length || startParts.length < 2) return false;
+
+        List<ParsedDate> starts = new ArrayList<>();
+        for (String s : startParts) {
+            ParsedDate pd = parseStrictBaseDate(s.trim());
+            if (pd == null) return false;
+            starts.add(pd);
+        }
+        List<ParsedDate> ends = new ArrayList<>();
+        for (String s : endParts) {
+            ParsedDate pd = parseStrictBaseDate(s.trim());
+            if (pd == null) return false;
+            ends.add(pd);
+        }
+
+        ParsedDate minStart = starts.get(0);
+        for (ParsedDate pd : starts) {
+            if (pd.lowerBound().isBefore(minStart.lowerBound())) minStart = pd;
+        }
+        ParsedDate maxEnd = ends.get(0);
+        for (ParsedDate pd : ends) {
+            if (pd.upperBound().isAfter(maxEnd.upperBound())) maxEnd = pd;
+        }
+
+        String newStart = minStart.raw;
+        String newEnd = maxEnd.raw;
+        int n = startParts.length;
+
+        // :raw clobber check on both sides; if either would clobber, emit
+        // the warning unfixable so the editor reconciles :raw first.
+        String existingStartRaw = rawConflictValue(p, "start_date", startVal);
+        String existingEndRaw = rawConflictValue(p, "end_date", endVal);
+
+        TestError.Builder builder = TestError.builder(this, Severity.WARNING, CODE_PACKED_FEATURE_SET)
+            .message(tr("[ohm] Suspicious feature - 1 feature that should be {0}; please review and consider splitting", n),
+                     marktr("start_date={0} and end_date={1}: looks like {2} features merged into "
+                        + "one. The autofix collapses to start_date={3} and end_date={4} (min/max), "
+                        + "preserves the originals in {5}={0} and {6}={1}, and adds "
+                        + "fixme=split into multiple features so the editor remembers the manual "
+                        + "follow-up."),
+                        startVal, endVal, n, newStart, newEnd, "start_date:raw", "end_date:raw")
+            .primitives(p);
+
+        if (existingStartRaw == null && existingEndRaw == null) {
+            // Safe to autofix.
+            List<Command> cmds = new ArrayList<>();
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "start_date", newStart));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "end_date", newEnd));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "start_date:raw", startVal));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "end_date:raw", endVal));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "fixme",
+                "split into multiple features"));
+            Command fix = new SequenceCommand(tr("Collapse merged-features dates"), cmds);
+            builder.fix(() -> fix);
+        }
+        // If existingStartRaw or existingEndRaw is non-null, no .fix(...)
+        // attached — the warning fires but the user has to clear the
+        // conflicting :raw manually before re-running.
+        errors.add(builder.build());
+        return true;
     }
 
     /**
@@ -418,9 +559,9 @@ public class DateTagTest extends Test {
         String trimmed = value.substring(0, value.length() - 1);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_TRAILING_HYPHEN)
             .message(tr("[ohm] Ambiguous date - trailing hyphen in date; unfixable, please review"),
-                     tr("{0}={1}: could be a typo for {2}, an incomplete input, "
-                        + "or an open-ended range {2}/. Manual review needed.",
-                        baseKey, value, trimmed))
+                     marktr("{0}={1}: could be a typo for {2}, an incomplete input, "
+                        + "or an open-ended range {2}/. Manual review needed."),
+                        baseKey, value, trimmed)
             .primitives(p)
             .build());
     }
@@ -467,30 +608,37 @@ public class DateTagTest extends Test {
         boolean isDec31 = month == 12 && day == 31;
 
         if (isStart && isJan1) {
-            // Possible false precision: start of year. We do not autofix
-            // because Jan 1 is also a legitimate date for many real
-            // events (laws taking effect, fiscal year boundaries, etc.);
-            // forum feedback flagged the auto-removal as too aggressive.
+            // Possible false precision: start of year. Unfixable per the
+            // 2026-04 forum feedback (auto-removal was too aggressive)
+            // and the v0.4.0 follow-up (issue #28: even an opt-in
+            // autofix is too easy to apply by mistake when batch-fixing,
+            // and Jan 1 is a legitimate real date often enough that the
+            // autofix shouldn't sit there as a one-click default).
             String yearStr = padAstronomicalYear(year);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_START)
-                .message(tr("[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01"),
-                         tr("{0}={1} → {0}={2}",
-                            baseKey, value, yearStr))
+                .message(tr("[ohm] Suspicious date - 01-01 start_date; unfixable, please review"),
+                         marktr("{0}={1}: Jan 1 is suspicious as a start_date — often "
+                            + "an artifact of false precision (someone typed YYYY-01-01 "
+                            + "when they meant YYYY) but also a legitimate date for many "
+                            + "real events (laws taking effect, fiscal year boundaries, "
+                            + "etc.). If the exact day is unknown, manually trim to "
+                            + "{0}={2}."),
+                            baseKey, value, yearStr)
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isEnd && isDec31) {
             // Possible false precision: end of year. Same reasoning as
             // above — Dec 31 is a real date too often to autofix.
             String yearStr = padAstronomicalYear(year);
-            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, yearStr);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_YEAR_END)
-                .message(tr("[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31"),
-                         tr("{0}={1} → {0}={2}",
-                            baseKey, value, yearStr))
+                .message(tr("[ohm] Suspicious date - 12-31 end_date; unfixable, please review"),
+                         marktr("{0}={1}: Dec 31 is suspicious as an end_date — often "
+                            + "an artifact of false precision (someone typed YYYY-12-31 "
+                            + "when they meant YYYY) but also a legitimate end date for "
+                            + "many real events (treaties signed, terms ending, etc.). "
+                            + "If the exact day is unknown, manually trim to {0}={2}."),
+                            baseKey, value, yearStr)
                 .primitives(p)
-                .fix(() -> fix)
                 .build());
         } else if (isStart && isDec31) {
             // Off-by-one: start on last day of year N almost certainly means year N+1.
@@ -500,26 +648,26 @@ public class DateTagTest extends Test {
             // representations share the year-0 convention here).
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_REVERSED_BOUNDARY)
                 .message(tr("[ohm] Suspicious date - 12-31 start_date; unfixable, please review"),
-                         tr("{0}={1}: end-of-year used as start_date. If the exact "
+                         marktr("{0}={1}: end-of-year used as start_date. If the exact "
                             + "day is unknown, manually change to {0}={2} (the year "
                             + "this date falls in) or {0}={3} (the next year, if a "
-                            + "typo).",
+                            + "typo)."),
                             baseKey, value,
                             padAstronomicalYear(year),
-                            padAstronomicalYear(year + 1)))
+                            padAstronomicalYear(year + 1))
                 .primitives(p)
                 .build());
         } else if (isEnd && isJan1) {
             // Off-by-one: end on first day of year N almost certainly means year N-1.
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SUSPICIOUS_REVERSED_BOUNDARY)
                 .message(tr("[ohm] Suspicious date - 01-01 end_date; unfixable, please review"),
-                         tr("{0}={1}: start-of-year used as end_date. If the exact "
+                         marktr("{0}={1}: start-of-year used as end_date. If the exact "
                             + "day is unknown, manually change to {0}={2} (the year "
                             + "this date falls in) or {0}={3} (the previous year, "
-                            + "if a typo).",
+                            + "if a typo)."),
                             baseKey, value,
                             padAstronomicalYear(year),
-                            padAstronomicalYear(year - 1)))
+                            padAstronomicalYear(year - 1))
                 .primitives(p)
                 .build());
         }
@@ -566,8 +714,8 @@ public class DateTagTest extends Test {
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_MONTH)
                     .message(tr("[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY"),
-                             tr("{0}={1}: month {2} is out of range. Trim to {3}?",
-                                baseKey, value, month, trimmed))
+                             marktr("{0}={1}: month {2} is out of range. Trim to {3}?"),
+                                baseKey, value, month, trimmed)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -578,8 +726,8 @@ public class DateTagTest extends Test {
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_DAY)
                     .message(tr("[ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM"),
-                             tr("{0}={1}: day {2} is out of range. Trim to {3}?",
-                                baseKey, value, day, trimmed))
+                             marktr("{0}={1}: day {2} is out of range. Trim to {3}?"),
+                                baseKey, value, day, trimmed)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -592,11 +740,11 @@ public class DateTagTest extends Test {
             if (!isValidDayForMonth(year, month, day)) {
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
                     .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review"),
-                             tr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
+                             marktr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
                               + "(e.g. Feb 30, June 31, or Feb 29 on a non-leap year). "
-                              + "Manual review needed.",
+                              + "Manual review needed."),
                                 baseKey, value,
-                                m.group(1), m.group(2), m.group(3)))
+                                m.group(1), m.group(2), m.group(3))
                     .primitives(p)
                     .build());
                 return;
@@ -613,8 +761,8 @@ public class DateTagTest extends Test {
                 Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_INVALID_MONTH)
                     .message(tr("[ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY"),
-                             tr("{0}={1}: month {2} is out of range. Trim to {3}?",
-                                baseKey, value, month, trimmed))
+                             marktr("{0}={1}: month {2} is out of range. Trim to {3}?"),
+                                baseKey, value, month, trimmed)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -668,8 +816,8 @@ public class DateTagTest extends Test {
             Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, null);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_FUTURE_DATE)
                 .message(tr("[ohm] Suspicious date - >10 year into the future; autofix as removed"),
-                         tr("{0}={1} is more than ten years in the future. Likely a typo; delete the key?",
-                            baseKey, value))
+                         marktr("{0}={1} is more than ten years in the future. Likely a typo; delete the key?"),
+                            baseKey, value)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -727,7 +875,7 @@ public class DateTagTest extends Test {
 
         errors.add(TestError.builder(this, Severity.WARNING, CODE_START_AFTER_END)
             .message(tr("[ohm] Suspicious date - start_date > end_date; autofix by swapping these"),
-                     tr("start_date={0}, end_date={1}. Swap?", start, end))
+                     marktr("start_date={0}, end_date={1}. Swap?"), start, end)
             .primitives(p)
             .fix(() -> fix)
             .build());
@@ -800,11 +948,11 @@ public class DateTagTest extends Test {
             Command fix = new SequenceCommand(tr("Revert tagcleanupbot start_date"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_BOT_ROLLBACK)
                 .message(tr("[ohm] Suspicious date - start_date:edtf=\\[end_date]; autofix to delete tags"),
-                         tr("start_date:edtf={0} matches end_date={1} and was written "
+                         marktr("start_date:edtf={0} matches end_date={1} and was written "
                           + "by tagcleanupbot. Rolling back deletes both start_date and "
                           + "start_date:edtf, restoring the pre-bot state where start_date "
-                          + "was genuinely unknown.",
-                            startEdtf, end))
+                          + "was genuinely unknown."),
+                            startEdtf, end)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -818,7 +966,7 @@ public class DateTagTest extends Test {
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_BACKSLASH_END_DATE_PATTERN)
                 .message(tr("[ohm] Suspicious date - start_date = end_date with backslash pattern; autofix by deleting start_date:edtf"),
-                         tr("The start_date and end_date values are equal and should "
+                         marktr("The start_date and end_date values are equal and should "
                           + "only be that way for an object that existed only for a day. "
                           + "Delete start_date:edtf?"))
                 .primitives(p)
@@ -835,9 +983,9 @@ public class DateTagTest extends Test {
             && end.startsWith(backslashRemainder)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_BACKSLASH_TRUNCATED)
                 .message(tr("[ohm] Suspicious date - start_date:edtf range extends after end_date; unfixable, please review"),
-                         tr("start_date:edtf={0}: possible `start_date:edtf = pattern` "
-                          + "inclusive of end_date={1}. Manual review needed.",
-                            startEdtf, end))
+                         marktr("start_date:edtf={0}: possible `start_date:edtf = pattern` "
+                          + "inclusive of end_date={1}. Manual review needed."),
+                            startEdtf, end)
                 .primitives(p)
                 .build());
             // Don't also fire Rule B for the same feature.
@@ -872,9 +1020,9 @@ public class DateTagTest extends Test {
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
-                             tr("start_date:edtf={0}: strip leading backslash and "
-                              + "re-normalize to {1}?",
-                                startEdtf, normalized.get()))
+                             marktr("start_date:edtf={0}: strip leading backslash and "
+                              + "re-normalize to {1}?"),
+                                startEdtf, normalized.get())
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -894,8 +1042,8 @@ public class DateTagTest extends Test {
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
-                             tr("start_date:edtf={0}: strip leading backslash to {1}?",
-                                startEdtf, backslashRemainder))
+                             marktr("start_date:edtf={0}: strip leading backslash to {1}?"),
+                                startEdtf, backslashRemainder)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -904,10 +1052,10 @@ public class DateTagTest extends Test {
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; unfixable, please review"),
-                             tr("start_date:edtf={0}: leading backslash is invalid "
+                             marktr("start_date:edtf={0}: leading backslash is invalid "
                               + "EDTF and the remainder cannot be normalized. "
-                              + "Manual review needed.",
-                                startEdtf))
+                              + "Manual review needed."),
+                                startEdtf)
                     .primitives(p)
                     .build());
             }
@@ -918,7 +1066,7 @@ public class DateTagTest extends Test {
         if (start != null && end != null && start.equals(end) && !botIsLastEditor) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_START_END_EQUAL)
                 .message(tr("[ohm] Suspicious date - start_date = end_date; unfixable, please review"),
-                         tr("did this feature exist for just 1 day/month/year?"))
+                         marktr("did this feature exist for just 1 day/month/year?"))
                 .primitives(p)
                 .build());
         }
@@ -986,9 +1134,9 @@ public class DateTagTest extends Test {
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_ANY_EDTF_INVALID_FIXABLE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
-                             tr("{0}={1} is not valid EDTF. Normalize to {2} and "
-                              + "preserve original in {3}?",
-                                key, value, newEdtf, rawSibling))
+                             marktr("{0}={1} is not valid EDTF. Normalize to {2} and "
+                              + "preserve original in {3}?"),
+                                key, value, newEdtf, rawSibling)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -996,9 +1144,9 @@ public class DateTagTest extends Test {
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
                     .message(tr("[ohm] Invalid date - *_date:edtf; unfixable, please review"),
-                             tr("{0}={1} is not valid EDTF and cannot be normalized. "
-                              + "Manual review needed.",
-                                key, value))
+                             marktr("{0}={1} is not valid EDTF and cannot be normalized. "
+                              + "Manual review needed."),
+                                key, value)
                     .primitives(p)
                     .build());
             }
@@ -1037,6 +1185,14 @@ public class DateTagTest extends Test {
             if ("end_date".equals(baseKey)) {
                 // end_date=present: legitimate "ongoing" intent, offer to
                 // convert to the canonical empty end_date + :raw=present form.
+                // The L1053 early-out already returned when :raw=present, so
+                // any non-null :raw at this point would be clobbered by the
+                // autofix. Fire CODE_RAW_CONFLICT instead in that case.
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, null, null, base, existingRaw);
+                    return;
+                }
                 List<Command> cmds = new ArrayList<>();
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, null));
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", null));
@@ -1044,8 +1200,8 @@ public class DateTagTest extends Test {
                 Command fix = new SequenceCommand(tr("Mark {0} as ongoing", baseKey), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_PRESENT_MARKER)
                     .message(tr("[ohm] Invalid date - end_date=present; autofix to no end_date"),
-                             tr("{0}={1} means an ongoing feature. Clear base and :edtf, mark with :raw={1}?",
-                                baseKey, base))
+                             marktr("{0}={1} means an ongoing feature. Clear base and :edtf, mark with :raw={1}?"),
+                                baseKey, base)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -1057,10 +1213,10 @@ public class DateTagTest extends Test {
                 Command fix = new SequenceCommand(tr("Delete {0}", baseKey), cmds);
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_PRESENT_START_DATE)
                     .message(tr("[ohm] Invalid date - start_date=present; autofix to no start_date"),
-                             tr("{0}={1}: ''present'' describes an ongoing state, not a start point. "
+                             marktr("{0}={1}: ''present'' describes an ongoing state, not a start point. "
                               + "''present'' is only valid as end_date. "
-                              + "Delete {0} and {0}:edtf?",
-                                baseKey, base))
+                              + "Delete {0} and {0}:edtf?"),
+                                baseKey, base)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -1134,16 +1290,22 @@ public class DateTagTest extends Test {
             Optional<String> decadeBase = "start_date".equals(baseKey)
                 ? DateNormalizer.lowerBoundIso(decadeEdtf.get())
                 : DateNormalizer.upperBoundIso(decadeEdtf.get());
-            Command fix = buildTripleFix(p, baseKey, decadeBase.orElse(null),
-                                         decadeEdtf.get(), sourceValue);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_DECADE)
-                .message(tr("[ohm] Ambiguous date - unclear century/decade date; autofix as decade"),
-                         tr("{0}={1} as a decade: {0}={2}, :edtf={3}",
-                            sourceKey, sourceValue,
-                            decadeBase.orElse("?"), decadeEdtf.get()))
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
+            String existingRaw = rawConflictValue(p, baseKey, sourceValue);
+            if (existingRaw != null) {
+                addRawConflictFinding(p, baseKey, sourceValue,
+                    decadeBase.orElse(null), decadeEdtf.get(), sourceValue, existingRaw);
+            } else {
+                Command fix = buildTripleFix(p, baseKey, decadeBase.orElse(null),
+                                             decadeEdtf.get(), sourceValue);
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_DECADE)
+                    .message(tr("[ohm] Ambiguous date - unclear century/decade date; autofix as decade"),
+                             marktr("{0}={1} as a decade: {0}={2}, :edtf={3}"),
+                                sourceKey, sourceValue,
+                                decadeBase.orElse("?"), decadeEdtf.get())
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+            }
         }
 
         // --- Century interpretation ---
@@ -1156,13 +1318,19 @@ public class DateTagTest extends Test {
             Optional<String> centuryBase = "start_date".equals(baseKey)
                 ? DateNormalizer.lowerBoundIso(centuryEdtf.get())
                 : DateNormalizer.upperBoundIso(centuryEdtf.get());
+            String existingRaw = rawConflictValue(p, baseKey, sourceValue);
+            if (existingRaw != null) {
+                addRawConflictFinding(p, baseKey, sourceValue,
+                    centuryBase.orElse(null), centuryEdtf.get(), sourceValue, existingRaw);
+                return;
+            }
             Command fix = buildTripleFix(p, baseKey, centuryBase.orElse(null),
                                          centuryEdtf.get(), sourceValue);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_CENTURY)
                 .message(tr("[ohm] Ambiguous date - unclear century/decade date; autofix as century"),
-                         tr("{0}={1} as a century: {0}={2}, :edtf={3}",
+                         marktr("{0}={1} as a century: {0}={2}, :edtf={3}"),
                             sourceKey, sourceValue,
-                            centuryBase.orElse("?"), centuryEdtf.get()))
+                            centuryBase.orElse("?"), centuryEdtf.get())
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1191,9 +1359,9 @@ public class DateTagTest extends Test {
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_RAW_UNPARSEABLE)
                     .message(tr("[ohm] Invalid date - Unparseable data preserved in *_date:raw tag, "
                               + "no valid *_date:edtf or *_date tags; unfixable, please review."),
-                             tr("{0}:raw={1} cannot be normalized, and neither "
-                              + "{0} nor {0}:edtf provides a salvageable date.",
-                                baseKey, raw))
+                             marktr("{0}:raw={1} cannot be normalized, and neither "
+                              + "{0} nor {0}:edtf provides a salvageable date."),
+                                baseKey, raw)
                     .primitives(p)
                     .build());
             }
@@ -1228,10 +1396,10 @@ public class DateTagTest extends Test {
             Command fix = buildBaseAndEdtfFix(p, baseKey, expectedBase, expectedEdtf);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_MISMATCH_BOT)
                 .message(tr("[ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf"),
-                         tr("{0}:raw={1} implies {0}={2}, {0}:edtf={3}.",
+                         marktr("{0}:raw={1} implies {0}={2}, {0}:edtf={3}."),
                             baseKey, raw,
                             expectedBase == null ? "(absent)" : expectedBase,
-                            expectedEdtf))
+                            expectedEdtf)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1242,9 +1410,9 @@ public class DateTagTest extends Test {
                                                     baseKey + ":raw", null);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_MISMATCH_HUMAN)
                 .message(tr("[ohm] Date mismatch - across date tags; autofix by deleting :raw"),
-                         tr("{0} and {0}:edtf don''t match {0}:raw={1}. "
-                            + "Delete the machine-generated :raw tag?",
-                            baseKey, raw))
+                         marktr("{0} and {0}:edtf don''t match {0}:raw={1}. "
+                            + "Delete the machine-generated :raw tag?"),
+                            baseKey, raw)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1294,8 +1462,8 @@ public class DateTagTest extends Test {
                                                         baseKey, expectedBase);
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_MISSING_BASE)
                     .message(tr("[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf"),
-                             tr("{0}:edtf={1} implies {0}={2}.",
-                                baseKey, edtf, expectedBase))
+                             marktr("{0}:edtf={1} implies {0}={2}."),
+                                baseKey, edtf, expectedBase)
                     .primitives(p)
                     .fix(() -> fix)
                     .build());
@@ -1317,9 +1485,9 @@ public class DateTagTest extends Test {
         // Case 3: base and :edtf disagree, no :raw to reconcile against.
         errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_BASE_MISMATCH)
             .message(tr("[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review"),
-                     tr("{0}={1} but {0}:edtf={2} implies {0}={3}. "
-                        + "Manual review needed.",
-                        baseKey, base, edtf, expectedBase))
+                     marktr("{0}={1} but {0}:edtf={2} implies {0}={3}. "
+                        + "Manual review needed."),
+                        baseKey, base, edtf, expectedBase)
             .primitives(p)
             .build());
     }
@@ -1345,9 +1513,9 @@ public class DateTagTest extends Test {
         errors.add(TestError.builder(this, Severity.WARNING,
                                      CODE_MORE_SPECIFIC_BASE)
             .message(tr("[ohm] Date mismatch - *_date more precise than *_date:edtf; autofix *_date:edtf=*_date"),
-                     tr("{0}={1} is more specific than {0}:edtf={2}. "
-                      + "Manual review needed: confirm which value is authoritative.",
-                        baseKey, base, edtf))
+                     marktr("{0}={1} is more specific than {0}:edtf={2}. "
+                      + "Manual review needed: confirm which value is authoritative."),
+                        baseKey, base, edtf)
             .primitives(p)
             .build());
     }
@@ -1467,25 +1635,236 @@ public class DateTagTest extends Test {
      * </ol>
      */
     private void checkBaseOnly(OsmPrimitive p, String baseKey, String base) {
+        // Path 0a: Ambiguous or unsafe "cYY" shorthand. Fires unfixable in
+        //   any case the rest of the pipeline can't handle correctly:
+        //     - cYear == 0 (c0, c-0, c0bc): degenerate, no clean
+        //       interpretation.
+        //     - 22 <= cYear <= 99: ambiguous between "circa year" and
+        //       "century N".
+        //     - -99 <= cYear <= -1: existing CN century pipeline strips the
+        //       sign and produces a CE century, so we must intercept
+        //       before falling through.
+        //   The two clean bands are deliberately NOT handled here:
+        //     - abs(cYear) >= 100: DateNormalizer.preprocess rewrites
+        //       "cYYYY" -> "~YYYY" and Path 2 below builds the triple.
+        //     - 1 <= cYear <= 21: positive band-3, falls through to the
+        //       existing CN / YY00s century pipeline (e.g. "c19" == "1800s").
+        Integer cYear = DateNormalizer.parseCShorthandYear(base);
+        if (cYear != null && Math.abs(cYear) < 100 && (cYear <= 0 || cYear >= 22)) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_C_SHORTHAND_AMBIGUOUS)
+                .message(tr("[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review"),
+                         marktr("{0}={1}: ''c{2}'' could mean ''circa year {2}'' or "
+                            + "''the {3} century''. Manual review needed: rewrite as "
+                            + "~{2} for circa year, or as the appropriate century shorthand."),
+                            baseKey, base, cYear, withOrdinalSuffix(cYear))
+                .primitives(p)
+                .build());
+            return;
+        }
+
+        // Path 0b: "YYYY/YY" abbreviated-tail range (e.g. "1716/17",
+        //   "1850/52"). The 2-digit suffix replaces the last two digits of
+        //   the 4-digit year, so "1850/52" expands to "1850/1852". Common
+        //   in OHM contributors' input. Pre-fix, edtf-java accepted the
+        //   short form as valid EDTF and produced wrong values:
+        //   end_date=1850/52 came out as end_date=5299. Now we expand
+        //   first and route through the existing triple-fix pipeline.
+        //
+        //   Only fires when the resulting end >= start — otherwise the
+        //   suffix wraps a century boundary (e.g. "1899/01" would expand
+        //   to "1801", less than the start). Wrap cases fall through to
+        //   whatever the existing pipeline does.
+        Matcher slashTail = SLASH_TAIL_RANGE.matcher(base);
+        if (slashTail.matches()) {
+            int year1 = Integer.parseInt(slashTail.group(1));
+            int suffix2 = Integer.parseInt(slashTail.group(2));
+            int year2 = (year1 / 100) * 100 + suffix2;
+            if (year2 >= year1) {
+                String year1Str = String.format("%04d", year1);
+                String year2Str = String.format("%04d", year2);
+                String fullEdtf = year1Str + "/" + year2Str;
+                String newBase = "start_date".equals(baseKey) ? year1Str : year2Str;
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, newBase, fullEdtf, base, existingRaw);
+                    return;
+                }
+                Command fix = buildTripleFix(p, baseKey, newBase, fullEdtf, base);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: abbreviated-tail range; rewrite as {0}={2}, "
+                                + "{0}:edtf={3}, {0}:raw={1}?"),
+                                baseKey, base, newBase, fullEdtf)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
+        }
+
+        // Path 0c: "0000..YYYY" implausibly-ancient-start range. The leading
+        //   zeros are typically a placeholder/error rather than a literal
+        //   year-zero claim, so when YYYY > 400 (clearly post-classical) we
+        //   collapse to the open-start EDTF "/YYYY" form. Both start_date
+        //   and end_date use YYYY as the base value (per OHM convention,
+        //   the only well-defined year in the input becomes the date).
+        //
+        //   Below the YYYY > 400 threshold the input could be a real
+        //   ancient range; falls through.
+        Matcher zeroDots = ZERO_DOTS_RANGE.matcher(base);
+        if (zeroDots.matches()) {
+            int upperYear = Integer.parseInt(zeroDots.group(1));
+            if (upperYear > 400) {
+                String upperYearStr = String.format("%04d", upperYear);
+                String fullEdtf = "/" + upperYearStr;
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, upperYearStr, fullEdtf, base, existingRaw);
+                    return;
+                }
+                Command fix = buildTripleFix(p, baseKey, upperYearStr, fullEdtf, base);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: implausibly-ancient leading zeros; rewrite as "
+                                + "{0}={2}, {0}:edtf={3}, {0}:raw={1}?"),
+                                baseKey, base, upperYearStr, fullEdtf)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
+        }
+
+        // Path 0d: packed-date typo (missing hyphen between month and day).
+        //   YYYY-MMDD (4-digit suffix): autofix when YYYY > 1200 AND MM-DD is
+        //     a real calendar date for that year. If neither is true but
+        //     YYYY > MMDD, the user clearly intended a packed date but the
+        //     components don't form a real one — fire 4244 unfixable.
+        //   YYYY-MDD (3-digit, leading zero on the month omitted): autofix
+        //     when YYYY > 1000 AND M-DD is a real calendar date. No
+        //     unfixable variant for 3-digit per spec.
+        Matcher packed4 = PACKED_DATE_MMDD.matcher(base);
+        if (packed4.matches()) {
+            int year = Integer.parseInt(packed4.group(1));
+            String mmddStr = packed4.group(2);
+            int mm = Integer.parseInt(mmddStr.substring(0, 2));
+            int dd = Integer.parseInt(mmddStr.substring(2, 4));
+            int mmdd = Integer.parseInt(mmddStr);
+            boolean validMD = isValidMonthDay(year, mm, dd);
+            if (year > 1200 && validMD) {
+                String fixed = String.format("%04d-%02d-%02d", year, mm, dd);
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: missing hyphen between month and day; rewrite as {0}={2}?"),
+                                baseKey, base, fixed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            } else if (validMD || year > mmdd) {
+                // Fires when the input looks like a packed-date attempt but
+                // can't be safely autofixed. Two sub-cases:
+                //   - validMD true, year <= 1200: MM-DD is real but the
+                //     year is too old for the autofix threshold
+                //     (e.g. 0500-1031 = May 31 of year 500).
+                //   - validMD false, year > mmdd: MM-DD isn't a real
+                //     calendar date but the input is shaped like a typo
+                //     (e.g. 1875-1131 — Nov 31 doesn't exist).
+                // We deliberately do NOT fire when validMD is false AND
+                // year <= mmdd (e.g. 0001-2024, where MM=20 invalid AND
+                // year < MMDD) — that's likely some other shape entirely.
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_PACKED_DATE_INVALID)
+                    .message(tr("[ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review"),
+                             marktr("{0}={1}: looks like a packed YYYY-MMDD date with the month-day "
+                                + "hyphen missing, but the autofix is held back (year is below the "
+                                + "1200 threshold for packed-date autofixes, or the implied MM-DD is "
+                                + "not a real calendar date). Manual review needed: rewrite to "
+                                + "{0}=YYYY-MM-DD or trim to {0}=YYYY if the day-precision was "
+                                + "unintentional."),
+                                baseKey, base)
+                    .primitives(p)
+                    .build());
+                return;
+            }
+        }
+        Matcher packed3 = PACKED_DATE_MDD.matcher(base);
+        if (packed3.matches()) {
+            int year = Integer.parseInt(packed3.group(1));
+            String mddStr = packed3.group(2);
+            int m = Integer.parseInt(mddStr.substring(0, 1));
+            int dd = Integer.parseInt(mddStr.substring(1, 3));
+            int mdd = Integer.parseInt(mddStr);
+            boolean validMD = isValidMonthDay(year, m, dd);
+            if (year > 1000 && validMD) {
+                String fixed = String.format("%04d-%02d-%02d", year, m, dd);
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
+                             marktr("{0}={1}: missing hyphen between month and day; rewrite as {0}={2}?"),
+                                baseKey, base, fixed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            } else if (validMD || year > mdd) {
+                // Same shape as the 4-digit unfixable above, parameterized
+                // for the 3-digit MDD form. Catches e.g. 0900-731 (year
+                // 900 < 1000 threshold, valid M-DD) and 1500-732 (year
+                // > 1000 but M-DD invalid).
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_PACKED_DATE_INVALID)
+                    .message(tr("[ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review"),
+                             marktr("{0}={1}: looks like a packed YYYY-MDD date (3-digit suffix, "
+                                + "leading zero on the month omitted) with the month-day hyphen "
+                                + "missing, but the autofix is held back (year is below the 1000 "
+                                + "threshold for packed-date autofixes, or the implied M-DD is not "
+                                + "a real calendar date). Manual review needed: rewrite to "
+                                + "{0}=YYYY-MM-DD or trim to {0}=YYYY if the day-precision was "
+                                + "unintentional."),
+                                baseKey, base)
+                    .primitives(p)
+                    .build());
+                return;
+            }
+        }
+
         // Path 0: Julian calendar or Julian day number.
         Optional<String> julianGregorian = DateNormalizer.tryConvertJulian(base);
         if (julianGregorian.isPresent()) {
             String gregorian = julianGregorian.get();
+            String noteKey = baseKey + ":note";
+            String existingNote = p.get(noteKey);
+            // The autofix synthesises a :note string; if the user has already
+            // hand-authored a :note here, autofix would silently overwrite their
+            // annotation. Emit an unfixable variant in that case so the editor
+            // can decide whether to merge, replace, or leave their note alone.
+            if (existingNote != null && !existingNote.isEmpty()) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_JULIAN_NOTE_CONFLICT)
+                    .message(tr("[ohm] Invalid date - Julian date but *_date:note already populated; unfixable, please review"),
+                             marktr("{0}={1}: would convert to {2} (Gregorian) and add a "
+                                + "calendar-conversion :note, but {3}={4} already holds a value. "
+                                + "Manual review needed: keep, merge, or replace the existing note "
+                                + "before re-running the validator."),
+                                baseKey, base, gregorian, noteKey, existingNote)
+                    .primitives(p)
+                    .build());
+                return;
+            }
             List<Command> cmds = new ArrayList<>();
             // Per OHM wiki convention, calendar-conversion annotation lives in
             // :note, not :raw. The wiki's start_date page explicitly asks for
             // start_date:note=* to explain non-trivial calendar conversions.
             // :raw is reserved for machine-generated scaffold of shorthand
             // normalization; it shouldn't carry semantic notes.
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":note",
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), noteKey,
                 tr("Converted from {0}", base)));
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, gregorian));
             // Deliberately no :edtf — EDTF has no standard form for Julian dates.
             Command fix = new SequenceCommand(tr("Convert Julian date for {0}", baseKey), cmds);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_JULIAN_CONVERSION)
                 .message(tr("[ohm] Invalid date - Julian date; fixable, please review"),
-                         tr("{0}={1} \u2192 {0}={2} (Gregorian), {0}:note added",
-                            baseKey, base, gregorian))
+                         marktr("{0}={1} \u2192 {0}={2} (Gregorian), {0}:note added"),
+                            baseKey, base, gregorian)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1505,13 +1884,18 @@ public class DateTagTest extends Test {
                 : DateNormalizer.upperBoundIso(derivedEdtf);
             String derivedBase = derivedBaseOpt.orElse(null);
 
+            String existingRaw = rawConflictValue(p, baseKey, base);
+            if (existingRaw != null) {
+                addRawConflictFinding(p, baseKey, base, derivedBase, derivedEdtf, base, existingRaw);
+                return;
+            }
             Command fix = buildTripleFix(p, baseKey, derivedBase, derivedEdtf, base);
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                 .message(tr("[ohm] Invalid date - *_date; fixable, please review"),
-                         tr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}, {0}:raw={1}",
+                         marktr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}, {0}:raw={1}"),
                             baseKey, base,
                             derivedBase == null ? "(absent)" : derivedBase,
-                            derivedEdtf))
+                            derivedEdtf)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1545,18 +1929,26 @@ public class DateTagTest extends Test {
             Command fix;
             String messageTitle;
             if (originalWasEdtf) {
+                // Path 3a: original was already valid EDTF, no :raw write,
+                // so no clobber risk.
                 fix = buildBaseAndEdtfFix(p, baseKey, passthroughBase, cleaned);
                 messageTitle = tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review");
             } else {
+                // Path 3b: write triple with :raw preserved. Check for clobber.
+                String existingRaw = rawConflictValue(p, baseKey, base);
+                if (existingRaw != null) {
+                    addRawConflictFinding(p, baseKey, base, passthroughBase, cleaned, base, existingRaw);
+                    return;
+                }
                 fix = buildTripleFix(p, baseKey, passthroughBase, cleaned, base);
                 messageTitle = tr("[ohm] Invalid date - *_date; fixable, please review");
             }
             errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
                 .message(messageTitle,
-                         tr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}",
+                         marktr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}"),
                             baseKey, base,
                             passthroughBase == null ? "(absent)" : passthroughBase,
-                            cleaned))
+                            cleaned)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1566,7 +1958,7 @@ public class DateTagTest extends Test {
         // Path 1-false: unparseable by any route.
         errors.add(TestError.builder(this, Severity.ERROR, CODE_UNPARSEABLE)
             .message(tr("[ohm] Invalid date - *_date cannot be read; unfixable, please review"),
-                     tr("{0}={1} cannot be normalized.", baseKey, base))
+                     marktr("{0}={1} cannot be normalized."), baseKey, base)
             .primitives(p)
             .build());
     }
@@ -1585,6 +1977,47 @@ public class DateTagTest extends Test {
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", newEdtf));
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, newBase));
         return new SequenceCommand(tr("Normalize {0}", baseKey), cmds);
+    }
+
+    /**
+     * Returns the value already at {@code baseKey + ":raw"} if a
+     * {@link #buildTripleFix} call would silently overwrite it (i.e. the
+     * existing value is non-empty AND differs from the {@code rawValue} we'd
+     * write). Returns null when the autofix is safe to apply: either the
+     * slot is empty/absent, or the existing value matches what we'd write.
+     *
+     * <p>Callers that detect a non-null return should emit
+     * {@link #CODE_RAW_CONFLICT} via {@link #addRawConflictFinding} instead
+     * of calling buildTripleFix, to avoid silent data loss.
+     */
+    private static String rawConflictValue(OsmPrimitive p, String baseKey, String rawValue) {
+        String existing = p.get(baseKey + ":raw");
+        if (existing == null || existing.isEmpty() || existing.equals(rawValue)) {
+            return null;
+        }
+        return existing;
+    }
+
+    /**
+     * Emit a CODE_RAW_CONFLICT finding for the case where a normalization
+     * autofix would have overwritten an existing {@code *_date:raw} value.
+     * Names both the proposed and existing values so the editor can decide.
+     */
+    private void addRawConflictFinding(OsmPrimitive p, String baseKey, String base,
+                                       String newBase, String newEdtf,
+                                       String proposedRaw, String existingRaw) {
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_CONFLICT)
+            .message(tr("[ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review"),
+                     marktr("{0}={1}: would normalize to {0}={2}, {0}:edtf={3}, "
+                        + "{0}:raw={4}, but {0}:raw={5} already holds a different value. "
+                        + "Manual review needed: delete or merge the existing :raw before "
+                        + "re-running the validator."),
+                        baseKey, base,
+                        newBase == null ? "(absent)" : newBase,
+                        newEdtf == null ? "(absent)" : newEdtf,
+                        proposedRaw, existingRaw)
+            .primitives(p)
+            .build());
     }
 
     /**
@@ -1733,7 +2166,64 @@ public class DateTagTest extends Test {
         checkChronologyMissingTags(r, infos, youngest);
         checkChronologyOverlap(r, infos, youngest);
         checkChronologyGap(r, infos, youngest);
+        checkChronologyBoundaryGap(r, infos, youngest);
         checkChronologyDuplicatePredecessor(r, infos);
+        checkBoundaryChronologyMemberTypes(r);
+    }
+
+    /**
+     * Rule 4243: a boundary chronology (a {@code type=chronology} relation
+     * whose members include 2 or more {@code type=boundary} relations) must
+     * not include non-relation members. Non-relation members on a boundary
+     * chronology indicate the contributor mistakenly attached ways or
+     * nodes directly instead of attaching them to one of the member
+     * boundary relations.
+     *
+     * <p>The "2 or more boundary relations" threshold is the boundary-
+     * chronology signature per OHM convention (issue #21). Single-boundary
+     * chronologies aren't flagged because a chronology with only one
+     * boundary member is a degenerate case the editor probably hasn't
+     * finished assembling.
+     */
+    private void checkBoundaryChronologyMemberTypes(Relation r) {
+        int boundaryRelCount = 0;
+        for (RelationMember rm : r.getMembers()) {
+            OsmPrimitive m = rm.getMember();
+            if (m instanceof Relation && "boundary".equals(m.get("type"))) {
+                boundaryRelCount++;
+            }
+        }
+        if (boundaryRelCount < 2) return;
+
+        List<OsmPrimitive> nonRelationMembers = new ArrayList<>();
+        for (RelationMember rm : r.getMembers()) {
+            OsmPrimitive m = rm.getMember();
+            if (m == null) continue;
+            if (!(m instanceof Relation)) {
+                nonRelationMembers.add(m);
+            }
+        }
+        if (nonRelationMembers.isEmpty()) return;
+
+        StringBuilder sb = new StringBuilder();
+        for (OsmPrimitive m : nonRelationMembers) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(formatPrim(m));
+        }
+
+        List<OsmPrimitive> primitives = new ArrayList<>();
+        primitives.add(r);
+        primitives.addAll(nonRelationMembers);
+
+        errors.add(TestError.builder(this, Severity.ERROR, CODE_BOUNDARY_CHRONOLOGY_NON_RELATION)
+            .message(tr("[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review"),
+                     marktr("Boundary chronology relation {0} has non-relation member(s): {1}. "
+                        + "Boundary chronologies should only contain relation members "
+                        + "(typically other type=boundary relations representing the "
+                        + "entity at different periods in time)."),
+                        formatPrim(r), sb.toString())
+            .primitives(primitives)
+            .build());
     }
 
     /**
@@ -1784,8 +2274,8 @@ public class DateTagTest extends Test {
 
             errors.add(TestError.builder(this, Severity.ERROR, CODE_CHRONOLOGY_OUTSIDE_PARENT)
                 .message(tr("[ohm] Chronology - member date range outside parent chronology range; unfixable, please review"),
-                         tr("Member {0} outside parent range {1}: {2}.",
-                            formatPrim(mi.prim), parentRange, sb.toString()))
+                         marktr("Member {0} outside parent range {1}: {2}."),
+                            formatPrim(mi.prim), parentRange, sb.toString())
                 .primitives(Arrays.asList(r, mi.prim))
                 .build());
         }
@@ -1803,9 +2293,9 @@ public class DateTagTest extends Test {
             if (noStartTag && noEndTag) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_MEMBER_NO_DATES)
                     .message(tr("[ohm] Chronology - member without dates; unfixable, please review"),
-                             tr("Member {0} of chronology relation {1} has neither "
-                                + "start_date nor end_date.",
-                                formatPrim(mi.prim), formatPrim(r)))
+                             marktr("Member {0} of chronology relation {1} has neither "
+                                + "start_date nor end_date."),
+                                formatPrim(mi.prim), formatPrim(r))
                     .primitives(mi.prim)
                     .build());
                 continue;
@@ -1814,18 +2304,18 @@ public class DateTagTest extends Test {
             if (mi.start == null) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_MISSING_DATE)
                     .message(tr("[ohm] Chronology - member missing required date tag; unfixable, please review"),
-                             tr("Member {0} of chronology relation {1} is missing start_date.",
-                                formatPrim(mi.prim), formatPrim(r)))
+                             marktr("Member {0} of chronology relation {1} is missing start_date."),
+                                formatPrim(mi.prim), formatPrim(r))
                     .primitives(mi.prim)
                     .build());
             }
             if (mi.end == null && mi != youngest) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_MISSING_DATE)
                     .message(tr("[ohm] Chronology - member missing required date tag; unfixable, please review"),
-                             tr("Member {0} of chronology relation {1} is missing end_date "
+                             marktr("Member {0} of chronology relation {1} is missing end_date "
                                 + "and is not the youngest member (only the youngest may "
-                                + "omit end_date).",
-                                formatPrim(mi.prim), formatPrim(r)))
+                                + "omit end_date)."),
+                                formatPrim(mi.prim), formatPrim(r))
                     .primitives(mi.prim)
                     .build());
             }
@@ -1863,13 +2353,13 @@ public class DateTagTest extends Test {
 
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_OVERLAP)
                     .message(tr("[ohm] Chronology - member date range overlap; unfixable, please review"),
-                             tr("Members {0} ({1}..{2}) and {3} ({4}..{5}) have "
-                                + "overlapping date ranges in chronology relation {6}.",
+                             marktr("Members {0} ({1}..{2}) and {3} ({4}..{5}) have "
+                                + "overlapping date ranges in chronology relation {6}."),
                                 formatPrim(a.prim), a.start.raw,
                                 a.end == null ? "(no end)" : a.end.raw,
                                 formatPrim(b.prim), b.start.raw,
                                 b.end == null ? "(no end)" : b.end.raw,
-                                formatPrim(r)))
+                                formatPrim(r))
                     .primitives(Arrays.asList(a.prim, b.prim))
                     .build());
             }
@@ -1909,15 +2399,112 @@ public class DateTagTest extends Test {
 
             errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
                 .message(tr("[ohm] Chronology - gap between member date ranges; unfixable, please review"),
-                         tr("Member {0} (ends {1}) and member {2} (starts {3}) leave a "
-                            + "{4} {5} gap in chronology relation {6}.",
+                         marktr("Member {0} (ends {1}) and member {2} (starts {3}) leave a "
+                            + "{4} {5} gap in chronology relation {6}."),
                             formatPrim(prev.prim), prev.end.raw,
                             formatPrim(next.prim), next.start.raw,
                             missing,
                             coarserPrecisionName(prev.end.precision, next.start.precision),
-                            formatPrim(r)))
+                            formatPrim(r))
                 .primitives(Arrays.asList(prev.prim, next.prim))
                 .build());
+        }
+    }
+
+    /**
+     * Rule 4236 boundary variant: gap between the chronology relation's
+     * own date range and its oldest/latest member. Fires when the parent's
+     * {@code start_date} is more than 1 unit (at the coarser shared precision)
+     * before the oldest member's {@code start_date}, or when the parent's
+     * {@code end_date} is more than 1 unit after the latest member's
+     * {@code end_date}. Issue #22.
+     *
+     * <p>The existing {@link #checkChronologyGap} rule only catches gaps
+     * between consecutive sorted members. This method covers the
+     * gap-at-the-edges case the user reported in #22.
+     *
+     * <p>Skips the trailing-gap check entirely when any member is
+     * open-ended (no {@code end_date}), since open-ended coverage extends
+     * to infinity and no trailing gap is possible.
+     */
+    private void checkChronologyBoundaryGap(Relation r, List<MemberInfo> infos,
+                                            MemberInfo youngest) {
+        ParsedDate parentStart = parseStrictBaseDate(r.get("start_date"));
+        ParsedDate parentEnd = parseStrictBaseDate(r.get("end_date"));
+        if (parentStart == null && parentEnd == null) return;
+
+        // Same eligibility as overlap/gap: needs a start; non-youngest
+        // missing-end members are reported by 4237 and skipped here.
+        List<MemberInfo> withStart = new ArrayList<>();
+        for (MemberInfo mi : infos) {
+            if (mi.start != null && (mi.end != null || mi == youngest)) {
+                withStart.add(mi);
+            }
+        }
+        if (withStart.isEmpty()) return;
+
+        // --- Leading gap: parent.start vs oldest member's start. ---
+        if (parentStart != null) {
+            MemberInfo oldest = null;
+            for (MemberInfo mi : withStart) {
+                if (oldest == null
+                    || mi.start.lowerBound().isBefore(oldest.start.lowerBound())) {
+                    oldest = mi;
+                }
+            }
+            // Skip when oldest start is at or before parent start (4234
+            // handles "before parent" as outside-parent-range).
+            if (!touchesAtMatchingPrecision(parentStart, oldest.start)
+                && oldest.start.lowerBound().isAfter(parentStart.upperBound())) {
+                int missing = missingUnitsAtCoarserPrecision(parentStart, oldest.start);
+                if (missing > 1) {
+                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
+                        .message(tr("[ohm] Chronology - gap between parent start and oldest member; unfixable, please review"),
+                                 marktr("Chronology relation {0} starts at {1} but oldest member {2} "
+                                    + "starts at {3}, leaving a {4} {5} gap at the start of the chronology."),
+                                    formatPrim(r), parentStart.raw,
+                                    formatPrim(oldest.prim), oldest.start.raw,
+                                    missing,
+                                    coarserPrecisionName(parentStart.precision, oldest.start.precision))
+                        .primitives(Arrays.asList(r, oldest.prim))
+                        .build());
+                }
+            }
+        }
+
+        // --- Trailing gap: parent.end vs latest member's end. ---
+        if (parentEnd != null) {
+            // If any eligible member is open-ended, coverage extends to
+            // MAX and no trailing gap is possible.
+            boolean anyOpenEnded = false;
+            MemberInfo latest = null;
+            for (MemberInfo mi : withStart) {
+                if (mi.end == null) {
+                    anyOpenEnded = true;
+                    break;
+                }
+                if (latest == null
+                    || mi.end.upperBound().isAfter(latest.end.upperBound())) {
+                    latest = mi;
+                }
+            }
+            if (!anyOpenEnded && latest != null
+                && !touchesAtMatchingPrecision(latest.end, parentEnd)
+                && latest.end.upperBound().isBefore(parentEnd.lowerBound())) {
+                int missing = missingUnitsAtCoarserPrecision(latest.end, parentEnd);
+                if (missing > 1) {
+                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
+                        .message(tr("[ohm] Chronology - gap between latest member end and parent end; unfixable, please review"),
+                                 marktr("Latest member {0} (in chronology relation {1}) ends at {2} but "
+                                    + "the chronology''s end_date is {3}, leaving a {4} {5} gap at the end of the chronology."),
+                                    formatPrim(latest.prim), formatPrim(r), latest.end.raw,
+                                    parentEnd.raw,
+                                    missing,
+                                    coarserPrecisionName(latest.end.precision, parentEnd.precision))
+                        .primitives(Arrays.asList(r, latest.prim))
+                        .build());
+                }
+            }
         }
     }
 
@@ -1958,14 +2545,14 @@ public class DateTagTest extends Test {
 
             errors.add(TestError.builder(this, Severity.ERROR, CODE_CHRONOLOGY_DUPLICATE)
                 .message(tr("[ohm] Chronology - member duplicate to its predecessor; unfixable, please review"),
-                         tr("Member {0} ({1}..{2}) is identical to its predecessor {3} "
+                         marktr("Member {0} ({1}..{2}) is identical to its predecessor {3} "
                             + "({4}..{5}) in every tag except date-related fields. If "
                             + "the entity did not change, do not split it into separate "
-                            + "chronology members.",
+                            + "chronology members."),
                             formatPrim(curr.prim), curr.start.raw,
                             curr.end == null ? "(no end)" : curr.end.raw,
                             formatPrim(prev.prim), prev.start.raw,
-                            prev.end == null ? "(no end)" : prev.end.raw))
+                            prev.end == null ? "(no end)" : prev.end.raw)
                 .primitives(Arrays.asList(prev.prim, curr.prim))
                 .build());
         }
@@ -2080,6 +2667,48 @@ public class DateTagTest extends Test {
     }
 
     /** Compact "n/123", "w/456", "r/789" form for description text. */
+    /**
+     * True if (year, month, day) form a real Gregorian calendar date.
+     * Wraps {@link java.time.LocalDate#of} so leap-year handling and
+     * month-length checks come from the JDK rather than an in-house
+     * lookup table.
+     */
+    private static boolean isValidMonthDay(int year, int month, int day) {
+        if (month < 1 || month > 12) return false;
+        if (day < 1 || day > 31) return false;
+        try {
+            java.time.LocalDate.of(year, month, day);
+            return true;
+        } catch (java.time.DateTimeException e) {
+            return false;
+        }
+    }
+
+    /**
+     * English ordinal suffix for an integer: "1st", "2nd", "3rd", "11th",
+     * "21st", "22nd", "100th". Negative values keep the leading minus
+     * (e.g. "-22nd"). Used to render century numbers in the 4241
+     * description; "the 22nd century" reads more naturally than "century 22".
+     */
+    private static String withOrdinalSuffix(int n) {
+        int abs = Math.abs(n);
+        int lastTwo = abs % 100;
+        int lastOne = abs % 10;
+        String suffix;
+        if (lastTwo >= 11 && lastTwo <= 13) {
+            suffix = "th";
+        } else if (lastOne == 1) {
+            suffix = "st";
+        } else if (lastOne == 2) {
+            suffix = "nd";
+        } else if (lastOne == 3) {
+            suffix = "rd";
+        } else {
+            suffix = "th";
+        }
+        return n + suffix;
+    }
+
     private static String formatPrim(OsmPrimitive p) {
         return p.getType().getAPIName().substring(0, 1) + "/" + p.getId();
     }

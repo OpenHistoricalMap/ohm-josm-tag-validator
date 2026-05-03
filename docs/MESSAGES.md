@@ -75,26 +75,77 @@ After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start
 
 ---
 
+### Compact "cYYYY" shorthand
+
+| Code | Title |
+|------|-------|
+| 4202 | `[ohm] Invalid date - *_date; fixable, please review` |
+| 4241 | `[ohm] Ambiguous date - cYY (year or century unclear); unfixable, please review` |
+
+OHM contributors sometimes write a compact `cYYYY` form for "circa YYYY" (e.g. `start_date=c1920`). The validator handles five magnitude/sign cases separately:
+
+- **`YYYY >= 100`** or **`YYYY <= -100`** — unambiguous "circa year". The existing 4202 normalization rule rewrites it via `DateNormalizer` to `~YYYY`, producing the standard triple.
+- **`22 <= YYYY <= 99`** — ambiguous: could be "circa year YY" or "the YYth century". Fires the new **4241** unfixable warning. Manual review required to pick one.
+- **`1 <= YYYY <= 21`** — highly probable positive century shorthand. Falls through to the existing `CN` century pipeline (so `c19` is treated the same as `1800s`).
+- **`-99 <= YYYY <= -1`** — negative magnitudes 1–99 (e.g. `c-19`, `c-50`) all fire **4241**. The existing CN pipeline silently strips the sign and produces a CE century, which is the wrong direction; firing unfixable forces the editor to write the date out explicitly.
+- **`YYYY == 0`** (`c0`, `c-0`, `c0bc`) — degenerate. Year zero and century zero are both nonsense in OHM's astronomical-year convention. Fires **4241**.
+
+The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix. BCE flips the sign of `YYYY` directly with no N-1 offset (so `c1920bc` becomes `~-1920`, not `~-1919`) — the historian's astronomical-year convention is too persnickety for typical OHM editing.
+
+**4202 example (cYYYY band, abs >= 100):**  
+Before: `start_date=c1920`  
+After autofix: `start_date=1920`, `start_date:edtf=1920~`, `start_date:raw=c1920`.
+
+**4202 example (cYYYY with BCE suffix):**  
+Before: `start_date=c1920bc`  
+After autofix: `start_date=-1920`, `start_date:edtf=-1920~`, `start_date:raw=c1920bc`.
+
+**4202 — packed-date typo (`YYYY-MMDD` or `YYYY-MDD`):** Common typo where the user wrote a packed date with the month-day hyphen missing. The validator autofixes when:
+- Input matches `^YYYY-MMDD$` AND `YYYY > 1200` AND the implied `MM-DD` is a real calendar date for that year (leap-year-aware).
+- Input matches `^YYYY-MDD$` (3-digit suffix; leading zero on the month) AND `YYYY > 1000` AND the implied `M-DD` is a real calendar date.
+
+Wrap to standard ISO: `start_date=1875-1031` → `start_date=1875-10-31`. The 1200/1000 thresholds avoid silently rewriting old or borderline-ambiguous inputs.
+
+When autofix is held back, code **4244** fires the unfixable variant whenever the input still looks like a packed-date attempt. The "looks like an attempt" heuristic fires in either of two sub-cases:
+- The implied MM-DD (or M-DD) **is** a real calendar date but the year is below the autofix threshold — e.g. `0500-1031` (May 31 of year 500), `0900-731` (July 31 of year 900).
+- The implied MM-DD (or M-DD) is **not** a real calendar date AND the year is the larger of the two halves — e.g. `1875-1131` (Nov 31 doesn't exist), `1500-732` (July 32 doesn't exist).
+
+Both 4-digit (`YYYY-MMDD`) and 3-digit (`YYYY-MDD`) suffixes get the same treatment. Inputs where the implied MM-DD is invalid AND the year is the smaller half (e.g. `0001-2024`) deliberately fall through — they're more plausibly some other shape entirely.
+
+**4202 example (packed-date autofix):**  
+Before: `end_date=1930-0630`.  
+After autofix: `end_date=1930-06-30`.
+
+**4244 example:**  
+Trigger: `start_date=1875-1131` (Nov 31 doesn't exist).  
+Suggested manual fix: rewrite to a real `start_date=YYYY-MM-DD` or trim to `start_date=YYYY` if the day-precision was unintentional.
+
+**4241 example:**  
+Trigger: `start_date=c50`.  
+Suggested manual fix: rewrite as `~50` if "circa year 50" was intended, or as a century form if "century 50" was intended.
+
+---
+
 ### Suspicious date — year-boundary
 
 | Code | Title |
 |------|-------|
-| 4212 | `[ohm] Suspicious date - 01-01 start_date; autofix by removing -01-01` |
-| 4213 | `[ohm] Suspicious date - 12-31 end_date; autofix by removing -12-31` |
+| 4212 | `[ohm] Suspicious date - 01-01 start_date; unfixable, please review` |
+| 4213 | `[ohm] Suspicious date - 12-31 end_date; unfixable, please review` |
 | 4214 | `[ohm] Suspicious date - 12-31 start_date; unfixable, please review` |
 | 4214 | `[ohm] Suspicious date - 01-01 end_date; unfixable, please review` |
 
-**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — at the year boundary that matches the role. Under OHM's conservative year-only convention, `start_date=YYYY` already starts at Jan 1 and `end_date=YYYY` already ends Dec 31, so the explicit form is functionally redundant.  
-**4212/4213 fix:** Trim to the bare year (e.g. `start_date=1875-01-01` → `start_date=1875`).  
-**4212/4213 description:** _{key}={value} → {key}={year}_
+**4212/4213 trigger:** `start_date=YYYY-01-01` or `end_date=YYYY-12-31` — at the year boundary that matches the role. Under OHM's conservative year-only convention, `start_date=YYYY` already starts at Jan 1 and `end_date=YYYY` already ends Dec 31, so the explicit form is often functionally redundant. But Jan 1 / Dec 31 are also legitimate real dates often enough (laws taking effect, treaties signed, terms ending, fiscal year boundaries) that the autofix can't safely run on its own.  
+**4212/4213 fix:** None. As of v0.4.0 these are unfixable; even an opt-in autofix proved too easy to apply by mistake when batch-fixing. If the exact day is unknown, manually trim to the bare year.  
+**4212/4213 description:** _{key}={value}: Jan 1 / Dec 31 is suspicious as start_date / end_date — often false precision but also a legitimate real date. If the exact day is unknown, manually trim to {key}={year}._
 
 **4214 trigger:** `start_date=YYYY-12-31` or `end_date=YYYY-01-01` — at the *opposite* year boundary for the role. Could be a typo (next/previous year intended) or a legitimate event-day boundary (e.g. a treaty signed Dec 31). Ambiguous; manual review only.  
 **4214 fix:** None.  
 **4214 description:** _{key}={value}: end-of-year used as start_date / start-of-year used as end_date. If the exact day is unknown, manually change to {key}={year} (the year this date falls in) or {key}={shifted} (next/previous year, if a typo)._
 
 **4212/4213 example:**  
-Before: `start_date=1875-01-01`  
-After autofix: `start_date=1875`.
+Trigger: `start_date=1875-01-01`.  
+Suggested manual fix: if the start was genuinely on Jan 1, 1875 (e.g. a law taking effect that day), leave alone; otherwise change to `start_date=1875` (the year only, dropping the false-precision day).
 
 **4214 example:**  
 Trigger: `start_date=1875-12-31`.  
@@ -247,6 +298,16 @@ Suggested manual fix: replace with a real date or remove the tag.
 Before: `start_date=fall of 1814`  
 After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23 = fall), `start_date:raw=fall of 1814`.
 
+**4202 — abbreviated-tail range (`YYYY/YY`):** OHM contributors sometimes write a short form for ranges that share a century-decade prefix, e.g. `start_date=1716/17` for "1716/1717" or `end_date=1850/52` for "1850/1852". The validator expands the 2-digit suffix and writes a full triple. For `start_date`, the base is the lower year; for `end_date`, the upper year. Pre-fix, edtf-java accepted the short form as valid EDTF and produced gibberish base values (e.g. `end_date=1850/52` came out as `end_date=5299`). Wrap cases like `1899/01` (where the suffix would resolve to a year less than the start) deliberately fall through and are not autofixed.
+
+Before: `end_date=1850/52`  
+After autofix: `end_date=1852`, `end_date:edtf=1850/1852`, `end_date:raw=1850/52`.
+
+**4202 — implausibly-ancient leading zeros (`0000..YYYY`):** Inputs like `start_date=0000..1850` or `end_date=00..1900` are common when a contributor wanted to express "no known start" but wrote a placeholder year zero. When the upper bound `YYYY > 400` (clearly post-classical), the validator collapses to the open-start EDTF form `/YYYY` and uses `YYYY` as the base for both `start_date` and `end_date`. Below the threshold the input could be a real ancient range; falls through.
+
+Before: `start_date=0000..1850`  
+After autofix: `start_date=1850`, `start_date:edtf=/1850`, `start_date:raw=0000..1850`.
+
 ---
 
 ### Invalid date — *_date:edtf invalid
@@ -320,6 +381,7 @@ After autofix: `start_date:edtf=1900-03-15` (lifts to match the more specific ba
 | 4205 | `[ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf` |
 | 4206 | `[ohm] Date mismatch - across date tags; autofix by deleting :raw` |
 | 4207 | `[ohm] Invalid date - Unparseable data preserved in *_date:raw tag, no valid *_date:edtf or *_date tags; unfixable, please review.` |
+| 4242 | `[ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review` |
 
 **4205 trigger (Rule A):** `tagcleanupbot` wrote a `:raw` value and the derived `*_date` / `*_date:edtf` can be reconstructed from it.  
 **4205 fix:** Reconstructs the triple from `:raw`.  
@@ -343,6 +405,14 @@ After autofix: `start_date:raw` deleted (the human edit is canonical; the stale 
 **4207 example:**  
 Trigger: `start_date:raw=garbage`, no valid `start_date` or `:edtf`.  
 Suggested manual fix: hand-correct the date based on whatever source produced the :raw value.
+
+**4242 trigger:** A normalization autofix would write `*_date:raw` with a value different from what the user already has there. Currently fires for the decade/century rule (4203/4204) and the `end_date=present` rule (4221) when their respective autofix path's intended `:raw` write would clobber a hand-authored or pre-existing machine-generated value.  
+**4242 fix:** None. Manual review required: delete or merge the existing `:raw` before re-running the validator.  
+**4242 description:** _{key}={value}: would normalize to {key}={newBase}, {key}:edtf={newEdtf}, {key}:raw={proposedRaw}, but {key}:raw={existingRaw} already holds a different value. Manual review needed: delete or merge the existing :raw before re-running the validator._
+
+**4242 example:**  
+Trigger: `start_date=1800s` AND `start_date:raw=around 1800 (hand-authored)`.  
+Suggested manual fix: decide whether the user's hand annotation is canonical (delete or pre-edit `:raw` to match what the autofix would produce, then re-run) or whether the user wanted the normalized form (delete the hand annotation and accept the autofix). Same shape applies to `end_date=present` overwriting a pre-existing `end_date:raw`.
 
 ---
 
@@ -374,14 +444,23 @@ Suggested manual fix: confirm the intended start_date manually; the bot pattern 
 | Code | Title |
 |------|-------|
 | 4233 | `[ohm] Invalid date - Julian date; fixable, please review` |
+| 4240 | `[ohm] Invalid date - Julian date but *_date:note already populated; unfixable, please review` |
 
-**Trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation.  
-**Fix:** Converts to Gregorian, stores converted value in base tag, preserves original in `*_date:note`.  
-**Description:** _{key}={julian} → {key}={gregorian} (Gregorian), {key}:note added_
+**4233 trigger:** `start_date` or `end_date` uses `j:YYYY-MM-DD` (Julian) or `jd:NNNNNNN` (Julian Day Number) notation AND `*_date:note` is empty or absent.  
+**4233 fix:** Converts to Gregorian, stores converted value in base tag, writes a calendar-conversion annotation into `*_date:note`.  
+**4233 description:** _{key}={julian} → {key}={gregorian} (Gregorian), {key}:note added_
 
-**Example:**  
-Before: `start_date=j:1582-10-04` (Julian calendar)  
-After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=j:1582-10-04` (original preserved).
+**4240 trigger:** Same as 4233 — Julian or Julian Day Number notation — but `*_date:note` already holds a value. The autofix would synthesise its own calendar-conversion note and silently overwrite the user's annotation, so this case is split out as unfixable. Per OHM wiki convention, `:note` is the slot for human-meaningful annotation, so preserving its content is non-negotiable.  
+**4240 fix:** None. Manual review required: keep, merge, or replace the existing note before re-running the validator.  
+**4240 description:** _{key}={julian}: would convert to {gregorian} (Gregorian) and add a calendar-conversion :note, but {noteKey}={existingNote} already holds a value. Manual review needed: keep, merge, or replace the existing note before re-running the validator._
+
+**4233 example:**  
+Before: `start_date=j:1582-10-04` (Julian calendar), no `start_date:note`.  
+After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=Converted from j:1582-10-04`.
+
+**4240 example:**  
+Trigger: `start_date=j:1582-10-04` AND `start_date:note=From archival entry, see ledger p.42`.  
+Suggested manual fix: decide whether to merge the calendar-conversion note with the existing archival note, replace one with the other, or keep the original and switch to a manually-converted Gregorian date.
 
 ---
 
@@ -392,9 +471,25 @@ After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=
 | 4234 | `[ohm] Chronology - member date range outside parent chronology range; unfixable, please review` |
 | 4235 | `[ohm] Chronology - member date range overlap; unfixable, please review` |
 | 4236 | `[ohm] Chronology - gap between member date ranges; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between parent start and oldest member; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between latest member end and parent end; unfixable, please review` |
 | 4237 | `[ohm] Chronology - member missing required date tag; unfixable, please review` |
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
+| 4243 | `[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review` |
+| 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; please review and consider splitting` |
+
+**4245 trigger:** Both `start_date` and `end_date` contain semicolon-delimited entries with the same count (≥ 2 each), and every entry on each side parses as a strict ISO date (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`). The pattern almost always indicates that a single OSM/OHM feature has been used to encode N temporally-distinct features (e.g. a building rebuilt twice, recorded as one feature with three start/end pairs).  
+**4245 fix:** Collapses `start_date` to the minimum of the start values and `end_date` to the maximum of the end values; preserves the original semicolon strings in `start_date:raw` and `end_date:raw`; adds `fixme=split into multiple features` so the editor remembers to do the actual split manually after accepting the fix.  
+**4245 description:** _start_date={starts} and end_date={ends}: looks like {N} features merged into one. The autofix collapses to start_date={min} and end_date={max} (min/max), preserves the originals in start_date:raw={starts} and end_date:raw={ends}, and adds fixme=split into multiple features so the editor remembers the manual follow-up._
+
+**4245 example:**  
+Before: `start_date=1850;1900;1950`, `end_date=1899;1949;2000`.  
+After autofix: `start_date=1850`, `end_date=2000`, `start_date:raw=1850;1900;1950`, `end_date:raw=1899;1949;2000`, `fixme=split into multiple features`.
+
+**4245 unfixable variant:** When the autofix would clobber an existing `start_date:raw` or `end_date:raw` (the same shape protection used by 4242), the warning still fires but no `fix` button is offered. The editor must clear or merge the conflicting `:raw` first.
+
+**Per-key suppression:** When 4245 fires (with or without autofix), the per-key date checks for `start_date` and `end_date` are skipped on this primitive — they would otherwise flag the semicolon strings as `Invalid date - *_date cannot be read`, which is true but redundant noise once 4245 has explained the situation.
 
 These six rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings select only the offending member(s); the outside-parent rule (4234) additionally selects the parent chronology relation since the violation is intrinsically about the parent ↔ member relationship.
 
@@ -490,7 +585,7 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 
 **4302 description:** _Wikidata QIDs help link OHM data to other databases._
 
-**4303 trigger:** Named feature has no `source*` tag of any kind.  
+**4303 trigger:** Named feature has no `source*` tag of any kind. As of v0.4.0, `type=chronology` relations are exempt — they're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal.  
 **4303 description:** _other mappers are lost without it._
 
 **4302 example (no autofix):**  
@@ -533,10 +628,15 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 | 4306 | `[ohm] Source optimization - move non-URL source tags to source:name` |
 | 4307 | `[ohm] Source optimization - repair URL missing 'http[s]://'` |
 | 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review` |
+| 4321 | `[ohm] Source mismatch - non-URL source with existing :name companion; unfixable, please review` |
 
-**4306 trigger:** `source` (or numbered variant) contains a non-URL text string.  
+**4306 trigger:** `source` (or numbered variant) contains a non-URL text string AND the companion `source:name` (or `source:N:name`) is empty or absent.  
 **4306 fix:** Moves value to `source:name`, leaves `source` blank for a URL.  
 **4306 description:** _{key}={value} is not a URL. Move to {source:name} and leave {key} blank for a URL?_
+
+**4321 trigger:** Same shape as 4306 — `source` (or numbered variant) contains a non-URL text string — but the companion `source:name` (or `source:N:name`) already holds a value. Autofix would silently overwrite the existing companion value, so this case is split out as unfixable.  
+**4321 fix:** None. Manual review required to decide whether to merge the two values, replace one with the other, or move the new value to an enumerated `source:N:name` slot.  
+**4321 description:** _{key}={value} is not a URL but {renamedKey}={existingValue} already holds a value. Manual review needed: merge, replace, or move to an enumerated source:N:name slot._
 
 **4307 trigger:** `source` value looks like a URL but is missing `http://` or `https://`.  
 **4307 fix:** Prepends `https://`.  
@@ -569,8 +669,10 @@ Suggested manual fix: add `source=https://...` pointing at the actual scanned ma
 | 4312 | `[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N` |
 | 4313 | `[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these` |
 
-**4311 trigger:** `source` and `source:url` hold the same value.  
-**4311 fix:** Deletes `source:url`.
+**4311 / 4312 / 4313 — generalized to `source[:N]?:url`.** As of v0.4.0, all three rules apply to every `source[:N]?:url` key on a primitive, not just the literal `source:url`. So `source:1:url` is paired with `source:1`, `source:7:url` with `source:7`, and so on. Per-pair, the four sub-cases below run independently. (Issue #27.)
+
+**4311 trigger:** `source[:N]?` and `source[:N]?:url` hold the same value.  
+**4311 fix:** Deletes the `:url` key.
 
 **4312 trigger (no source):** `source:url` is set but `source` is absent.  
 **4312 fix:** Moves `source:url` value to `source`.  
@@ -610,22 +712,32 @@ After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`,
 | 4315 | `[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys` |
 | 4316 | `[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys` |
 | 4317 | `[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review` |
+| 4322 | `[ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review` |
+| 4323 | `[ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review` |
 
 **4314 trigger:** `source` contains two semicolon-separated values: one URL and one text string.  
-**4314 fix:** Splits into `source` (URL) and `source:name` (text).  
+**4314 fix:** Splits into `source` (URL) and `source:name` (text). If `source:name` already holds a value, the new text is appended with `;` rather than overwriting.  
 **4314 description:** _{key}={value}: move URL to source and text to source:name?_
 
-**4315 trigger:** `source` contains two or more semicolon-separated URLs.  
+**4315 trigger:** `source` contains two or more semicolon-separated URLs AND no enumerated `source:N` slot in the target range is already occupied.  
 **4315 fix:** Enumerates into `source`, `source:1`, `source:2`, …  
 **4315 description:** _{key}={value}: enumerate into source, source:1, source:2, …?_
 
-**4316 trigger:** `source` contains two or more semicolon-separated non-URL strings.  
+**4316 trigger:** `source` contains two or more semicolon-separated non-URL strings AND no target `source:name` / `source:N:name` slot is already occupied.  
 **4316 fix:** Enumerates into `source:name`, `source:1:name`, …  
 **4316 description:** _{key}={value}: enumerate into source:name, source:1:name, …?_
 
 **4317 trigger:** `source` contains 3+ semicolon-separated items mixing URLs and text.  
 **4317 fix:** None — too ambiguous to autofix.  
 **4317 description:** _{key}={value}: 3 or more items mixing URLs and text. Manual review needed — split into source, source:N, source:name, source:N:name as appropriate._
+
+**4322 trigger:** Same shape as 4315 — `source` contains multiple URLs — but at least one target `source:N` slot already holds a value, so the autofix would silently overwrite it.  
+**4322 fix:** None. Manual review required to decide whether to merge, replace the occupied slot, or shift the split to higher `source:N` indices.  
+**4322 description:** _{key}={value}: cannot enumerate into source, source:1, … because {occupiedKey}={occupiedValue} already holds a value. Manual review needed: merge, replace, or shift to higher source:# slots._
+
+**4323 trigger:** Same shape as 4316 — `source` contains multiple text strings — but at least one target `source:name` / `source:N:name` slot already holds a value, so the autofix would silently overwrite it.  
+**4323 fix:** None. Manual review required to decide whether to merge, replace the occupied slot, or shift the split to higher `source:N:name` indices.  
+**4323 description:** _{key}={value}: cannot enumerate into source:name, source:1:name, … because {occupiedKey}={occupiedValue} already holds a value. Manual review needed: merge, replace, or shift to higher source:#:name slots._
 
 **4314 example:**  
 Before: `source=https://usgs.gov/topo1925; USGS topo 1925`  
