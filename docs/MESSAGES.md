@@ -15,6 +15,14 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 ## DateTagTest (codes 4200–4239)
 
+**`*_date:edtf` is never written equal to `*_date`.** When an autofix
+would set `start_date=1900` and `start_date:edtf=1900`, the validator
+suppresses the redundant `:edtf` write (and deletes any existing one).
+`:edtf` only carries information beyond the base — ranges (`1900/1950`),
+qualifiers (`1900~`), unspecified-digit forms (`19XX`), open-ended
+bounds (`/1900`). Plain ISO values live in the base tag alone. In
+description text, `:edtf=(absent)` indicates this suppression.
+
 ### Suspicious date — missing start_date
 
 | Code | Title |
@@ -532,7 +540,19 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4320)
+## TagConsistencyTest (codes 4300–4325)
+
+**Source slot contract (v0.5).** Three keys, three roles:
+
+- `source` (and numbered variants `source:N`) — URL **or** text. Both
+  placements are valid.
+- `source:name` (and `source:N:name`) — text only.
+- `source:url` (and `source:N:url`) — URL only.
+
+Codes 4306, 4310, 4311, 4313, 4321, 4322, 4323 retired in v0.5 along
+with the prior URL-leaning interpretation of `source` (see Retired codes
+table at the bottom).
+
 
 ### Name consistency
 
@@ -621,42 +641,61 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 
 ---
 
-### Source URL format
+### Source slot type-check
 
 | Code | Title |
 |------|-------|
-| 4306 | `[ohm] Source optimization - move non-URL source tags to source:name` |
 | 4307 | `[ohm] Source optimization - repair URL missing 'http[s]://'` |
-| 4310 | `[ohm] Source optimization - source[:#]:name is present, but source[:#] is not; please review` |
-| 4321 | `[ohm] Source mismatch - non-URL source with existing :name companion; unfixable, please review` |
+| 4324 | `[ohm] Source mismatch - URL value in source:name; autofix by moving to source:url` |
+| 4324 | `[ohm] Source mismatch - URL in source:name and source:url already set; unfixable, please review` |
+| 4325 | `[ohm] Source mismatch - text value in source:url; autofix by moving to source / source:name / source:note` |
+| 4325 | `[ohm] Source mismatch - text value in source:url and all sibling slots full; unfixable, please review` |
 
-**4306 trigger:** `source` (or numbered variant) contains a non-URL text string AND the companion `source:name` (or `source:N:name`) is empty or absent.  
-**4306 fix:** Moves value to `source:name`, leaves `source` blank for a URL.  
-**4306 description:** _{key}={value} is not a URL. Move to {source:name} and leave {key} blank for a URL?_
-
-**4321 trigger:** Same shape as 4306 — `source` (or numbered variant) contains a non-URL text string — but the companion `source:name` (or `source:N:name`) already holds a value. Autofix would silently overwrite the existing companion value, so this case is split out as unfixable.  
-**4321 fix:** None. Manual review required to decide whether to merge the two values, replace one with the other, or move the new value to an enumerated `source:N:name` slot.  
-**4321 description:** _{key}={value} is not a URL but {renamedKey}={existingValue} already holds a value. Manual review needed: merge, replace, or move to an enumerated source:N:name slot._
-
-**4307 trigger:** `source` value looks like a URL but is missing `http://` or `https://`.  
+**4307 trigger:** Any `source[:N]?[:url]?` value matches the URL-shape regex but is missing `http://` or `https://`. Generalized in v0.5 from `source` / `source:N` to also fire on `source:url` / `source:N:url`.  
 **4307 fix:** Prepends `https://`.  
 **4307 description:** _{key}={value} looks like a URL missing the scheme. Prepend 'https://'?_
 
-**4310 trigger:** `source:name` (or `source:N:name`) is present but the corresponding `source` (or `source:N`) URL is absent.  
-**4310 fix:** None — prompts user to add the URL.  
-**4310 description:** _{key}={value} is set, but {source_key} is empty. Would you like to add a URL for the source?_
+**4324 trigger:** `source:name` (or `source:N:name`) holds a value matching the strict URL regex (must have `http://` or `https://`).  
+**4324 fix (slot free):** Moves the URL to the matching `source[:N]?:url` slot and clears `source[:N]?:name`.  
+**4324 fix (slot occupied with a different URL):** None — manual review.  
+**4324 description (fixable):** _{key}={value} is a URL. Move to {url_key}?_  
+**4324 description (unfixable):** _{key}={value} is a URL but {url_key}={existing_url} already holds a different URL. Manual review needed._
 
-**4306 example:**  
-Before: `source=USGS topo map 1925`  
-After autofix: `source=` (blank), `source:name=USGS topo map 1925`. The user can later fill in a URL for `source`.
+**4325 trigger:** `source:url` (or `source:N:url`) holds a non-URL value (no scheme, and not even URL-shaped enough to fire 4307). Plain free-form text in a URL-only slot.  
+**4325 fix (fallback chain):** Walks the companion siblings in order — `source[:N]?` → `source[:N]?:name` → `source[:N]?:note` — and moves the text to the first empty one, clearing `source[:N]?:url`.  
+**4325 fix (all three full):** None — manual review.  
+**4325 description (fixable):** _{key}={value} is not a URL. Move to {target}?_  
+**4325 description (unfixable):** _{key}={value} is not a URL but {source}, {source:name}, and {source:note} all hold values. Manual review needed._
 
-**4307 example:**  
+**4307 example (source):**  
 Before: `source=usgs.gov/maps/topo1925`  
 After autofix: `source=https://usgs.gov/maps/topo1925`.
 
-**4310 example:**  
-Trigger: `source:name=USGS topo 1925`, no `source` URL.  
-Suggested manual fix: add `source=https://...` pointing at the actual scanned map.
+**4307 example (source:url):**  
+Before: `source:url=example.org/secondary`  
+After autofix: `source:url=https://example.org/secondary`.
+
+**4324 example (autofix):**  
+Before: `source:name=https://example.org/scan`, `source:url=` (blank)  
+After autofix: `source:name=` (blank), `source:url=https://example.org/scan`.
+
+**4324 example (unfixable):**  
+Trigger: `source:1:name=https://example.org/foo`, `source:1:url=https://example.org/different`. Two different URLs occupy the URL slot and the name slot — manual review required.
+
+**4325 example (fallback to source):**  
+Before: `source=` (blank), `source:url=Sketch in archive box 12`  
+After autofix: `source=Sketch in archive box 12`, `source:url=` (blank).
+
+**4325 example (fallback to source:name):**  
+Before: `source=https://example.org/primary`, `source:name=` (blank), `source:url=Field notes 1923`  
+After autofix: `source:name=Field notes 1923`, `source:url=` (blank).
+
+**4325 example (fallback to source:note):**  
+Before: `source=https://example.org/primary`, `source:name=Existing label`, `source:note=` (blank), `source:url=Note about provenance`  
+After autofix: `source:note=Note about provenance`, `source:url=` (blank).
+
+**4325 example (unfixable):**  
+Trigger: `source`, `source:name`, and `source:note` all hold values, and `source:url` holds non-URL text. No empty fallback slot — manual review.
 
 ---
 
@@ -664,43 +703,19 @@ Suggested manual fix: add `source=https://...` pointing at the actual scanned ma
 
 | Code | Title |
 |------|-------|
-| 4311 | `[ohm] Source keys with duplicate values - source=source:url; autofix by deleting source:url` |
-| 4312 | `[ohm] Source mismatch - no source tag and valid source:url tag; autofix by moving *:url value to source=` |
-| 4312 | `[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:N` |
-| 4313 | `[ohm] Source optimization - source contains a name and source:url contains a URL; autofix by swapping these` |
+| 4312 | `[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#` |
 
-**4311 / 4312 / 4313 — generalized to `source[:N]?:url`.** As of v0.4.0, all three rules apply to every `source[:N]?:url` key on a primitive, not just the literal `source:url`. So `source:1:url` is paired with `source:1`, `source:7:url` with `source:7`, and so on. Per-pair, the four sub-cases below run independently. (Issue #27.)
+The pair iteration is generalized to every `source[:N]?:url` key on a primitive (issue #27, since v0.4.0). So `source:1:url` is paired with `source:1`, `source:7:url` with `source:7`, etc.
 
-**4311 trigger:** `source[:N]?` and `source[:N]?:url` hold the same value.  
-**4311 fix:** Deletes the `:url` key.
+**4312 trigger:** `source` (or `source:N`) holds a URL, `source:url` (or `source:N:url`) holds a different URL. Two distinct URLs in what should be a single source slot is treated as a likely user error — preserve the value in `source[:N]?` and demote the `:url` value to a numbered slot.  
+**4312 fix:** Moves the `:url` value to `source:M+1` where M is the highest existing `source:N` index on the primitive (the shared enumeration convention; see Semicolon-separated rules below).  
+**4312 description:** _{companion}={url1} and {url_key}={url2} are different URLs. Move {url_key} to the next numbered source key?_
 
-**4312 trigger (no source):** `source:url` is set but `source` is absent.  
-**4312 fix:** Moves `source:url` value to `source`.  
-**4312 description:** _source:url={url} should live in source._
-
-**4312 trigger (both URLs):** Both `source` and `source:url` are URLs but hold different values.  
-**4312 fix:** Moves `source:url` to the next available `source:N` slot (N = max existing + 1). Leaves `source` untouched.  
-**4312 description:** _source={url1} and source:url={url2} are different URLs. Move source:url to the next numbered source key?_
-
-**4313 trigger:** `source` holds a name string while `source:url` holds a URL — they are in the wrong keys.  
-**4313 fix:** Swaps values: URL → `source`, name → `source:name`.  
-**4313 description:** _Consolidate: source:url → source, source → source:name?_
-
-**4311 example:**  
-Before: `source=https://example.org/map`, `source:url=https://example.org/map`  
-After autofix: `source:url` deleted; `source` retained.
-
-**4312 example (no source):**  
-Before: `source:url=https://example.org/map`, no `source`  
-After autofix: `source=https://example.org/map`, `source:url` deleted.
-
-**4312 example (different URLs):**  
+**4312 example:**  
 Before: `source=https://a.example/map`, `source:url=https://b.example/map`  
 After autofix: `source=https://a.example/map` (unchanged), `source:1=https://b.example/map`, `source:url` deleted.
 
-**4313 example:**  
-Before: `source=USGS topo 1925`, `source:url=https://usgs.gov/topo1925`  
-After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`, `source:url` deleted.
+**Note on retired companion rules:** Under the v0.5 contract, identical URLs in both slots (formerly 4311) and text-in-`source` + URL-in-`source:url` (formerly 4313) and bare `source:url` with empty `source` (formerly 4312 case 1) are all valid layouts and no longer warned. See Retired codes table.
 
 ---
 
@@ -708,52 +723,51 @@ After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`,
 
 | Code | Title |
 |------|-------|
-| 4314 | `[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:name` |
+| 4314 | `[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url` |
+| 4314 | `[ohm] Source mismatch - source contains 1 URL & 1 text string but source:url already holds a different value; unfixable, please review` |
 | 4315 | `[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys` |
-| 4316 | `[ohm] Source optimization - source contains multiple text strings; autofix by enumerating source:#:name keys` |
+| 4316 | `[ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review` |
 | 4317 | `[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review` |
-| 4322 | `[ohm] Source mismatch - target source:# slot occupied for multi-URL split; unfixable, please review` |
-| 4323 | `[ohm] Source mismatch - target source:#:name slot occupied for multi-text split; unfixable, please review` |
+
+**Enumeration convention (v0.5).** Rules 4312 and 4315 share one rule for placing values into numbered slots: scan the primitive for `source:N` keys, take `M = max(N)` (or 0 if none), and write new items to `source:M+1`, `source:M+2`, …. The bare `source` key is only overwritten by 4315 when the primitive has no enumerated `source:N` keys at all (in which case the autofix writes `source=items[0]`, `source:1=items[1]`, …). Otherwise `source` is left alone and items are appended past the existing enumeration. This guarantees no clobbering and tolerates gaps.
 
 **4314 trigger:** `source` contains two semicolon-separated values: one URL and one text string.  
-**4314 fix:** Splits into `source` (URL) and `source:name` (text). If `source:name` already holds a value, the new text is appended with `;` rather than overwriting.  
-**4314 description:** _{key}={value}: move URL to source and text to source:name?_
+**4314 fix (slot empty or matching):** Writes `source=text`, `source:url=URL`. (If `source:url` already equals the URL part, only `source` is updated.)  
+**4314 fix (slot occupied with a different value):** None — emits the unfixable variant under the same code 4314.  
+**4314 description (fixable):** _{key}={value}: move text to source and URL to source:url?_  
+**4314 description (unfixable):** _{key}={value}: cannot split into source={text} and source:url={url} because source:url already holds {existing}. Manual review needed._
 
-**4315 trigger:** `source` contains two or more semicolon-separated URLs AND no enumerated `source:N` slot in the target range is already occupied.  
-**4315 fix:** Enumerates into `source`, `source:1`, `source:2`, …  
+**4315 trigger:** `source` contains two or more semicolon-separated URLs.  
+**4315 fix:** Enumerates per the shared convention.  
 **4315 description:** _{key}={value}: enumerate into source, source:1, source:2, …?_
 
-**4316 trigger:** `source` contains two or more semicolon-separated non-URL strings AND no target `source:name` / `source:N:name` slot is already occupied.  
-**4316 fix:** Enumerates into `source:name`, `source:1:name`, …  
-**4316 description:** _{key}={value}: enumerate into source:name, source:1:name, …?_
+**4316 trigger:** `source` contains two or more semicolon-separated non-URL strings.  
+**4316 fix:** None — semicolons in text are ambiguous. They may delimit separate sources, but they may also be legitimate punctuation inside a single citation (e.g. `Archive folder 12; see also p. 7`). Manual review.  
+**4316 description:** _{key}={value}: semicolons in text are ambiguous. If these are separate sources, split manually into source, source:1, source:2, …; if the semicolons are punctuation in a single citation, leave alone._
 
 **4317 trigger:** `source` contains 3+ semicolon-separated items mixing URLs and text.  
 **4317 fix:** None — too ambiguous to autofix.  
-**4317 description:** _{key}={value}: 3 or more items mixing URLs and text. Manual review needed — split into source, source:N, source:name, source:N:name as appropriate._
+**4317 description:** _{key}={value}: 3 or more items mixing URLs and text. Manual review needed — split into source, source:N, source:url, source:N:url as appropriate._
 
-**4322 trigger:** Same shape as 4315 — `source` contains multiple URLs — but at least one target `source:N` slot already holds a value, so the autofix would silently overwrite it.  
-**4322 fix:** None. Manual review required to decide whether to merge, replace the occupied slot, or shift the split to higher `source:N` indices.  
-**4322 description:** _{key}={value}: cannot enumerate into source, source:1, … because {occupiedKey}={occupiedValue} already holds a value. Manual review needed: merge, replace, or shift to higher source:# slots._
-
-**4323 trigger:** Same shape as 4316 — `source` contains multiple text strings — but at least one target `source:name` / `source:N:name` slot already holds a value, so the autofix would silently overwrite it.  
-**4323 fix:** None. Manual review required to decide whether to merge, replace the occupied slot, or shift the split to higher `source:N:name` indices.  
-**4323 description:** _{key}={value}: cannot enumerate into source:name, source:1:name, … because {occupiedKey}={occupiedValue} already holds a value. Manual review needed: merge, replace, or shift to higher source:#:name slots._
-
-**4314 example:**  
+**4314 example (fixable):**  
 Before: `source=https://usgs.gov/topo1925; USGS topo 1925`  
-After autofix: `source=https://usgs.gov/topo1925`, `source:name=USGS topo 1925`.
+After autofix: `source=USGS topo 1925`, `source:url=https://usgs.gov/topo1925`.
 
 **4315 example:**  
 Before: `source=https://a.example; https://b.example`  
 After autofix: `source=https://a.example`, `source:1=https://b.example`.
 
-**4316 example:**  
-Before: `source=USGS topo 1925; Sanborn 1933`  
-After autofix: `source:name=USGS topo 1925`, `source:1:name=Sanborn 1933`.
+**4315 example (with existing source:1):**  
+Before: `source=https://a.example;https://b.example;https://c.example`, `source:1=https://existing.example/preserved`  
+After autofix: `source` cleared; `source:1=https://existing.example/preserved` (unchanged), `source:2=https://a.example`, `source:3=https://b.example`, `source:4=https://c.example`.
+
+**4316 example (warn only):**  
+Trigger: `source=Archive folder 12; Field notes 1923`. Two semicolon-separated text strings.  
+Suggested manual fix: if these are two distinct sources, split into `source=Archive folder 12`, `source:1=Field notes 1923`. If the semicolon is punctuation inside a single citation, leave alone.
 
 **4317 example:**  
 Trigger: `source=https://a.example; USGS topo; https://b.example` (mixed types, 3+ items).  
-Suggested manual fix: split by hand into `source`, `source:1`, `source:name`, `source:N:name` slots as appropriate.
+Suggested manual fix: split by hand into `source`, `source:1`, `source:url`, `source:N:url` slots as appropriate.
 
 ---
 
@@ -820,3 +834,11 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 | 4227 | Rule D2 now fires the unified "Invalid *_date:edtf" fixable/unfixable messages (4228) |
 | 4229 | Merged with `CODE_EDTF_INVALID_NO_BASE` (4208) under the unified unfixable message |
 | 4230 | Retired as redundant — invalid `:edtf` with a base tag now fires only the unified `:edtf` message (4208/4228) |
+| 4306 | Retired in v0.5 — non-URL `source` is now valid (slot typing loosened) |
+| 4310 | Retired in v0.5 — `source:name` without a companion URL is a valid state (textual citation only) |
+| 4311 | Retired in v0.5 — duplicate values in `source` and `source:url` are harmless under the loosened contract |
+| 4312 case 1 | Retired in v0.5 — bare `source:url` with empty `source` is valid (`source:url` is now a first-class URL slot) |
+| 4313 | Retired in v0.5 — `source` text + `source:url` URL is a valid layout |
+| 4321 | Retired in v0.5 — non-URL `source` with a populated `source:name` is valid |
+| 4322 | Retired in v0.5 — multi-URL split now always appends past max-existing `source:N` (rule 4315 always fixable) |
+| 4323 | Retired in v0.5 — multi-text split now always appends past max-existing `source:N` (rule 4316 always fixable) |

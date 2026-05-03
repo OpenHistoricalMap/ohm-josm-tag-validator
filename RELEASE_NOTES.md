@@ -1,3 +1,91 @@
+# v0.5.0 — Source-slot type contract; redundant `:edtf` suppression
+
+Loosens the source-tag rules around URL vs text placement. The pre-v0.5
+validator treated `source` as URL-leaning: any non-URL value triggered a
+fix moving it to `source:name`, and `source:url` was treated as an alias
+to be folded back into `source`. v0.5 establishes a three-slot contract
+that better matches how OHM mappers actually use these tags.
+
+## The new source-slot contract
+
+- `source` (and numbered variants `source:N`) — **URL or text**, both valid
+- `source:name` (and `source:N:name`) — **text only**
+- `source:url` (and `source:N:url`) — **URL only**
+
+The validator enforces the slot typing on `:name` and `:url` and warns
+when values land in the wrong type-slot.
+
+## Retired rules
+
+Seven codes retired because their premise (that `source` should always be
+a URL) is no longer true:
+
+- **4306** Non-URL `source` rename — text in `source` is valid
+- **4310** Lone `source:name` without companion — text-only citations are valid
+- **4311** Identical `source` / `source:url` — harmless redundancy
+- **4312 case 1** `source:url` with empty `source` — `source:url` is now first-class
+- **4313** Text-in-`source` + URL-in-`source:url` swap — valid layout
+- **4321** Non-URL `source` with populated `source:name` — both valid
+- **4322 / 4323** Multi-URL / multi-text split target conflict — replaced by always-appendable enumeration
+
+The 4312 conflict variant (different URLs in `source` and `source:url`)
+remains active.
+
+## New rules
+
+- **4324** `source:name` contains a URL → autofix moves it to
+  `source:url` when that slot is empty; unfixable when the URL slot
+  already holds a different URL.
+- **4325** `source:url` contains non-URL text → autofix moves it
+  through a fallback chain (`source` → `source:name` → `source:note`)
+  to the first empty sibling. Unfixable when all three are full.
+
+## Modified rules
+
+- **4307** URL-missing-scheme autofix now also fires on `source:url`
+  and `source:N:url` (was previously limited to `source` and
+  `source:N`).
+- **4314** semicolon `URL;text` split now writes `source=text`,
+  `source:url=URL` (flipped from the old `source=URL`,
+  `source:name=text` direction). Unfixable variant when `source:url`
+  already holds a different URL.
+- **4315** multi-URL split is now always autofixable: items append
+  past the highest existing `source:N` index instead of producing a
+  conflict warning when slots are occupied. Shared enumeration
+  convention extracted as `nextSourceIndex(p)`.
+- **4316** multi-text split is now **unfixable** — semicolons in text
+  are ambiguous (legitimate punctuation vs. multi-source delimiter)
+  and the prior autofix risked destroying real citations. Just warns.
+
+## Also: never write `*_date:edtf` equal to `*_date`
+
+The date-normalization autofix builders (`buildTripleFix`,
+`buildBaseAndEdtfFix`) now suppress `:edtf` when its value would equal
+the base — `start_date=1900` shouldn't carry a redundant
+`start_date:edtf=1900`. Affected cases include BC dates that normalize
+to padded astronomical years (`273 BC` → `-0272`), year-padding
+(`500` → `0500`), separator cleanup (`1855_12` → `1855-12`), and ISO
+typos (`29/11/2024` → `2024-11-29`). The `:edtf` slot is reserved for
+forms that carry information the base can't express — ranges,
+qualifiers, unspecified-digit notation, open-ended bounds. Description
+text shows `:edtf=(absent)` to signal the suppression.
+
+Existing redundant pairs (where the tagger has manually written
+identical values to base and `:edtf`) are not flagged by v0.5 — only
+the autofix output is constrained.
+
+## Test coverage
+
+Repurposed and added synthetic fixtures in `test/crasher_braces.osm`
+covering the new rules' fixable and unfixable variants, plus the
+4325 fallback chain (paths to `source`, `source:name`, `source:note`,
+all-full unfixable). The golden-file diff in `ant test` regenerated
+to match: ~250 lines removed (retired rules no longer firing on
+real-data fixtures), with new code/title strings replacing the
+displaced ones.
+
+---
+
 # v0.4.0 — JOSM crash hotfix, autofix-safety guards, normalization wins
 
 Originally scoped as a v0.3.3 hotfix for [#26](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/26) (a JOSM crash on tag values containing `{` or `}`). Bumped to v0.4.0 once the audit it triggered surfaced a class of autofix-safety bugs and the testing pass uncovered several normalization wins worth shipping in the same release.

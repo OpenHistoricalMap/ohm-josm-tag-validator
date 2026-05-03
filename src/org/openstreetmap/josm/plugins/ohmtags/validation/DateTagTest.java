@@ -1399,7 +1399,7 @@ public class DateTagTest extends Test {
                          marktr("{0}:raw={1} implies {0}={2}, {0}:edtf={3}."),
                             baseKey, raw,
                             expectedBase == null ? "(absent)" : expectedBase,
-                            expectedEdtf)
+                            edtfDisplayValue(expectedBase, expectedEdtf))
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1895,7 +1895,7 @@ public class DateTagTest extends Test {
                          marktr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}, {0}:raw={1}"),
                             baseKey, base,
                             derivedBase == null ? "(absent)" : derivedBase,
-                            derivedEdtf)
+                            edtfDisplayValue(derivedBase, derivedEdtf))
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1948,7 +1948,7 @@ public class DateTagTest extends Test {
                          marktr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}"),
                             baseKey, base,
                             passthroughBase == null ? "(absent)" : passthroughBase,
-                            cleaned)
+                            edtfDisplayValue(passthroughBase, cleaned))
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -1969,14 +1969,43 @@ public class DateTagTest extends Test {
      * Build a fix that writes the full triple: sets base and {@code :edtf},
      * moves the original value into {@code :raw}. If {@code newBase} is
      * null, the base tag is removed (unbounded-bound case).
+     *
+     * <p>If {@code newEdtf} would equal {@code newBase}, {@code :edtf} is
+     * deleted instead of written — a redundant {@code :edtf} carrying the
+     * same value as the base tag is noise (see {@link #edtfWriteValue}).
      */
     private Command buildTripleFix(OsmPrimitive p, String baseKey,
                                    String newBase, String newEdtf, String rawValue) {
         List<Command> cmds = new ArrayList<>();
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":raw", rawValue));
-        cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", newEdtf));
+        cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf",
+                                           edtfWriteValue(newBase, newEdtf)));
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, newBase));
         return new SequenceCommand(tr("Normalize {0}", baseKey), cmds);
+    }
+
+    /**
+     * Decide what value (if any) to write to {@code *_date:edtf} given the
+     * normalized base and edtf values. Returns {@code null} (delete the
+     * key) when the edtf value would be redundant — same as the base or
+     * absent. The base tag is the source of truth for simple ISO values;
+     * {@code :edtf} should only exist when it adds information beyond the
+     * base (ranges, qualifiers like {@code ~}, unspecified-digit forms).
+     */
+    private static String edtfWriteValue(String newBase, String newEdtf) {
+        if (newEdtf == null) return null;
+        if (newBase != null && newBase.equals(newEdtf)) return null;
+        return newEdtf;
+    }
+
+    /**
+     * Display string for {@code *_date:edtf} in autofix description text.
+     * Mirrors {@link #edtfWriteValue}: returns {@code (absent)} when the
+     * fix won't actually write {@code :edtf} (because it would be redundant
+     * with the base), so the description matches the post-fix tagset.
+     */
+    private static String edtfDisplayValue(String newBase, String newEdtf) {
+        return edtfWriteValue(newBase, newEdtf) == null ? "(absent)" : newEdtf;
     }
 
     /**
@@ -2014,7 +2043,7 @@ public class DateTagTest extends Test {
                         + "re-running the validator."),
                         baseKey, base,
                         newBase == null ? "(absent)" : newBase,
-                        newEdtf == null ? "(absent)" : newEdtf,
+                        edtfDisplayValue(newBase, newEdtf),
                         proposedRaw, existingRaw)
             .primitives(p)
             .build());
@@ -2023,12 +2052,13 @@ public class DateTagTest extends Test {
     /**
      * Build a fix that writes only base and {@code :edtf}. Used for the
      * bot-mismatch case where {@code :raw} is already set and shouldn't be
-     * touched.
+     * touched. Skips a redundant {@code :edtf} per {@link #edtfWriteValue}.
      */
     private Command buildBaseAndEdtfFix(OsmPrimitive p, String baseKey,
                                         String newBase, String newEdtf) {
         List<Command> cmds = new ArrayList<>();
-        cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", newEdtf));
+        cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf",
+                                           edtfWriteValue(newBase, newEdtf)));
         cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, newBase));
         return new SequenceCommand(tr("Sync {0} and :edtf to :raw", baseKey), cmds);
     }
