@@ -438,4 +438,26 @@
     <tag k='end_date' v='1000' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <!-- Packed-features (4245) probes. Semicolon-delimited matched sets
+       of start_date/end_date that almost certainly represent N
+       features merged into one. -->
+  <node id='9000071' visible='true' version='1' lat='0.0' lon='4.4'>
+    <tag k='name' v='packed-features probe — 3 year-only entries autofix' />
+    <tag k='start_date' v='1850;1900;1950' />
+    <tag k='end_date' v='1899;1949;2000' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000072' visible='true' version='1' lat='0.0' lon='4.5'>
+    <tag k='name' v='packed-features probe — 2 entries mixed precision autofix' />
+    <tag k='start_date' v='1850-03;1900-06-15' />
+    <tag k='end_date' v='1899-12-31;1949' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000073' visible='true' version='1' lat='0.0' lon='4.6'>
+    <tag k='name' v='packed-features probe — :raw conflict warning unfixable' />
+    <tag k='start_date' v='1850;1900' />
+    <tag k='end_date' v='1899;1949' />
+    <tag k='start_date:raw' v='hand-authored note about start' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

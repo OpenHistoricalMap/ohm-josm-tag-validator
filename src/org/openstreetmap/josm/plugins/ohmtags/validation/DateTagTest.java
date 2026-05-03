@@ -227,6 +227,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_RAW_CONFLICT = 4242;
     protected static final int CODE_BOUNDARY_CHRONOLOGY_NON_RELATION = 4243;
     protected static final int CODE_PACKED_DATE_INVALID = 4244;
+    protected static final int CODE_PACKED_FEATURE_SET = 4245;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -353,17 +354,119 @@ public class DateTagTest extends Test {
                 .build());
         }
 
-        for (String baseKey : BASE_KEYS) {
-            checkAmbiguousTrailingHyphen(p, baseKey);
-            checkDateFamily(p, baseKey);
-            checkMoreSpecificBase(p, baseKey);
-            checkSuspiciousYearBoundary(p, baseKey);
-            checkInvalidComponents(p, baseKey);
-            checkFutureEndDate(p, baseKey);
+        // Detect "merged-features" — semicolon-delimited matched sets of
+        // start_date and end_date — before the per-key checks. If this rule
+        // fires, it offers a single autofix that collapses to min/max while
+        // adding a fixme for the editor to split into separate features.
+        // When it fires we suppress the per-key + cross-key date checks for
+        // this primitive: those would otherwise produce noisy "cannot be
+        // read" warnings against the same semicolon strings the packed-
+        // features rule already explains. checkAllEdtfKeys still runs since
+        // it operates on :edtf siblings (orthogonal to the packed sets).
+        boolean packedFeatures = checkPackedFeatureSet(p);
+        if (!packedFeatures) {
+            for (String baseKey : BASE_KEYS) {
+                checkAmbiguousTrailingHyphen(p, baseKey);
+                checkDateFamily(p, baseKey);
+                checkMoreSpecificBase(p, baseKey);
+                checkSuspiciousYearBoundary(p, baseKey);
+                checkInvalidComponents(p, baseKey);
+                checkFutureEndDate(p, baseKey);
+            }
+            checkStartAfterEnd(p);
+            checkStartEndEqualityAndBackslash(p);
         }
-        checkStartAfterEnd(p);
-        checkStartEndEqualityAndBackslash(p);
         checkAllEdtfKeys(p);
+    }
+
+    /**
+     * Rule 4245: when {@code start_date} and {@code end_date} both contain
+     * the same number of semicolon-delimited entries (each parseable as a
+     * strict ISO date), the feature is almost certainly an attempt to encode
+     * N features in one. Offers a per-feature autofix that collapses the
+     * sets to min(start) / max(end), preserves the original semicolon
+     * strings in {@code start_date:raw} and {@code end_date:raw}, and adds
+     * {@code fixme=split into multiple features} so the editor remembers
+     * the manual follow-up.
+     *
+     * <p>Skips when either side is unparseable (can't compute min/max), when
+     * counts don't match (the rule is about matched pairs), or when the
+     * autofix would clobber an existing {@code :raw} on either side (fires
+     * the unfixable variant in that case so the editor reconciles
+     * :raw manually first).
+     *
+     * <p>Returns {@code true} if the rule fired (with or without autofix),
+     * so the caller can suppress redundant per-key date checks for this
+     * primitive.
+     */
+    private boolean checkPackedFeatureSet(OsmPrimitive p) {
+        String startVal = p.get("start_date");
+        String endVal = p.get("end_date");
+        if (startVal == null || endVal == null) return false;
+        if (!startVal.contains(";") || !endVal.contains(";")) return false;
+
+        String[] startParts = startVal.split(";");
+        String[] endParts = endVal.split(";");
+        if (startParts.length != endParts.length || startParts.length < 2) return false;
+
+        List<ParsedDate> starts = new ArrayList<>();
+        for (String s : startParts) {
+            ParsedDate pd = parseStrictBaseDate(s.trim());
+            if (pd == null) return false;
+            starts.add(pd);
+        }
+        List<ParsedDate> ends = new ArrayList<>();
+        for (String s : endParts) {
+            ParsedDate pd = parseStrictBaseDate(s.trim());
+            if (pd == null) return false;
+            ends.add(pd);
+        }
+
+        ParsedDate minStart = starts.get(0);
+        for (ParsedDate pd : starts) {
+            if (pd.lowerBound().isBefore(minStart.lowerBound())) minStart = pd;
+        }
+        ParsedDate maxEnd = ends.get(0);
+        for (ParsedDate pd : ends) {
+            if (pd.upperBound().isAfter(maxEnd.upperBound())) maxEnd = pd;
+        }
+
+        String newStart = minStart.raw;
+        String newEnd = maxEnd.raw;
+        int n = startParts.length;
+
+        // :raw clobber check on both sides; if either would clobber, emit
+        // the warning unfixable so the editor reconciles :raw first.
+        String existingStartRaw = rawConflictValue(p, "start_date", startVal);
+        String existingEndRaw = rawConflictValue(p, "end_date", endVal);
+
+        TestError.Builder builder = TestError.builder(this, Severity.WARNING, CODE_PACKED_FEATURE_SET)
+            .message(tr("[ohm] Suspicious feature - 1 feature that should be {0}; please review and consider splitting", n),
+                     marktr("start_date={0} and end_date={1}: looks like {2} features merged into "
+                        + "one. The autofix collapses to start_date={3} and end_date={4} (min/max), "
+                        + "preserves the originals in {5}={0} and {6}={1}, and adds "
+                        + "fixme=split into multiple features so the editor remembers the manual "
+                        + "follow-up."),
+                        startVal, endVal, n, newStart, newEnd, "start_date:raw", "end_date:raw")
+            .primitives(p);
+
+        if (existingStartRaw == null && existingEndRaw == null) {
+            // Safe to autofix.
+            List<Command> cmds = new ArrayList<>();
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "start_date", newStart));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "end_date", newEnd));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "start_date:raw", startVal));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "end_date:raw", endVal));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "fixme",
+                "split into multiple features"));
+            Command fix = new SequenceCommand(tr("Collapse merged-features dates"), cmds);
+            builder.fix(() -> fix);
+        }
+        // If existingStartRaw or existingEndRaw is non-null, no .fix(...)
+        // attached — the warning fires but the user has to clear the
+        // conflicting :raw manually before re-running.
+        errors.add(builder.build());
+        return true;
     }
 
     /**

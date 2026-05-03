@@ -31,6 +31,21 @@ The fix splits each affected rule into two paths: autofix when destination slots
 
 The unfixable variants name the occupied slot and its current value so the editor can decide whether to merge, replace, or shift the split to higher indices.
 
+## New: 4245 — packed-features warning ("1 feature that should be N")
+
+When `start_date` and `end_date` both contain semicolon-delimited entries with the same count (≥ 2 each) and every entry parses as a strict ISO date, the feature is almost certainly an attempt to encode N temporally-distinct features in one — e.g. a building rebuilt twice, recorded as one feature with three start/end pairs.
+
+The new **4245** warning fires "1 feature that should be N; please review and consider splitting" with an autofix that:
+
+- Collapses `start_date` to the minimum of the start values
+- Collapses `end_date` to the maximum of the end values
+- Preserves the original semicolon strings in `start_date:raw` and `end_date:raw`
+- Adds `fixme=split into multiple features` so the editor remembers to do the actual split manually
+
+When the autofix would clobber an existing `:raw` (same protection as 4242), the warning fires unfixable. When 4245 fires with or without autofix, the per-key date checks for `start_date` and `end_date` are suppressed on this primitive — they'd otherwise produce noisy "cannot be read" warnings against the same semicolon strings the new rule already explains.
+
+Real-world impact: 4 primitives in the regression dataset (one node, three ways) flip from opaque "cannot be read" warnings to the new actionable autofix.
+
 ## New: 4243 — boundary chronology has non-relation members
 
 Per [issue #21](https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/issues/21), a "boundary chronology" — defined as a `type=chronology` relation with 2 or more `type=boundary` relations as members — must contain only relation members. Non-relation members (ways, nodes attached directly) indicate the contributor mistakenly bypassed the member boundary relations and attached the geometry to the chronology instead. Severity ERROR.

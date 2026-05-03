@@ -477,6 +477,19 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
 | 4243 | `[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review` |
+| 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; please review and consider splitting` |
+
+**4245 trigger:** Both `start_date` and `end_date` contain semicolon-delimited entries with the same count (≥ 2 each), and every entry on each side parses as a strict ISO date (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`). The pattern almost always indicates that a single OSM/OHM feature has been used to encode N temporally-distinct features (e.g. a building rebuilt twice, recorded as one feature with three start/end pairs).  
+**4245 fix:** Collapses `start_date` to the minimum of the start values and `end_date` to the maximum of the end values; preserves the original semicolon strings in `start_date:raw` and `end_date:raw`; adds `fixme=split into multiple features` so the editor remembers to do the actual split manually after accepting the fix.  
+**4245 description:** _start_date={starts} and end_date={ends}: looks like {N} features merged into one. The autofix collapses to start_date={min} and end_date={max} (min/max), preserves the originals in start_date:raw={starts} and end_date:raw={ends}, and adds fixme=split into multiple features so the editor remembers the manual follow-up._
+
+**4245 example:**  
+Before: `start_date=1850;1900;1950`, `end_date=1899;1949;2000`.  
+After autofix: `start_date=1850`, `end_date=2000`, `start_date:raw=1850;1900;1950`, `end_date:raw=1899;1949;2000`, `fixme=split into multiple features`.
+
+**4245 unfixable variant:** When the autofix would clobber an existing `start_date:raw` or `end_date:raw` (the same shape protection used by 4242), the warning still fires but no `fix` button is offered. The editor must clear or merge the conflicting `:raw` first.
+
+**Per-key suppression:** When 4245 fires (with or without autofix), the per-key date checks for `start_date` and `end_date` are skipped on this primitive — they would otherwise flag the semicolon strings as `Invalid date - *_date cannot be read`, which is true but redundant noise once 4245 has explained the situation.
 
 These six rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings select only the offending member(s); the outside-parent rule (4234) additionally selects the parent chronology relation since the violation is intrinsically about the parent ↔ member relationship.
 
