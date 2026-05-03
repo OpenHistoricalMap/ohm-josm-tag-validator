@@ -15,6 +15,14 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 ## DateTagTest (codes 4200–4239)
 
+**`*_date:edtf` is never written equal to `*_date`.** When an autofix
+would set `start_date=1900` and `start_date:edtf=1900`, the validator
+suppresses the redundant `:edtf` write (and deletes any existing one).
+`:edtf` only carries information beyond the base — ranges (`1900/1950`),
+qualifiers (`1900~`), unspecified-digit forms (`19XX`), open-ended
+bounds (`/1900`). Plain ISO values live in the base tag alone. In
+description text, `:edtf=(absent)` indicates this suppression.
+
 ### Suspicious date — missing start_date
 
 | Code | Title |

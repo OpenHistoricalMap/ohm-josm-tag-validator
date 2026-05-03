@@ -1,13 +1,13 @@
 E   n/2083309640   [ohm] Invalid date - *_date; fixable, please review   end_date=2003-03..2016 ? end_date=2016, end_date:edtf=2003-03/2016, end_date:raw=2003-03..2016
 E   n/2083309641   [ohm] Invalid date - *_date; fixable, please review   start_date=2007..2008-10-16 ? start_date=2007, start_date:edtf=2007/2008-10-16, start_date:raw=2007..2008-10-16
-E   n/2083309798   [ohm] Invalid date - *_date; fixable, please review   end_date=500 ? end_date=0500, end_date:edtf=0500, end_date:raw=500
-E   n/2083309798   [ohm] Invalid date - *_date; fixable, please review   start_date=273 BC ? start_date=-0272, start_date:edtf=-0272, start_date:raw=273 BC
+E   n/2083309798   [ohm] Invalid date - *_date; fixable, please review   end_date=500 ? end_date=0500, end_date:edtf=(absent), end_date:raw=500
+E   n/2083309798   [ohm] Invalid date - *_date; fixable, please review   start_date=273 BC ? start_date=-0272, start_date:edtf=(absent), start_date:raw=273 BC
 E   n/2083309798   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   n/2083309799   [ohm] Invalid date - *_date; fixable, please review   end_date=400 BC ? end_date=-0399, end_date:edtf=-0399, end_date:raw=400 BC
-E   n/2083309799   [ohm] Invalid date - *_date; fixable, please review   start_date=600 BC ? start_date=-0599, start_date:edtf=-0599, start_date:raw=600 BC
+E   n/2083309799   [ohm] Invalid date - *_date; fixable, please review   end_date=400 BC ? end_date=-0399, end_date:edtf=(absent), end_date:raw=400 BC
+E   n/2083309799   [ohm] Invalid date - *_date; fixable, please review   start_date=600 BC ? start_date=-0599, start_date:edtf=(absent), start_date:raw=600 BC
 E   n/2083309799   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   n/2083309800   [ohm] Invalid date - *_date; fixable, please review   end_date=273 BC ? end_date=-0272, end_date:edtf=-0272, end_date:raw=273 BC
-E   n/2083309800   [ohm] Invalid date - *_date; fixable, please review   start_date=400 BC ? start_date=-0399, start_date:edtf=-0399, start_date:raw=400 BC
+E   n/2083309800   [ohm] Invalid date - *_date; fixable, please review   end_date=273 BC ? end_date=-0272, end_date:edtf=(absent), end_date:raw=273 BC
+E   n/2083309800   [ohm] Invalid date - *_date; fixable, please review   start_date=400 BC ? start_date=-0399, start_date:edtf=(absent), start_date:raw=400 BC
 E   n/2083309800   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/2083360015   [ohm] Invalid date - *_date; fixable, please review   end_date=2016-07-30..2017-02 ? end_date=2017-02, end_date:edtf=2016-07-30/2017-02, end_date:raw=2016-07-30..2017-02
 E   n/2083408038   [ohm] Invalid date - *_date; fixable, please review   start_date=1962..1964-10 ? start_date=1962, start_date:edtf=1962/1964-10, start_date:raw=1962..1964-10
@@ -46,8 +46,8 @@ E   n/2087585058   [ohm] Invalid date - *_date; fixable, please review   end_dat
 E   n/2087600011   [ohm] Invalid date - *_date; fixable, please review   end_date=2019-02..2019-06 ? end_date=2019-06, end_date:edtf=2019-02/2019-06, end_date:raw=2019-02..2019-06
 E   n/2087731923   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=na 1965 cannot be normalized.
 E   n/2087732269   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=./ cannot be normalized.
-E   n/2087732269   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=0000, start_date:raw=0
-E   n/2088092554   [ohm] Invalid date - *_date; fixable, please review   start_date=1855_12 ? start_date=1855-12, start_date:edtf=1855-12, start_date:raw=1855_12
+E   n/2087732269   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=(absent), start_date:raw=0
+E   n/2088092554   [ohm] Invalid date - *_date; fixable, please review   start_date=1855_12 ? start_date=1855-12, start_date:edtf=(absent), start_date:raw=1855_12
 E   n/2088126233   [ohm] Invalid date - *_date; fixable, please review   end_date=1979-02..1984 ? end_date=1984, end_date:edtf=1979-02/1984, end_date:raw=1979-02..1984
 E   n/2088126936   [ohm] Invalid date - *_date; fixable, please review   start_date=2008-10..2009-04 ? start_date=2008-10, start_date:edtf=2008-10/2009-04, start_date:raw=2008-10..2009-04
 E   n/2090178444   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=Q1438579 cannot be normalized.
@@ -68,7 +68,7 @@ E   n/2091813675   [ohm] Invalid date - *_date cannot be read; unfixable, please
 E   n/2091813676   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=.2012-03-29 cannot be normalized.
 E   n/2092258596   [ohm] Invalid date - *_date; fixable, please review   start_date=1869.. 1913 ? start_date=1869, start_date:edtf=1869/1913, start_date:raw=1869.. 1913
 E   n/2093040334   [ohm] Invalid date - *_date; fixable, please review   end_date=1940.. 44 ? end_date=0044, end_date:edtf=1940/0044, end_date:raw=1940.. 44
-E   n/2093410718   [ohm] Invalid date - *_date; fixable, please review   start_date=1930_01 ? start_date=1930-01, start_date:edtf=1930-01, start_date:raw=1930_01
+E   n/2093410718   [ohm] Invalid date - *_date; fixable, please review   start_date=1930_01 ? start_date=1930-01, start_date:edtf=(absent), start_date:raw=1930_01
 E   n/2093410718   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/2094044503   [ohm] Invalid date - *_date; fixable, please review   end_date=~C20 ? end_date=1999, end_date:edtf=19XX~, end_date:raw=~C20
 E   n/2094044503   [ohm] Invalid date - *_date; fixable, please review   start_date=~C19 ? start_date=1800, start_date:edtf=18XX~, start_date:raw=~C19
@@ -160,12 +160,12 @@ E   n/2097432371   [ohm] Invalid date - *_date; fixable, please review   start_d
 E   n/2097432371   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/2099636151   [ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY   start_date=1969-28-10: month 28 is out of range. Trim to 1969?
 E   n/2099636151   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   n/2100388429   [ohm] Invalid date - *_date; fixable, please review   end_date=1978 -05-28 ? end_date=1978-05-28, end_date:edtf=1978-05-28, end_date:raw=1978 -05-28
+E   n/2100388429   [ohm] Invalid date - *_date; fixable, please review   end_date=1978 -05-28 ? end_date=1978-05-28, end_date:edtf=(absent), end_date:raw=1978 -05-28
 E   n/2101980511   [ohm] Invalid date - *_date; fixable, please review   start_date=c11 ? start_date=1000, start_date:edtf=10XX, start_date:raw=c11
 E   n/2101980511   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/2110642148   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   n/2118101595   [ohm] Invalid date - *_date; fixable, please review   start_date=2004/11/12 ? start_date=2004-11-12, start_date:edtf=2004-11-12, start_date:raw=2004/11/12
-E   n/2123029934   [ohm] Invalid date - *_date; fixable, please review   start_date=2021 May 01 ? start_date=2021-05-01, start_date:edtf=2021-05-01, start_date:raw=2021 May 01
+E   n/2118101595   [ohm] Invalid date - *_date; fixable, please review   start_date=2004/11/12 ? start_date=2004-11-12, start_date:edtf=(absent), start_date:raw=2004/11/12
+E   n/2123029934   [ohm] Invalid date - *_date; fixable, please review   start_date=2021 May 01 ? start_date=2021-05-01, start_date:edtf=(absent), start_date:raw=2021 May 01
 E   n/2123283531   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=soon cannot be normalized.
 E   n/2125545168   [ohm] Invalid date - *_date; fixable, please review   start_date=1850-1900 ? start_date=1850, start_date:edtf=1850/1900, start_date:raw=1850-1900
 E   n/2125545577   [ohm] Invalid date - *_date; fixable, please review   start_date=2003-03..2003-04 ? start_date=2003-03, start_date:edtf=2003-03/2003-04, start_date:raw=2003-03..2003-04
@@ -207,25 +207,25 @@ E   n/2136796622   [ohm] Invalid date - *_date; fixable, please review   start_d
 E   n/2137237650   [ohm] Invalid date - *_date:edtf; unfixable, please review   end_date:edtf=...15/11/1997 is not valid EDTF and cannot be normalized. Manual review needed.
 E   n/2141928474   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/2143549416   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=TEMP cannot be normalized.
-E   n/2146065865   [ohm] Invalid date - *_date; fixable, please review   start_date=29/11/2024 ? start_date=2024-11-29, start_date:edtf=2024-11-29, start_date:raw=29/11/2024
+E   n/2146065865   [ohm] Invalid date - *_date; fixable, please review   start_date=29/11/2024 ? start_date=2024-11-29, start_date:edtf=(absent), start_date:raw=29/11/2024
 E   n/2146375655   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   end_date=/1850 ? end_date=1850, end_date:edtf=/1850
 E   n/2147361393   [ohm] Invalid date - *_date; fixable, please review   end_date=circa 1977 ? end_date=1977, end_date:edtf=1977~, end_date:raw=circa 1977
 E   n/9000009   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920 ? start_date=1920, start_date:edtf=1920~, start_date:raw=c1920
 E   n/9000010   [ohm] Invalid date - *_date; fixable, please review   start_date=c-1500 ? start_date=-1500, start_date:edtf=-1500~, start_date:raw=c-1500
 E   n/9000011   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920bc ? start_date=-1920, start_date:edtf=-1920~, start_date:raw=c1920bc
-E   n/9000012   [ohm] Invalid date - *_date; fixable, please review   end_date=200 ? end_date=0200, end_date:edtf=0200, end_date:raw=200
+E   n/9000012   [ohm] Invalid date - *_date; fixable, please review   end_date=200 ? end_date=0200, end_date:edtf=(absent), end_date:raw=200
 E   n/9000012   [ohm] Invalid date - *_date; fixable, please review   start_date=c100 ? start_date=0100, start_date:edtf=0100~, start_date:raw=c100
-E   n/9000013   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
-E   n/9000014   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
+E   n/9000013   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=(absent), end_date:raw=100
+E   n/9000014   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=(absent), end_date:raw=100
 E   n/9000015   [ohm] Invalid date - *_date; fixable, please review   start_date=c19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=c19
-E   n/9000016   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
-E   n/9000017   [ohm] Invalid date - *_date; fixable, please review   end_date=-1 ? end_date=-0001, end_date:edtf=-0001, end_date:raw=-1
+E   n/9000016   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=(absent), end_date:raw=100
+E   n/9000017   [ohm] Invalid date - *_date; fixable, please review   end_date=-1 ? end_date=-0001, end_date:edtf=(absent), end_date:raw=-1
 E   n/9000018   [ohm] Invalid date - *_date; fixable, please review   start_date=1850/52: abbreviated-tail range; rewrite as start_date=1850, start_date:edtf=1850/1852, start_date:raw=1850/52?
 E   n/9000019   [ohm] Invalid date - *_date; fixable, please review   end_date=1850/52: abbreviated-tail range; rewrite as end_date=1852, end_date:edtf=1850/1852, end_date:raw=1850/52?
 E   n/9000020   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1899/01 ? start_date=1899, start_date:edtf=1899/01
 E   n/9000021   [ohm] Invalid date - *_date; fixable, please review   start_date=0000..1850: implausibly-ancient leading zeros; rewrite as start_date=1850, start_date:edtf=/1850, start_date:raw=0000..1850?
 E   n/9000022   [ohm] Invalid date - *_date; fixable, please review   end_date=0000..1900: implausibly-ancient leading zeros; rewrite as end_date=1900, end_date:edtf=/1900, end_date:raw=0000..1900?
-E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=0100, end_date:raw=100
+E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   end_date=100 ? end_date=0100, end_date:edtf=(absent), end_date:raw=100
 E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   start_date=0000..0050 ? start_date=0000, start_date:edtf=0000/0050, start_date:raw=0000..0050
 E   n/9000061   [ohm] Invalid date - *_date; fixable, please review   start_date=1875-1031: missing hyphen between month and day; rewrite as start_date=1875-10-31?
 E   n/9000062   [ohm] Invalid date - *_date; fixable, please review   start_date=1500-731: missing hyphen between month and day; rewrite as start_date=1500-07-31?
@@ -253,7 +253,7 @@ E   r/2700593   [ohm] Invalid date - *_date; fixable, please review   start_date
 E   r/2702880   [ohm] Invalid date - *_date; fixable, please review   start_date=C19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=C19
 E   r/2736516   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=1993) cannot be normalized.
 E   r/2736516   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   r/2742420   [ohm] Invalid date - *_date; fixable, please review   end_date=2020-12- 31 ? end_date=2020-12-31, end_date:edtf=2020-12-31, end_date:raw=2020-12- 31
+E   r/2742420   [ohm] Invalid date - *_date; fixable, please review   end_date=2020-12- 31 ? end_date=2020-12-31, end_date:edtf=(absent), end_date:raw=2020-12- 31
 E   r/2742420   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2747751   [ohm] Invalid date - *_date; fixable, please review   start_date=c1920 ? start_date=1920, start_date:edtf=1920~, start_date:raw=c1920
 E   r/2747751   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
@@ -261,10 +261,10 @@ E   r/2796293   [ohm] Invalid date - *_date; fixable, please review   start_date
 E   r/2796293   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2825526   [ohm] Invalid date - invalid month in start_date or end_date; autofix to YYYY   end_date=1959-90-15: month 90 is out of range. Trim to 1959?
 E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630: missing hyphen between month and day; rewrite as end_date=1930-06-30?
-E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=0000, start_date:raw=0
+E   r/2849295   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=(absent), start_date:raw=0
 E   r/2849295   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2849516   [ohm] Invalid date - *_date; fixable, please review   end_date=1930-0630: missing hyphen between month and day; rewrite as end_date=1930-06-30?
-E   r/2849516   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=0000, start_date:raw=0
+E   r/2849516   [ohm] Invalid date - *_date; fixable, please review   start_date=0 ? start_date=0000, start_date:edtf=(absent), start_date:raw=0
 E   r/2849516   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2867823   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=199x ? start_date=1990, start_date:edtf=199X
 E   r/2887877   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=1891-05-91: day 91 is out of range. Trim to 1891-05?
@@ -287,17 +287,17 @@ E   r/9100720   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=2200-05-32: day 32 is out of range. Trim to 2200-05?
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   end_date=4C ? end_date=0399, end_date:edtf=03XX, end_date:raw=4C
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   start_date=1C ? start_date=0000, start_date:edtf=00XX, start_date:raw=1C
-E   w/198164162   [ohm] Invalid date - *_date; fixable, please review   end_date=260 ? end_date=0260, end_date:edtf=0260, end_date:raw=260
+E   w/198164162   [ohm] Invalid date - *_date; fixable, please review   end_date=260 ? end_date=0260, end_date:edtf=(absent), end_date:raw=260
 E   w/198164162   [ohm] Invalid date - *_date; fixable, please review   start_date=mid 2C ? start_date=0130, start_date:edtf=0130~/0170~, start_date:raw=mid 2C
 E   w/198164162   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   w/198168262   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168263   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168264   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168265   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168266   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168267   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168268   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
-E   w/198168269   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=-0499, start_date:raw=500bc
+E   w/198168262   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168263   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168264   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168265   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168266   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168267   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168268   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
+E   w/198168269   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
 E   w/198179710   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=2010 (approximate) cannot be normalized.
 E   w/198179715   [ohm] Invalid date - *_date; fixable, please review   end_date=ca 1967 ? end_date=1967, end_date:edtf=1967~, end_date:raw=ca 1967
 E   w/198180597   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=Present means an ongoing feature. Clear base and :edtf, mark with :raw=Present?
@@ -348,11 +348,11 @@ E   w/198292477   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/198292703   [ohm] Invalid date - *_date; fixable, please review   start_date=1730? ? start_date=1730, start_date:edtf=1730?, start_date:raw=1730?
 E   w/198293512   [ohm] Invalid date - *_date; fixable, please review   start_date=1728? ? start_date=1728, start_date:edtf=1728?, start_date:raw=1728?
 E   w/198296208   [ohm] Invalid date - *_date; fixable, please review   start_date=1716? ? start_date=1716, start_date:edtf=1716?, start_date:raw=1716?
-E   w/198300399   [ohm] Invalid date - *_date; fixable, please review   start_date=31/07/2015 ? start_date=2015-07-31, start_date:edtf=2015-07-31, start_date:raw=31/07/2015
+E   w/198300399   [ohm] Invalid date - *_date; fixable, please review   start_date=31/07/2015 ? start_date=2015-07-31, start_date:edtf=(absent), start_date:raw=31/07/2015
 E   w/198530068   [ohm] Invalid date - *_date; fixable, please review   start_date=early C18 ? start_date=1700, start_date:edtf=1700~/1730~, start_date:raw=early C18
-E   w/198533013   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=2019-07-27, end_date:raw=Jul 27, 2019
-E   w/198533016   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=2019-07-27, end_date:raw=Jul 27, 2019
-E   w/198533018   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=2019-07-27, end_date:raw=Jul 27, 2019
+E   w/198533013   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=(absent), end_date:raw=Jul 27, 2019
+E   w/198533016   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=(absent), end_date:raw=Jul 27, 2019
+E   w/198533018   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=(absent), end_date:raw=Jul 27, 2019
 E   w/198540418   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   w/198542607   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   w/198544317   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1900: implausibly-ancient leading zeros; rewrite as start_date=1900, start_date:edtf=/1900, start_date:raw=0..1900?
@@ -363,7 +363,7 @@ E   w/198556160   [ohm] Invalid date - *_date cannot be read; unfixable, please 
 E   w/198556397   [ohm] Invalid date - *_date; fixable, please review   start_date=1980-1990 ? start_date=1980, start_date:edtf=1980/1990, start_date:raw=1980-1990
 E   w/198556532   [ohm] Invalid date - *_date; fixable, please review   start_date=1850-1970 ? start_date=1850, start_date:edtf=1850/1970, start_date:raw=1850-1970
 E   w/198560256   [ohm] Invalid date - *_date; fixable, please review   end_date=ca. 2014 ? end_date=2014, end_date:edtf=2014~, end_date:raw=ca. 2014
-E   w/198563072   [ohm] Invalid date - *_date; fixable, please review   end_date=01/01/1970 ? end_date=1970-01-01, end_date:edtf=1970-01-01, end_date:raw=01/01/1970
+E   w/198563072   [ohm] Invalid date - *_date; fixable, please review   end_date=01/01/1970 ? end_date=1970-01-01, end_date:edtf=(absent), end_date:raw=01/01/1970
 E   w/198563534   [ohm] Invalid date - *_date; fixable, please review   start_date=1984-04..1985-05 ? start_date=1984-04, start_date:edtf=1984-04/1985-05, start_date:raw=1984-04..1985-05
 E   w/198563730   [ohm] Invalid date - *_date; fixable, please review   start_date=1983..1984-08 ? start_date=1983, start_date:edtf=1983/1984-08, start_date:raw=1983..1984-08
 E   w/198563731   [ohm] Invalid date - *_date; fixable, please review   start_date=1983..1984-08 ? start_date=1983, start_date:edtf=1983/1984-08, start_date:raw=1983..1984-08
@@ -394,13 +394,13 @@ E   w/198653353   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/198660005   [ohm] Invalid date - *_date:edtf; unfixable, please review   start_date:edtf=/18C is not valid EDTF and cannot be normalized. Manual review needed.
 E   w/198663009   [ohm] Invalid date - *_date; fixable, please review   start_date=1990-2000 ? start_date=1990, start_date:edtf=1990/2000, start_date:raw=1990-2000
 E   w/198670420   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   end_date=1796/ ? end_date=1796, end_date:edtf=1796/
-E   w/198671525   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
-E   w/198671526   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
-E   w/198671527   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
-E   w/198671528   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
-E   w/198671538   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
-E   w/198671539   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
-E   w/198671540   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=1862-09-17, end_date:raw=1862-09-17T06:45
+E   w/198671525   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
+E   w/198671526   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
+E   w/198671527   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
+E   w/198671528   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
+E   w/198671538   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
+E   w/198671539   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
+E   w/198671540   [ohm] Invalid date - *_date; fixable, please review   end_date=1862-09-17T06:45 ? end_date=1862-09-17, end_date:edtf=(absent), end_date:raw=1862-09-17T06:45
 E   w/198675380   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=2021-09-026 cannot be normalized.
 E   w/198675380   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/198691395   [ohm] Invalid date - *_date; fixable, please review   start_date=~C19 ? start_date=1800, start_date:edtf=18XX~, start_date:raw=~C19
@@ -551,26 +551,26 @@ E   w/200505678   [ohm] Invalid date - *_date cannot be read; unfixable, please 
 E   w/200604322   [ohm] Invalid date - *_date; fixable, please review   start_date=2005-2007 ? start_date=2005, start_date:edtf=2005/2007, start_date:raw=2005-2007
 E   w/200623105   [ohm] Invalid date - *_date; fixable, please review   start_date=c17 ? start_date=1600, start_date:edtf=16XX, start_date:raw=c17
 E   w/200625619   [ohm] Invalid date - *_date; fixable, please review   start_date=early C20 ? start_date=1900, start_date:edtf=1900~/1930~, start_date:raw=early C20
-E   w/200657093   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=2005-09, start_date:raw=September 2005
-E   w/200657094   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=2005-09, start_date:raw=September 2005
-E   w/200657217   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=2005-09, start_date:raw=September 2005
-E   w/200657218   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=2005-09, start_date:raw=September 2005
-E   w/200657220   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=2005-09, start_date:raw=September 2005
+E   w/200657093   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
+E   w/200657094   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
+E   w/200657217   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
+E   w/200657218   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
+E   w/200657220   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
 E   w/200681734   [ohm] Invalid date - *_date; fixable, please review   start_date=1465-1468 ? start_date=1465, start_date:edtf=1465/1468, start_date:raw=1465-1468
 E   w/200681740   [ohm] Invalid date - *_date; fixable, please review   start_date=1466 / 1735 ? start_date=1466, start_date:edtf=1466/1735, start_date:raw=1466 / 1735
 E   w/200681774   [ohm] Invalid date - *_date; fixable, please review   start_date=~C13 ? start_date=1200, start_date:edtf=12XX~, start_date:raw=~C13
 E   w/200681784   [ohm] Invalid date - *_date; fixable, please review   start_date=2020-2021 ? start_date=2020, start_date:edtf=2020/2021, start_date:raw=2020-2021
 E   w/200681785   [ohm] Invalid date - *_date; fixable, please review   start_date=2020-2021 ? start_date=2020, start_date:edtf=2020/2021, start_date:raw=2020-2021
 E   w/200681786   [ohm] Invalid date - *_date; fixable, please review   start_date=2020-2021 ? start_date=2020, start_date:edtf=2020/2021, start_date:raw=2020-2021
-E   w/200833382   [ohm] Invalid date - *_date; fixable, please review   start_date=29/05/1898 ? start_date=1898-05-29, start_date:edtf=1898-05-29, start_date:raw=29/05/1898
-E   w/200871875   [ohm] Invalid date - *_date; fixable, please review   start_date=19/12/2014 ? start_date=2014-12-19, start_date:edtf=2014-12-19, start_date:raw=19/12/2014
-E   w/200871890   [ohm] Invalid date - *_date; fixable, please review   start_date=19/12/2014 ? start_date=2014-12-19, start_date:edtf=2014-12-19, start_date:raw=19/12/2014
-E   w/200914282   [ohm] Invalid date - *_date; fixable, please review   start_date=2018 Dec ? start_date=2018-12, start_date:edtf=2018-12, start_date:raw=2018 Dec
+E   w/200833382   [ohm] Invalid date - *_date; fixable, please review   start_date=29/05/1898 ? start_date=1898-05-29, start_date:edtf=(absent), start_date:raw=29/05/1898
+E   w/200871875   [ohm] Invalid date - *_date; fixable, please review   start_date=19/12/2014 ? start_date=2014-12-19, start_date:edtf=(absent), start_date:raw=19/12/2014
+E   w/200871890   [ohm] Invalid date - *_date; fixable, please review   start_date=19/12/2014 ? start_date=2014-12-19, start_date:edtf=(absent), start_date:raw=19/12/2014
+E   w/200914282   [ohm] Invalid date - *_date; fixable, please review   start_date=2018 Dec ? start_date=2018-12, start_date:edtf=(absent), start_date:raw=2018 Dec
 E   w/200914298   [ohm] Invalid date - *_date; fixable, please review   start_date=1896 / 1910 ? start_date=1896, start_date:edtf=1896/1910, start_date:raw=1896 / 1910
 E   w/200914312   [ohm] Invalid date - *_date; fixable, please review   start_date=1544 / 1700 ? start_date=1544, start_date:edtf=1544/1700, start_date:raw=1544 / 1700
 E   w/200914318   [ohm] Invalid date - *_date; fixable, please review   start_date=1905/06: abbreviated-tail range; rewrite as start_date=1905, start_date:edtf=1905/1906, start_date:raw=1905/06?
 E   w/200924284   [ohm] Invalid date - *_date; fixable, please review   start_date=1632 / 1687 ? start_date=1632, start_date:edtf=1632/1687, start_date:raw=1632 / 1687
-E   w/200924642   [ohm] Invalid date - *_date; fixable, please review   start_date=2024-Feb-15 ? start_date=2024-02-15, start_date:edtf=2024-02-15, start_date:raw=2024-Feb-15
+E   w/200924642   [ohm] Invalid date - *_date; fixable, please review   start_date=2024-Feb-15 ? start_date=2024-02-15, start_date:edtf=(absent), start_date:raw=2024-Feb-15
 E   w/200943805   [ohm] Invalid date - *_date; fixable, please review   start_date=1880/1891 ? start_date=1880, start_date:edtf=1880/1891, start_date:raw=1880/1891
 E   w/200943805   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/200943806   [ohm] Invalid date - *_date; fixable, please review   start_date=1880/1891 ? start_date=1880, start_date:edtf=1880/1891, start_date:raw=1880/1891
@@ -659,11 +659,11 @@ E   w/201285334   [ohm] Invalid date - *_date contains a readable EDTF date; fix
 E   w/201311202   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=1950-01-28; 1955-10-28 cannot be normalized.
 E   w/201316381   [ohm] Invalid date - *_date; fixable, please review   start_date=1873-1935 ? start_date=1873, start_date:edtf=1873/1935, start_date:raw=1873-1935
 E   w/201324728   [ohm] Invalid date - *_date; fixable, please review   start_date=1422/1423 ? start_date=1422, start_date:edtf=1422/1423, start_date:raw=1422/1423
-E   w/201327661   [ohm] Invalid date - *_date; fixable, please review   end_date=1947/03/14 ? end_date=1947-03-14, end_date:edtf=1947-03-14, end_date:raw=1947/03/14
-E   w/201327661   [ohm] Invalid date - *_date; fixable, please review   start_date=1932/10/01 ? start_date=1932-10-01, start_date:edtf=1932-10-01, start_date:raw=1932/10/01
+E   w/201327661   [ohm] Invalid date - *_date; fixable, please review   end_date=1947/03/14 ? end_date=1947-03-14, end_date:edtf=(absent), end_date:raw=1947/03/14
+E   w/201327661   [ohm] Invalid date - *_date; fixable, please review   start_date=1932/10/01 ? start_date=1932-10-01, start_date:edtf=(absent), start_date:raw=1932/10/01
 E   w/201327661   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
-E   w/201327664   [ohm] Invalid date - *_date; fixable, please review   end_date=1947/03/14 ? end_date=1947-03-14, end_date:edtf=1947-03-14, end_date:raw=1947/03/14
-E   w/201327664   [ohm] Invalid date - *_date; fixable, please review   start_date=1932/10/01 ? start_date=1932-10-01, start_date:edtf=1932-10-01, start_date:raw=1932/10/01
+E   w/201327664   [ohm] Invalid date - *_date; fixable, please review   end_date=1947/03/14 ? end_date=1947-03-14, end_date:edtf=(absent), end_date:raw=1947/03/14
+E   w/201327664   [ohm] Invalid date - *_date; fixable, please review   start_date=1932/10/01 ? start_date=1932-10-01, start_date:edtf=(absent), start_date:raw=1932/10/01
 E   w/201362983   [ohm] Invalid date - *_date; fixable, please review   end_date=1962-1968 ? end_date=1968, end_date:edtf=1962/1968, end_date:raw=1962-1968
 E   w/201362987   [ohm] Invalid date - *_date; fixable, please review   end_date=1962-1968 ? end_date=1968, end_date:edtf=1962/1968, end_date:raw=1962-1968
 E   w/201498146   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   end_date=200X ? end_date=2009, end_date:edtf=200X
