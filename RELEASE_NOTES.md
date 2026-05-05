@@ -1,3 +1,63 @@
+# v0.5.5 — DateNormalizer expansion: many new fixable patterns, latent-bug fixes, retired 4232
+
+A substantial expansion of `DateNormalizer`'s coverage of OHM-style date shorthand, plus a few latent bugs in existing autofix paths surfaced and fixed. Driven by direct user-Claude conversation working through inventories of unfixable values from real OHM data.
+
+## New rules
+
+- **4246** `[ohm] Invalid date - 5+ digit number; unfixable, please review` (ERROR). Fires on any `*_date` value containing a run of 5+ consecutive digits that doesn't parse as valid EDTF — catches typos like `20251`, `12345-06`, `1997-04..1997-06006`, and Wikidata Q-numbers mistakenly placed in date tags (`Q1438579`). Legitimate EDTF long-year forms (e.g. `Y20251`, `Y-20251`) and any other syntax `edtf-java` accepts are exempt. Suppresses downstream per-key checks for that key.
+- **4247** `[ohm] Suspicious date - 02/29; autofix by stripping to year` (WARNING). Fires on any `*_date` value with month=02, day=29, regardless of leap-year status. Almost nothing in history actually happened on Feb 29; in OHM it's widely used as a placeholder for approximate dates. Fires alongside 4222 on non-leap years; both warnings appear and the editor picks.
+- **4248** `[ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form` (ERROR). Fires when `*_date:edtf` is valid EDTF (the parser accepts it) but is not in canonical form — typically unpadded years like `700~`, `/787`, `636/700`. Downstream bound-extraction misbehaves on unpadded years (returns `7000` for `700~`) which causes spurious mismatch warnings; the autofix preserves the original in `:edtf:raw` and writes the padded canonical form.
+- **4249** `[ohm] Invalid date - day 31 in a 30-day month; autofix day to 30` (ERROR). Fires when a month with 30 days (Apr/Jun/Sep/Nov) is paired with day=31. Clamps to 30. February cases stay in 4222 (too many possible interpretations).
+- **4326** `[ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags` (WARNING). Fires when every tag on a node is duplicated on at least one of its parent ways — accidental over-tagging where corner nodes carry the same tags as the way. Autofix removes every tag from the node.
+
+## Retired rule
+
+- **4232** (`[ohm] Date mismatch - *_date more precise than *_date:edtf; …`) retired. A `*_date` more precise than its `:edtf` (with base falling within `:edtf`'s bounds) is the *expected* OHM convention — the high-precision authoritative value lives on `:base`, the wider/qualified context on `:edtf`. Flagging it as a warning was wrong. Only true mismatches (base outside `:edtf`'s bounds) fire now, via the existing 4210. The `isBaseMoreSpecificWithinBounds` helper is preserved as the suppression guard for 4210.
+
+## DateNormalizer expansion (all surface as 4202 fixable, code unchanged)
+
+A round of inventory-driven coverage expansion against unfixable values from real OHM data:
+
+- **`by X` / `as of X`** — aliases for `before X` → `/X` (e.g. `by 1844` → `/1844`).
+- **`during X`** — pure unwrap; the prefix adds no information (`during 1934` → `1934`).
+- **Recursive `before`/`by`/`as of`/`after`** — the inner value is normalized recursively through `toEdtf`, so OHM shorthand on the bound side normalizes too (`before C12` → `/11XX`, `by c1900` → `/1900~`, `as of 1850s` → `/185X`).
+- **Dash-separated DM/MD/Y in `before:`/`after:`** — `before:01-01-1882` → `/1882` (coarsens to year only because day/month order is ambiguous).
+- **`end of YYYY`** → `YYYY-12` (last calendar month of the named year).
+- **`Nth - [early|mid|late] Mth Century [BC]`** — ordinal-century range with optional modifier on either side. `5th - mid 8th Century` → `0400/0770`.
+- **Qualifier on decade/century (prefix or suffix)** — `~1960s`, `670s~`, `~C3`, `C19~` — emits an explicit slash range with the qualifier on each bound (`~C19` → `1800~/1899~`) since EDTF rejects qualifiers attached to X-forms (`196X~` is parser-invalid).
+- **`early/mid/late` with leading qualifier** — `~late C1` → `0070~/0099~` (the inner output is already qualifier-bearing; the input qualifier is consumed for free).
+- **Short-year range with qualifier** — `~47-50` → `0047~/0050`. Ambiguity-guarded so `5-10` (could be year-month) still falls through.
+- **Hyphen range with negatives** — `-0800 - -0600` → `-0800/-0600` (after preprocess strips internal whitespace). Mixed signs work too: `-0800-1500` → `-0800/1500`.
+- **Per-bound BCE markers in `..` ranges** — `182 BC..174 BC` → `-0181/-0173` (existing N-1 convention preserved per OHM canon). The RANGE handler previously corrupted the start as `"182 BC BC"` by appending the global BCE-suffix capture to a side that already had its own.
+- **`Nth Century BC[E]`** — preprocess BCE_SUFFIX double-space bug fixed; `2nd Century BC` and `8th Century BCE` now normalize cleanly to `-0199/-0100` and `-0799/-0700`.
+- **Open-ended slash forms** — `..1945-05-20` → `/1945-05-20` (also `1945-05-20..` → `1945-05-20/`). The `/`-form was always EDTF-valid but no `toEdtf` pattern recognized it as canonical; new `LEADING_SLASH` / `TRAILING_SLASH` patterns recurse into the bounded side so canonicalization runs (year padding, `cYYYY` → `~YYYY`, etc.).
+- **Junk-tail strip** — `1959/..~` / `1959/..` / `1959/.~` / `1959/~` → `1959/`.
+- **Junk `..` markers around `/`** — `1839../..1859-12-02` → `1839/1859-12-02`. When this strip fires AND a leading or trailing `..` remains alongside the `/`, that `..` is also treated as junk (`..1839/..1859` → `1839/1859`); gated on the inner-strip firing so a clean leading `..` like `...15/11/1997` (genuine open-ended-left marker) is left for the standard rewrite to convert to `/`.
+- **Multi-dot collapse** — runs of 3+ dots normalize to two dots before pattern matching (`[1907...]` → `[1907..]`, `1839...1859` → `1839..1859`).
+- **Unicode dash normalization** — en-dash `–`, em-dash `—`, figure-dash `‒`, minus-sign `−` all normalize to ASCII `-` early in preprocess. `0544–0595` (en-dash, common copy-paste artifact) now parses.
+- **X-form with stray qualifier** — `/196X?` and `18XX~` strip the qualifier (since X-form can't carry one). `/196X?` → `/196X`.
+- **Qualifier adjacent to `..`** — `~..1907` → `/1907~` (open-ended-left, ends ~1907); `1907..~` → `1907~/`. Qualifier promotes to the bound year via the slash form.
+- **`..` as separator after `before`/`by`/`as of`/`during`** — after dot-collapse reduces `by...1907` to `by..1907`, the BEFORE/AFTER/DURING patterns accept `..` as a separator alongside space and colon.
+- **Valid-EDTF passthrough** — at the end of `toEdtf`, after preprocess and pattern-matching haven't matched, if the result is itself valid EDTF (e.g. `192X`, `[1907..]`, `199X`) it's returned as-is. Required for canonicalization to recurse cleanly through wrappers like `192X/..` → `192X/`.
+- **Path 2a in `checkDateFamily`** — when the original `*_date` value was already canonical EDTF and `toEdtf` returned it unchanged, the autofix takes a special "promote to `:edtf`" path with a friendlier title and no `:raw` write (since the input is recoverable from `:edtf`). Restores the cleaner output for cases like `start_date=1958~`, `start_date=/2013`, `start_date=1880/1891`.
+
+## Latent bugs fixed
+
+- **`~CN` `:edtf` autofix** previously emitted `18XX~` / `19XX~` / `12XX~` — **invalid EDTF** (the parser rejects qualifiers attached to X-forms). Now emits valid range form `1800~/1899~` etc. Affects 4 fixtures in the test corpus that had `~C19`, `~C20`, `~C13` on their base tag.
+- **BCE_SUFFIX double-space**: regex was producing `"2nd Century  BC"` (two spaces) which broke downstream "Nth century BC" head-extraction; tightening the lookbehind to `(?<=\d)|\s+` (consume the existing space when present) fixed both `2nd Century BC` and `8th Century BCE`.
+- **RANGE handler with per-bound BCE markers**: was appending the trailing-`BC` capture group to the start side too, corrupting `182 BC` to `182 BC BC` and producing empty output. Now skips the append when the start already ends with ` BC`.
+- **`checkAllEdtfKeys` key matching**: previously used `endsWith(":edtf")` which would match nested annotation keys like `note:start_date:edtf`. Now uses `^[^:]+:edtf$` (single-namespace `:edtf` only), so `birth_date:edtf` / `lifespan:edtf` still work but `note:start_date:edtf` and `source:foo:edtf` are correctly skipped.
+
+## Behavior change
+
+- **4248 severity elevated to ERROR** — joins 4208 / 4228 as the unified `:edtf`-malformed cluster. Even though the parser accepts the input, downstream bound-extraction misbehaves on unpadded years and produces spurious mismatch warnings, so this is a real defect that needs the editor's attention.
+
+## Test coverage
+
+`test/expected.txt` regenerated to absorb routing improvements: existing `~CN`-on-base fixtures shift from invalid `:edtf=NXX~` autofix output to valid `:edtf=NNNN~/NNNN~`; existing `..YYYY` and `/YYYY` base-tag fixtures shift between Path 2a (no `:raw`, friendly title) and Path 2b (with `:raw`) according to whether the input was already canonical EDTF; one fixture (`...15/11/1997`) reclassifies from unfixable to fixable thanks to the multi-dot collapse cascading through the slash-date interpreter. No regressions; ~50 lines of churn in expected.txt across the routing improvements.
+
+---
+
 # v0.5.0 — Source-slot type contract; redundant `:edtf` suppression
 
 Loosens the source-tag rules around URL vs text placement. The pre-v0.5

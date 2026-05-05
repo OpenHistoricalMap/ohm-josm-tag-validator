@@ -211,7 +211,12 @@ public class DateTagTest extends Test {
     //   companion to the unified invalid-:edtf messages (4208/4228); user
     //   already gets an actionable warning without it.
     protected static final int CODE_PRESENT_START_DATE = 4231;
-    protected static final int CODE_MORE_SPECIFIC_BASE = 4232;
+    // 4232 (CODE_MORE_SPECIFIC_BASE) retired: a `*_date` more precise than
+    //   its `*_date:edtf` (with base falling within `:edtf`'s bounds) is the
+    //   *expected* OHM convention — the high-precision authoritative value
+    //   lives on `:base`, the wider/qualified context on `:edtf`. Flagging
+    //   it as a warning was wrong; only true mismatches (base outside
+    //   `:edtf`'s bounds) fire now, via the existing 4210.
     protected static final int CODE_JULIAN_CONVERSION = 4233;
     // Chronology-relation structural checks. All findings attach only to the
     // parent chronology relation; offending member ids are listed in the
@@ -228,10 +233,25 @@ public class DateTagTest extends Test {
     protected static final int CODE_BOUNDARY_CHRONOLOGY_NON_RELATION = 4243;
     protected static final int CODE_PACKED_DATE_INVALID = 4244;
     protected static final int CODE_PACKED_FEATURE_SET = 4245;
+    protected static final int CODE_FIVE_PLUS_DIGIT_NUMBER = 4246;
+    protected static final int CODE_FEB_29_PLACEHOLDER = 4247;
+    protected static final int CODE_EDTF_NOT_CANONICAL = 4248;
+    protected static final int CODE_CALENDAR_DAY_31_IN_30_DAY_MONTH = 4249;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
         Pattern.compile("^(-?\\d{4})-(\\d{2})-(\\d{2})$");
+
+    /**
+     * Matches any value containing a run of five or more consecutive digits
+     * (anywhere in the string). Used to catch likely-typo date values like
+     * {@code 20251}, {@code 20251-01-15}, {@code 12345/12346} — anything
+     * with a digit-run too long to be a plain ISO year. Combined with an
+     * EDTF validity check, this lets through legitimate long-year EDTF
+     * forms (e.g. {@code Y20251}) while flagging the rest.
+     */
+    private static final Pattern HAS_FIVE_PLUS_DIGIT_RUN =
+        Pattern.compile("\\d{5}");
 
     /** Matches a bare negative year like {@code -1920} with no month/day suffix. */
     private static final Pattern BARE_NEGATIVE_YEAR =
@@ -366,9 +386,9 @@ public class DateTagTest extends Test {
         boolean packedFeatures = checkPackedFeatureSet(p);
         if (!packedFeatures) {
             for (String baseKey : BASE_KEYS) {
+                if (checkFivePlusDigitNumber(p, baseKey)) continue;
                 checkAmbiguousTrailingHyphen(p, baseKey);
                 checkDateFamily(p, baseKey);
-                checkMoreSpecificBase(p, baseKey);
                 checkSuspiciousYearBoundary(p, baseKey);
                 checkInvalidComponents(p, baseKey);
                 checkFutureEndDate(p, baseKey);
@@ -733,11 +753,49 @@ public class DateTagTest extends Test {
                     .build());
                 return;
             }
+            // 4247: any Feb 29 is suspicious in OHM. Almost nothing in
+            // history actually happened on Feb 29, and the date is widely
+            // used as a placeholder for approximate or made-up values.
+            // Fires regardless of leap-year status — and in addition to
+            // 4222 below when the year is non-leap (calendar-invalid).
+            if (month == 2 && day == 29) {
+                String trimmed = m.group(1);
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_FEB_29_PLACEHOLDER)
+                    .message(tr("[ohm] Suspicious date - 02/29; autofix by stripping to year"),
+                             marktr("{0}={1}: Feb 29 is widely used in OHM as a placeholder for approximate or made-up dates. Strip to {2}?"),
+                                baseKey, value, trimmed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+            }
             // Day-in-month check: month and day are in basic range, but is
             // this particular day actually valid for this particular month
             // and year? Use Java's LocalDate to do the leap-year arithmetic.
             // LocalDate.of throws DateTimeException on invalid dates.
             if (!isValidDayForMonth(year, month, day)) {
+                // Specific autofix: day=31 in a 30-day month (Apr/Jun/Sep/Nov).
+                // The user's most likely error is forgetting the month is
+                // 30-day, and the rest of the date is well-formed —
+                // clamping to day 30 preserves intent. February cases
+                // (Feb 30, Feb 29 on non-leap) are deliberately not
+                // autofixed here: too many possible interpretations
+                // (28 vs 29 vs strip-to-month vs month is wrong), and
+                // Feb 29 already gets the 4247 strip-to-year autofix.
+                if (day == 31 && (month == 4 || month == 6
+                                  || month == 9 || month == 11)) {
+                    String fixed = m.group(1) + "-" + m.group(2) + "-30";
+                    Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, fixed);
+                    errors.add(TestError.builder(this, Severity.ERROR,
+                                                 CODE_CALENDAR_DAY_31_IN_30_DAY_MONTH)
+                        .message(tr("[ohm] Invalid date - day 31 in a 30-day month; autofix day to 30"),
+                                 marktr("{0}={1}: month {2} has 30 days, not 31. Change to {3}?"),
+                                    baseKey, value, m.group(2), fixed)
+                        .primitives(p)
+                        .fix(() -> fix)
+                        .build());
+                    return;
+                }
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
                     .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review"),
                              marktr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
@@ -782,6 +840,41 @@ public class DateTagTest extends Test {
         } catch (java.time.DateTimeException e) {
             return false;
         }
+    }
+
+    /**
+     * Flag a {@code *_date} value that contains a run of five or more
+     * consecutive digits and does not parse as valid EDTF. Such values are
+     * almost always typos — an extra digit slipped into a year, or a
+     * misformatted date — since plain ISO years are 4 digits and EDTF
+     * already provides {@code Y}-prefixed long-year notation for years
+     * outside the 0000–9999 range.
+     *
+     * <p>The EDTF check exempts legitimate long-year forms like
+     * {@code Y20251} (and ranges/intervals built from them) — anything the
+     * upstream {@code edtf-java} library accepts is allowed through.
+     *
+     * <p>No autofix is offered: we can't tell whether the intent was
+     * {@code 2025}, {@code 12025}, or something else; the editor must
+     * decide.
+     *
+     * <p>Returns {@code true} if the rule fired, so the caller can skip
+     * the rest of the per-key date checks for this primitive — they would
+     * otherwise emit a generic "cannot be read" warning that obscures the
+     * specific typo diagnosis.
+     */
+    private boolean checkFivePlusDigitNumber(OsmPrimitive p, String baseKey) {
+        String value = p.get(baseKey);
+        if (value == null) return false;
+        if (!HAS_FIVE_PLUS_DIGIT_RUN.matcher(value).find()) return false;
+        if (DateNormalizer.looksLikeValidEdtf(value)) return false;
+        errors.add(TestError.builder(this, Severity.ERROR, CODE_FIVE_PLUS_DIGIT_NUMBER)
+            .message(tr("[ohm] Invalid date - 5+ digit number; unfixable, please review"),
+                     marktr("{0}={1} contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually."),
+                        baseKey, value)
+            .primitives(p)
+            .build());
+        return true;
     }
 
     /**
@@ -1100,15 +1193,25 @@ public class DateTagTest extends Test {
      * deliberately skips invalid-{@code :edtf} branches to avoid
      * double-warning.
      */
+    /**
+     * Top-level {@code :edtf} keys: {@code <name>:edtf} where {@code <name>}
+     * has no embedded colon. Matches {@code start_date:edtf},
+     * {@code birth_date:edtf}, {@code lifespan:edtf}, etc.
+     *
+     * <p>Excludes nested forms like {@code note:start_date:edtf} or
+     * {@code source:foo:edtf} — those are sibling-annotation patterns
+     * (the {@code :edtf} is on a different namespace level than a
+     * primary date key) and shouldn't be normalized as if they were dates.
+     */
+    private static final Pattern TOP_LEVEL_EDTF_KEY =
+        Pattern.compile("^[^:]+:edtf$");
+
     private void checkAllEdtfKeys(OsmPrimitive p) {
         for (String key : p.keySet()) {
-            if (!key.endsWith(":edtf")) continue;
-            // The :edtf:raw sibling is a scaffold, not an :edtf key itself.
-            if (key.endsWith(":edtf:raw")) continue;
+            if (!TOP_LEVEL_EDTF_KEY.matcher(key).matches()) continue;
 
             String value = p.get(key);
             if (value == null || value.isEmpty()) continue;
-            if (DateNormalizer.looksLikeValidEdtf(value)) continue; // OK.
             // Values with a leading backslash are handled by the Rule A/C/D*
             // path (checkStartEndEqualityAndBackslash) for start_date:edtf,
             // which emits the same unified messages. Skip here to avoid
@@ -1116,14 +1219,19 @@ public class DateTagTest extends Test {
             // no such rule exists — we still catch them here.
             if (value.startsWith("\\") && key.equals("start_date:edtf")) continue;
 
+            boolean isValid = DateNormalizer.looksLikeValidEdtf(value);
+            Optional<String> normalized = DateNormalizer.toEdtf(value);
+            boolean canonicalAvailable = normalized.isPresent()
+                && DateNormalizer.looksLikeValidEdtf(normalized.get())
+                && !normalized.get().equals(value);
+
+            // Already valid AND already canonical (or no canonicalization
+            // available) — nothing to do.
+            if (isValid && !canonicalAvailable) continue;
+
             String rawSibling = key + ":raw";
 
-            // Try to normalize the invalid :edtf value.
-            Optional<String> normalized = DateNormalizer.toEdtf(value);
-            boolean fixable = normalized.isPresent()
-                && DateNormalizer.looksLikeValidEdtf(normalized.get());
-
-            if (fixable) {
+            if (canonicalAvailable) {
                 String newEdtf = normalized.get();
                 List<Command> cmds = new ArrayList<>();
                 if (p.get(rawSibling) == null) {
@@ -1131,15 +1239,35 @@ public class DateTagTest extends Test {
                 }
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, newEdtf));
                 Command fix = new SequenceCommand(tr("Normalize {0}", key), cmds);
-                errors.add(TestError.builder(this, Severity.ERROR,
-                                             CODE_ANY_EDTF_INVALID_FIXABLE)
-                    .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
-                             marktr("{0}={1} is not valid EDTF. Normalize to {2} and "
-                              + "preserve original in {3}?"),
-                                key, value, newEdtf, rawSibling)
-                    .primitives(p)
-                    .fix(() -> fix)
-                    .build());
+
+                if (isValid) {
+                    // Valid EDTF but not canonical — typically unpadded years
+                    // ({@code 700~} → {@code 0700~}) or non-canonical interval
+                    // forms ({@code 636/700} → {@code 0636/0700}). Treated as
+                    // ERROR alongside the other malformed-`:edtf` cases:
+                    // even though the parser accepts the input, downstream
+                    // bound-extraction misbehaves on unpadded years, which
+                    // is a real defect that needs the editor's attention.
+                    errors.add(TestError.builder(this, Severity.ERROR,
+                                                 CODE_EDTF_NOT_CANONICAL)
+                        .message(tr("[ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form"),
+                                 marktr("{0}={1} is valid EDTF but not canonical. "
+                                  + "Normalize to {2} and preserve original in {3}?"),
+                                    key, value, newEdtf, rawSibling)
+                        .primitives(p)
+                        .fix(() -> fix)
+                        .build());
+                } else {
+                    errors.add(TestError.builder(this, Severity.ERROR,
+                                                 CODE_ANY_EDTF_INVALID_FIXABLE)
+                        .message(tr("[ohm] Invalid date - *_date:edtf; fixable, please review"),
+                                 marktr("{0}={1} is not valid EDTF. Normalize to {2} and "
+                                  + "preserve original in {3}?"),
+                                    key, value, newEdtf, rawSibling)
+                        .primitives(p)
+                        .fix(() -> fix)
+                        .build());
+                }
             } else {
                 errors.add(TestError.builder(this, Severity.ERROR,
                                              CODE_EDTF_INVALID_NO_BASE)
@@ -1381,9 +1509,9 @@ public class DateTagTest extends Test {
         }
 
         // If base is a precision refinement of :edtf (more specific, within
-        // :edtf's bounds), that's not an inconsistency for message 29 — it's
-        // a separate case covered by checkMoreSpecificBase, which fires
-        // independently. Skip message 29 in that scenario.
+        // :edtf's bounds), that's the expected OHM state — no warning. The
+        // high-precision authoritative value lives on `:base`; the wider
+        // or qualified context lives on `:edtf`.
         if (!baseOk && edtfOk
             && base != null && edtf != null
             && isBaseMoreSpecificWithinBounds(base, edtf)) {
@@ -1476,8 +1604,9 @@ public class DateTagTest extends Test {
         }
 
         // If base is a refinement (more specific, within bounds), that's
-        // not covered by this message — checkMoreSpecificBase handles it
-        // as a separate warning. Skip here to avoid firing both.
+        // the expected OHM state — no warning. The high-precision
+        // authoritative value lives on `:base`; the wider or qualified
+        // context lives on `:edtf`.
         if (isBaseMoreSpecificWithinBounds(base, edtf)) {
             return;
         }
@@ -1493,41 +1622,15 @@ public class DateTagTest extends Test {
     }
 
     /**
-     * Fires when base has finer precision than {@code :edtf} and falls
-     * within {@code :edtf}'s bounds — e.g. {@code start_date=1890-03-15},
-     * {@code start_date:edtf=1890~}. This is semantically legitimate (a
-     * refinement), but isn't aligned with the convention of deriving base
-     * from {@code :edtf}'s lower/upper bound, so we flag for review.
-     *
-     * <p>Fires regardless of whether {@code :raw} exists, regardless of
-     * last editor. Has no autofix — determining the authoritative value
-     * is a human judgment call.
-     */
-    private void checkMoreSpecificBase(OsmPrimitive p, String baseKey) {
-        String base = p.get(baseKey);
-        String edtf = p.get(baseKey + ":edtf");
-        if (base == null || edtf == null) return;
-        if (!DateNormalizer.looksLikeValidEdtf(edtf)) return;
-        if (!isBaseMoreSpecificWithinBounds(base, edtf)) return;
-
-        errors.add(TestError.builder(this, Severity.WARNING,
-                                     CODE_MORE_SPECIFIC_BASE)
-            .message(tr("[ohm] Date mismatch - *_date more precise than *_date:edtf; autofix *_date:edtf=*_date"),
-                     marktr("{0}={1} is more specific than {0}:edtf={2}. "
-                      + "Manual review needed: confirm which value is authoritative."),
-                        baseKey, base, edtf)
-            .primitives(p)
-            .build());
-    }
-
-    /**
      * True when {@code base} is a finer-precision ISO date than {@code edtf}
      * (YYYY-MM or YYYY-MM-DD when edtf is YYYY; YYYY-MM-DD when edtf is YYYY-MM)
      * AND {@code base} falls within {@code edtf}'s lower/upper bounds.
      *
-     * <p>Used by both {@link #checkMoreSpecificBase} (which fires on this
-     * state) and {@link #checkWithRaw} (which suppresses the mismatch
-     * message in this state).
+     * <p>Used by the {@code :edtf}-disagreement checks ({@link #checkWithRaw}
+     * and the no-raw mismatch path in {@link #checkDateFamily}) to
+     * <i>suppress</i> the mismatch warning when this state holds — a more
+     * precise {@code :base} within the {@code :edtf} bounds is the
+     * expected OHM convention, not a mismatch.
      */
     private static boolean isBaseMoreSpecificWithinBounds(String base, String edtf) {
         // base must be valid ISO calendar form (YYYY, YYYY-MM, or YYYY-MM-DD).
@@ -1884,6 +1987,32 @@ public class DateTagTest extends Test {
                 : DateNormalizer.upperBoundIso(derivedEdtf);
             String derivedBase = derivedBaseOpt.orElse(null);
 
+            // Sub-case 2a: original was already valid EDTF AND toEdtf
+            // didn't transform it (e.g. "1958~", "/2013", "1880/1891").
+            // The user typed canonical EDTF in the base tag \u2014 promote to
+            // :edtf, derive base. No :raw write because the input is
+            // recoverable from :edtf with no information lost.
+            //
+            // The `derivedEdtf.equals(base)` guard rules out cases where
+            // preprocess discarded information (e.g. "1862-09-17T06:45"
+            // \u2192 "1862-09-17" loses the time component) or canonicalized
+            // a qualifier position ("~-0180" \u2192 "-0180~"); in those cases
+            // we fall through to 2b and preserve the original in :raw.
+            if (DateNormalizer.looksLikeValidEdtf(base) && derivedEdtf.equals(base)) {
+                Command fix = buildBaseAndEdtfFix(p, baseKey, derivedBase, derivedEdtf);
+                errors.add(TestError.builder(this, Severity.ERROR, CODE_NEEDS_NORMALIZATION)
+                    .message(tr("[ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review"),
+                             marktr("{0}={1} \u2192 {0}={2}, {0}:edtf={3}"),
+                                baseKey, base,
+                                derivedBase == null ? "(absent)" : derivedBase,
+                                edtfDisplayValue(derivedBase, derivedEdtf))
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
+
+            // Sub-case 2b: shorthand normalization, preserve original in :raw.
             String existingRaw = rawConflictValue(p, baseKey, base);
             if (existingRaw != null) {
                 addRawConflictFinding(p, baseKey, base, derivedBase, derivedEdtf, base, existingRaw);

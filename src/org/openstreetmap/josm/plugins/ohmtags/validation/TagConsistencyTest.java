@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -22,6 +23,7 @@ import java.util.regex.Pattern;
 import org.openstreetmap.josm.command.ChangePropertyCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.SequenceCommand;
+import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
@@ -148,6 +150,7 @@ public class TagConsistencyTest extends Test {
     // 4323: retired in v0.5 — multi-text split now always appends past max source:N.
     protected static final int CODE_SOURCE_NAME_HAS_URL = 4324;
     protected static final int CODE_SOURCE_URL_HAS_TEXT = 4325;
+    protected static final int CODE_NODE_TAGS_REDUNDANT_WITH_PARENT_WAY = 4326;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -261,6 +264,7 @@ public class TagConsistencyTest extends Test {
     @Override
     public void visit(org.openstreetmap.josm.data.osm.Node n) {
         checkPrimitive(n);
+        checkNodeTagsRedundantWithParentWay(n);
     }
 
     @Override
@@ -300,6 +304,52 @@ public class TagConsistencyTest extends Test {
                         String.join(", ", labels))
             .primitives(r)
             .build());
+    }
+
+    /**
+     * Flag a node whose entire tag set is duplicated on one of its parent
+     * ways. This typically arises when an editor tags both the way and one
+     * of its constituent nodes for the same feature — only the way needs
+     * the tags. The autofix removes every tag from the node.
+     *
+     * <p>"Shared" means the node carries no tag the way doesn't already have
+     * with the same value. Only one parent way needs to fully cover the
+     * node's tags for the rule to fire (a node shared between two ways with
+     * different attributes is still over-tagged relative to whichever one
+     * carries the duplicate set).
+     */
+    private void checkNodeTagsRedundantWithParentWay(Node n) {
+        Map<String, String> nodeTags = n.getKeys();
+        if (nodeTags.isEmpty()) return;
+
+        for (OsmPrimitive parent : n.getReferrers()) {
+            if (!(parent instanceof Way)) continue;
+            Way w = (Way) parent;
+            boolean allShared = true;
+            for (Map.Entry<String, String> e : nodeTags.entrySet()) {
+                if (!e.getValue().equals(w.get(e.getKey()))) {
+                    allShared = false;
+                    break;
+                }
+            }
+            if (!allShared) continue;
+
+            List<Command> cmds = new ArrayList<>();
+            for (String key : nodeTags.keySet()) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(n), key, null));
+            }
+            Command fix = new SequenceCommand(tr("Remove redundant node tags"), cmds);
+            errors.add(TestError.builder(this, Severity.WARNING,
+                                         CODE_NODE_TAGS_REDUNDANT_WITH_PARENT_WAY)
+                .message(tr("[ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags"),
+                         marktr("All {0} tag(s) on this node are duplicated on parent way w/{1}; "
+                            + "remove the node tags?"),
+                            nodeTags.size(), Long.toString(w.getId()))
+                .primitives(n)
+                .fix(() -> fix)
+                .build());
+            return;
+        }
     }
 
     private void checkPrimitive(OsmPrimitive p) {

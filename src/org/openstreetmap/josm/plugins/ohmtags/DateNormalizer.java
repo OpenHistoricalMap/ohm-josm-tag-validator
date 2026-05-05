@@ -53,32 +53,114 @@ public final class DateNormalizer {
         Pattern.compile("^(.+)\\.\\.(.+?)( BCE?)?$");
 
     /**
-     * Simple year with optional qualifier. Qualifier may be prefix ({@code ~},
-     * {@code ?}, or {@code %}) or suffix ({@code ?}, {@code %} — a trailing
-     * {@code ~} would conflict with BCE suffix handling, so {@code ~} is
-     * only accepted as prefix). Accepts both positive years and astronomical
-     * negative years ({@code -180}, {@code ~-180}).
+     * Simple year with optional qualifier. Qualifier may be prefix or suffix
+     * and may be {@code ~}, {@code ?}, or {@code %}. The regex's group order
+     * (year/monthDay before suffix qualifier before BCE marker) keeps trailing
+     * {@code ~} unambiguous against the BCE suffix — {@code 1970~ BCE} parses
+     * cleanly. Accepts both positive years and astronomical negative years
+     * ({@code -180}, {@code ~-180}).
      */
     private static final Pattern SIMPLE_YEAR =
-        Pattern.compile("^([~?%])?(-?\\d+)(-\\d\\d(?:-\\d\\d)?)?([?%])?( BCE?)?$");
+        Pattern.compile("^([~?%])?(-?\\d+)(-\\d\\d(?:-\\d\\d)?)?([~?%])?( BCE?)?$");
+
+    /**
+     * Range of two 1- or 2-digit years separated by a hyphen, with an
+     * optional leading qualifier on the left bound (e.g. {@code ~47-50},
+     * {@code 47-50}). The qualifier — when present — propagates to the
+     * left bound only, matching the user's syntactic intent (the {@code ~}
+     * sits before the first year).
+     *
+     * <p>The pattern requires the left bound to be 1–2 digits, which a
+     * legitimate ISO year-month would never have ({@code 1950-05}'s left
+     * bound is 4 digits), so this can't be confused with year-month parsing.
+     */
+    private static final Pattern QUALIFIED_SHORT_YEAR_RANGE =
+        Pattern.compile("^([~?%])?(\\d{1,2})-(\\d{1,2})$");
+
+    /**
+     * Range of ordinal centuries with optional early/mid/late modifiers on
+     * either or both sides, with the trailing word "Century" applying to
+     * both: {@code 5th - mid 8th Century}, {@code early 1st - 3rd Century BC}.
+     * Each side is normalized recursively via {@link #toEdtf} (as
+     * {@code C5}, {@code mid C8}, etc.) and the bounds combined.
+     */
+    private static final Pattern ORDINAL_CENTURY_RANGE =
+        Pattern.compile(
+            "^(?i)" +
+            "(?:(early|mid|late)\\s+)?(\\d+)(?:st|nd|rd|th)" +
+            "\\s*-\\s*" +
+            "(?:(early|mid|late)\\s+)?(\\d+)(?:st|nd|rd|th)" +
+            "\\s+century(\\s+BC)?$"
+        );
 
     private static final Pattern DECADE =
-        Pattern.compile("^(~)?(\\d+)0s( BCE?)?$");
+        Pattern.compile("^([~?%])?(\\d+)0s([~?%])?( BCE?)?$");
 
     private static final Pattern CENTURY =
-        Pattern.compile("^(~)?C(\\d+)( BCE?)?$");
+        Pattern.compile("^([~?%])?C(\\d+)([~?%])?( BCE?)?$");
 
     private static final Pattern THIRD_DECADE =
-        Pattern.compile("^(early|mid|late) (\\d+)0s( BCE?)?$");
+        Pattern.compile("^([~?%])?(early|mid|late) (\\d+)0s( BCE?)?$");
 
     private static final Pattern THIRD_CENTURY =
-        Pattern.compile("^(early|mid|late) C(\\d+)( BCE?)?$");
+        Pattern.compile("^([~?%])?(early|mid|late) C(\\d+)( BCE?)?$");
 
+    /**
+     * Matches "before X", "by X", or "as of X" (and the colon-prefix
+     * variants {@code before:X} / {@code by:X} / {@code as of:X}, plus
+     * the dotdot-as-separator form {@code by..X} after multi-dot collapse
+     * has reduced {@code by...X} to two dots). All three keywords resolve
+     * to the same open-ended interval ending at X; the captured inner
+     * value is normalized via {@link #beforeAfterInner}.
+     */
     private static final Pattern BEFORE =
-        Pattern.compile("^before (\\d{4}(?:-\\d\\d)?(?:-\\d\\d)?)$");
+        Pattern.compile("^(?:before|by|as of)(?:[ :]+|\\.\\.+)(.+)$");
 
+    /** Symmetric counterpart to {@link #BEFORE}: open-ended interval starting at X. */
     private static final Pattern AFTER =
-        Pattern.compile("^after (\\d{4}(?:-\\d\\d)?(?:-\\d\\d)?)$");
+        Pattern.compile("^after(?:[ :]+|\\.\\.+)(.+)$");
+
+    /**
+     * Matches "during X" / "during:X" — semantically equivalent to plain X
+     * (the {@code during} prefix adds no information). The captured inner
+     * value is normalized recursively via {@link #toEdtf}.
+     */
+    private static final Pattern DURING =
+        Pattern.compile("^during(?:[ :]+|\\.\\.+)(.+)$");
+
+    /**
+     * Strict ISO date or year inside a before/after expression: {@code YYYY},
+     * {@code YYYY-MM}, or {@code YYYY-MM-DD}. Preserved at full precision
+     * because the format is unambiguous.
+     */
+    private static final Pattern STRICT_ISO_FOR_BEFORE_AFTER =
+        Pattern.compile("^\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?$");
+
+    /**
+     * Day-month-year or month-day-year with dash separators inside a
+     * before/after expression: {@code 01-01-1882}, {@code 1-1-1882},
+     * {@code 12-31-1999}. The day/month order is ambiguous, so the inner
+     * normalization coarsens to year-only (the {@code (\d{4})} capture group);
+     * "before X" with a fuzzy bound is fuzzy enough that losing day-of-month
+     * precision is acceptable. Slash-separated variants ({@code 01/01/1882})
+     * are normalized to ISO {@code 1882-01-01} earlier in {@link #preprocess},
+     * so they hit {@link #STRICT_ISO_FOR_BEFORE_AFTER} instead.
+     */
+    private static final Pattern DAY_MONTH_YEAR_DASHED =
+        Pattern.compile("^\\d{1,2}-\\d{1,2}-(\\d{4})$");
+
+    /**
+     * Open-ended slash-form intervals. These typically arise from the
+     * preprocess step rewriting trailing/leading {@code ..} to {@code /}
+     * (e.g. {@code ..1945-05-20} → {@code /1945-05-20}). Handled by
+     * recursively normalizing the bounded side so canonicalization
+     * (e.g. {@code cYYYY} → {@code ~YYYY}, year padding) still runs.
+     */
+    private static final Pattern LEADING_SLASH =
+        Pattern.compile("^/(.+)$");
+
+    private static final Pattern TRAILING_SLASH =
+        Pattern.compile("^(.+)/$");
 
     // --- Preprocessing patterns ---------------------------------------------
 
@@ -107,11 +189,16 @@ public final class DateNormalizer {
      * attached directly to digits ({@code "500bc"}), {@code "B.C."}, etc.
      * Case-insensitive.
      *
-     * <p>Uses a lookbehind to require either whitespace or a digit before
-     * the suffix, so this doesn't accidentally match inside random words.
+     * <p>Two anchors accepted: digit-attached (e.g. {@code "500bc"}) via
+     * the lookbehind, or after one-or-more spaces (e.g.
+     * {@code "8th Century BC"}) via {@code \\s+}. The {@code \\s+} arm
+     * consumes the existing whitespace as part of the match, so the
+     * {@code " BC"} replacement does not introduce a double-space — that
+     * would otherwise break downstream "Nth century BC" head-extraction,
+     * which uses a strict {@code endsWith(" BC")}/strict-ordinal pair.
      */
     private static final Pattern BCE_SUFFIX =
-        Pattern.compile("(?i)(?<=[\\d\\s])\\s*b\\.?\\s*c\\.?e?\\.?$");
+        Pattern.compile("(?i)(?:(?<=\\d)|\\s+)b\\.?\\s*c\\.?e?\\.?$");
 
     /** Unambiguous YYYY/MM/DD (year-first, 4 digits). */
     private static final Pattern SLASH_DATE_YMD =
@@ -465,10 +552,70 @@ public final class DateNormalizer {
         String s = raw.trim().replaceAll("\\s+", " ");
         if (s.isEmpty()) return s;
 
+        // Normalize Unicode dash variants to ASCII hyphen-minus. Common in
+        // pasted-from-word-processor data: en-dash (U+2013), em-dash (U+2014),
+        // figure-dash (U+2012), minus-sign (U+2212).
+        s = s.replace('‒', '-')
+             .replace('–', '-')
+             .replace('—', '-')
+             .replace('−', '-');
+
+        // Collapse runs of 3+ dots to two dots — three or more is always
+        // junk (typo, ellipsis, or copy-paste artifact). Catches things
+        // like "1839...1859" and "[1907...]".
+        s = s.replaceAll("\\.{3,}", "..");
+
         // Strip whitespace adjacent to hyphens, dots (EDTF range ..), slashes.
         s = s.replaceAll("\\s*-\\s*", "-");
         s = s.replaceAll("\\s*\\.\\.\\s*", "..");
         s = s.replaceAll("\\s*/\\s*", "/");
+
+        // Qualifier adjacent to `..`: rewrite to slash form with the
+        // qualifier on the bound year.
+        //   "~..1907" → "/1907~"  (open-ended-left, ends ~1907)
+        //   "1907..~" → "1907~/"  (open-ended-right, starts ~1907)
+        // EDTF can't attach a qualifier directly to a `..` range marker,
+        // so we promote the qualifier to the bound year via the slash form.
+        s = s.replaceAll("^([~?%])\\.\\.+(.+)$", "/$2$1");
+        s = s.replaceAll("^(.+)\\.\\.+([~?%])$", "$1$2/");
+
+        // Strip "junk-edge" `..` markers immediately adjacent to `/` —
+        // e.g. "1839../..1859" → "1839/1859". These typically arise from
+        // partial edits (the `..` and the `/` are both range-separators
+        // and aren't meaningful together).
+        boolean adjacentJunkStripped = false;
+        if (s.contains("../")) {
+            s = s.replaceAll("\\.\\.+/", "/");
+            adjacentJunkStripped = true;
+        }
+        if (s.contains("/..")) {
+            s = s.replaceAll("/\\.\\.+", "/");
+            adjacentJunkStripped = true;
+        }
+
+        // If the inner-junk strip just fired AND a leading or trailing `..`
+        // remains alongside the `/`, that remaining `..` is also junk —
+        // the user wrote redundant range markers on both ends. Strip
+        // outright (rather than rewriting to `/`) to keep a single
+        // canonical `/` in the output. Without this guard, the standard
+        // step 8 leading/trailing-`..` → `/` rewrite below would produce
+        // a double-slash like "/1839/1859" (invalid EDTF).
+        //
+        // We require `adjacentJunkStripped` to gate this: a leading `..`
+        // on a value that came in cleanly with no inner-`..` junk (e.g.
+        // "...15/11/1997" → "..15/11/1997") is a meaningful open-ended-left
+        // marker, not junk, so leave it alone — step 8 will correctly
+        // rewrite it to a leading `/`.
+        if (adjacentJunkStripped && s.contains("/")) {
+            if (s.startsWith("..")) s = s.substring(2);
+            if (s.endsWith("..")) s = s.substring(0, s.length() - 2);
+        }
+
+        // Strip a stray qualifier directly after an X-form (e.g. "196X?",
+        // "18XX~"). EDTF rejects qualifiers attached to X-forms; the
+        // closest valid form is to drop the qualifier and keep the
+        // unspecified-digit form.
+        s = s.replaceAll("([Xx]+)[~?%]", "$1");
 
         // 1a. Underscore-as-separator: "1855_12" → "1855-12", "1970_01_01"
         //     → "1970-01-01". We only replace underscores that sit between
@@ -621,6 +768,15 @@ public final class DateNormalizer {
             s = hr.group(1) + ".." + hr.group(2);
         }
 
+        // 7a. Qualified hyphen range: "~1848-1854" or "?47-50". Rewrite
+        //     so the qualifier moves to the end of the left bound and the
+        //     hyphen becomes ".." — the standard RANGE branch then picks
+        //     each side up and propagates the qualifier to the start.
+        Matcher hrq = QUALIFIED_HYPHEN_RANGE.matcher(s);
+        if (hrq.matches()) {
+            s = hrq.group(2) + hrq.group(1) + ".." + hrq.group(3);
+        }
+
         // 8. Open-ended range indicators expressed with "..". Normalize
         //    trailing ".." to trailing "/", and leading ".." to leading "/".
         //    This catches things like "1958..", "..1900".
@@ -634,6 +790,17 @@ public final class DateNormalizer {
         }
         if (s.startsWith("..")) {
             s = "/" + s.substring(2);
+        }
+        // Strip junk-tail after a trailing slash: "/..", "/..~", "/.~",
+        // "/~". These typically arise from incomplete edits where the user
+        // meant just an open-ended "/" (e.g. "1959/..~" → "1959/").
+        s = s.replaceAll("/[.~]+$", "/");
+        // Collapse runs of `/` introduced when the `..` → `/` rewrite above
+        // lands adjacent to an existing slash (e.g. "../871" → "//871",
+        // "1850/.." → "1850//"). Genuine EDTF never has `//` so this is
+        // safe.
+        if (s.contains("//")) {
+            s = s.replaceAll("/+", "/");
         }
 
         // 9. Uppercase lowercase 'x' in X-forms (e.g. "185x" → "185X").
@@ -651,9 +818,62 @@ public final class DateNormalizer {
         return n.length() == 1 ? "0" + n : n;
     }
 
-    /** Matches two 4-digit years separated by a hyphen (a likely range). */
+    /**
+     * Normalize the inner date of a before/by/as-of/after expression.
+     * Returns the form to embed in the slash interval, or {@code null} if
+     * the inner is not a recognized format.
+     *
+     * <p>Resolution order:
+     * <ol>
+     *   <li>Strict ISO ({@code YYYY}, {@code YYYY-MM}, {@code YYYY-MM-DD}):
+     *       preserved at full precision.</li>
+     *   <li>Dash-separated DM/MD/Y ({@code 01-01-1882}, {@code 12-31-1999}):
+     *       coarsened to year only because day/month order is ambiguous.</li>
+     *   <li>Anything else: recurse into {@link #toEdtf} so OHM shorthand on
+     *       the bound side normalizes too. Handles {@code before C12 → /11XX},
+     *       {@code by c1900 → /1900~}, {@code as of 1850s → /185X}, etc.
+     *       Only accepted if the recursive result is itself valid EDTF, to
+     *       avoid feeding garbage into the slash interval.</li>
+     * </ol>
+     */
+    private static String beforeAfterInner(String s) {
+        if (STRICT_ISO_FOR_BEFORE_AFTER.matcher(s).matches()) return s;
+        Matcher m = DAY_MONTH_YEAR_DASHED.matcher(s);
+        if (m.matches()) return m.group(1);
+        Optional<String> recursed = toEdtf(s);
+        if (recursed.isPresent() && looksLikeValidEdtf(recursed.get())) {
+            return recursed.get();
+        }
+        return null;
+    }
+
+    /**
+     * Matches two 4-digit years separated by a hyphen (a likely range).
+     * Either or both years may carry a leading minus sign for astronomical
+     * BCE notation (e.g. {@code -0800--0600} after preprocess strips the
+     * spaces in {@code -0800 - -0600}).
+     */
     private static final Pattern HYPHEN_RANGE_YY =
-        Pattern.compile("^(\\d{4})-(\\d{4})$");
+        Pattern.compile("^(-?\\d{4})-(-?\\d{4})$");
+
+    /**
+     * Hyphen range with leading qualifier ({@code ~1848-1854},
+     * {@code ?47-50}). Captures (1) qualifier, (2) left year (1-4 digits,
+     * optional negative), (3) right year. Rewritten in {@link #preprocess}
+     * to {@code <left><qualifier>..<right>} so the qualifier propagates to
+     * the start side via the standard RANGE branch in {@link #toEdtf}.
+     */
+    private static final Pattern QUALIFIED_HYPHEN_RANGE =
+        Pattern.compile("^([~?%])(-?\\d{1,4})-(-?\\d{1,4})$");
+
+    /**
+     * "end of YYYY" / "end of YYYY BC" — collapses to year-month December
+     * ({@code 1955-12}). The "end of" prefix narrows the year to its last
+     * month. Symmetric handlers for {@code beginning of} and {@code mid of}
+     * could be added similarly if/when needed.
+     */
+    private static final Pattern END_OF_YEAR =
+        Pattern.compile("^(?i)end of\\s+(-?\\d{4})(\\s+BC)?$");
 
     /**
      * Convert the given OHM/OSM-format date string to EDTF.
@@ -696,18 +916,65 @@ public final class DateNormalizer {
         // parse both notations, defensively, for callers that pass in
         // pre-existing bracket-form EDTF.
 
+        // --- Ordinal-century range: "5th - mid 8th Century" --------------
+        // Has to come before the generic RANGE branch because the input
+        // doesn't contain `..` — the dash is the range separator and the
+        // trailing "Century" word applies to both sides. Each side is
+        // recursively normalized as a CN expression (with optional
+        // early/mid/late modifier and BCE suffix), and the bounds combined.
+        Matcher m = ORDINAL_CENTURY_RANGE.matcher(osm);
+        if (m.matches()) {
+            String leftMod = m.group(1);
+            String leftN = m.group(2);
+            String rightMod = m.group(3);
+            String rightN = m.group(4);
+            String bcSuffix = m.group(5) == null ? "" : m.group(5);
+
+            String leftKey = (leftMod == null ? "" : leftMod + " ")
+                + "C" + leftN + bcSuffix;
+            String rightKey = (rightMod == null ? "" : rightMod + " ")
+                + "C" + rightN + bcSuffix;
+
+            String leftEdtf = toEdtf(leftKey).orElse(null);
+            String rightEdtf = toEdtf(rightKey).orElse(null);
+            if (leftEdtf != null && rightEdtf != null) {
+                // Resolve to plain ISO bounds so the resulting interval is
+                // precise on both sides (e.g. "5th Century" → "04XX" → "0400";
+                // "mid 8th Century" → "0730~/0770~" → "0770"). The bracket
+                // form would otherwise leak the X-form / qualifier into the
+                // outer interval.
+                String low = lowerBoundIso(leftEdtf).orElse(null);
+                String high = upperBoundIso(rightEdtf).orElse(null);
+                if (low != null && !low.isEmpty()
+                    && high != null && !high.isEmpty()) {
+                    return Optional.of(low + "/" + high);
+                }
+            }
+            return Optional.empty();
+        }
+
         // --- Range: A..B --------------------------------------------------
-        Matcher m = RANGE.matcher(osm);
+        m = RANGE.matcher(osm);
         if (m.matches()) {
             String start = m.group(1);
             String end = m.group(2);
             String bc = m.group(3) == null ? "" : m.group(3);
 
-            String startEdtf = toEdtf(start + bc).orElse(null);
+            // The trailing " BC" capture (group 3) is meant to distribute to
+            // both bounds when the user writes a global suffix like
+            // "1500..1700 BC". But when each bound already carries its own
+            // BCE marker (e.g. "182 BC..174 BC"), the right side captured
+            // " BC" only attaches to the end and would corrupt the start
+            // ("182 BC BC") if appended unconditionally. Skip the append on
+            // either side that already ends with a BCE-style marker.
+            String startWithBc = start.matches("(?i).*\\sBC$") ? start : start + bc;
+            String endWithBc   = end.matches("(?i).*\\sBC$")   ? end   : end + bc;
+
+            String startEdtf = toEdtf(startWithBc).orElse(null);
             if (startEdtf != null) {
                 startEdtf = lowerBoundOf(startEdtf);
             }
-            String endEdtf = toEdtf(end + bc).orElse(null);
+            String endEdtf = toEdtf(endWithBc).orElse(null);
             if (endEdtf != null) {
                 endEdtf = upperBoundOf(endEdtf);
             }
@@ -717,7 +984,30 @@ public final class DateNormalizer {
                 // Slash notation — see header comment on toEdtf().
                 return Optional.of(startEdtf + "/" + endEdtf);
             }
-            return Optional.empty();
+            // Recursion on one or both sides failed. Fall through to
+            // subsequent patterns and the final valid-EDTF passthrough —
+            // this lets bracket-set forms like "[1907..]" pass through
+            // unchanged even though RANGE's `(.+)\\.\\.(.+?)` greedily
+            // bites off the brackets and fails to recurse on the parts.
+        }
+
+        // --- Short-year range with optional qualifier ---------------------
+        // "~47-50" / "47-50". Must come BEFORE SIMPLE_YEAR — otherwise that
+        // pattern would parse "47-50" as year=47/month=50 (an invalid date
+        // that also fails looksLikeValidEdtf, so the autofix would never
+        // surface). Only fires when the right side is too large to be a
+        // valid month (>12), or a qualifier is present (which signals year
+        // semantics over month-day); ambiguous cases fall through.
+        m = QUALIFIED_SHORT_YEAR_RANGE.matcher(osm);
+        if (m.matches()) {
+            String qualifier = m.group(1) == null ? "" : m.group(1);
+            int startYear = Integer.parseInt(m.group(2));
+            int endYear = Integer.parseInt(m.group(3));
+            if (!qualifier.isEmpty() || endYear > 12) {
+                return Optional.of(padYear(startYear) + qualifier
+                                   + "/" + padYear(endYear));
+            }
+            // else fall through — could be year-month, let SIMPLE_YEAR try.
         }
 
         // --- Plain or approximate year (optionally with month/day, BCE) ---
@@ -726,7 +1016,7 @@ public final class DateNormalizer {
             String prefixQual = m.group(1);          // ~, ?, or %
             String year       = m.group(2);          // may start with "-"
             String monthDay   = m.group(3) == null ? "" : m.group(3);
-            String suffixQual = m.group(4);          // ? or % (~ reserved for prefix only)
+            String suffixQual = m.group(4);          // ~, ?, or %
             String bc         = m.group(5);
 
             // Choose the qualifier to emit. Prefer whichever the user supplied.
@@ -764,49 +1054,63 @@ public final class DateNormalizer {
         // --- Decade: YYYY0s -----------------------------------------------
         m = DECADE.matcher(osm);
         if (m.matches()) {
-            String circa = m.group(1) == null ? "" : m.group(1);
+            String prefixQ = m.group(1) == null ? "" : m.group(1);
             int decade = Integer.parseInt(m.group(2));
-            String bc = m.group(3);
+            String suffixQ = m.group(3) == null ? "" : m.group(3);
+            String bc = m.group(4);
+            String qualifier = !suffixQ.isEmpty() ? suffixQ : prefixQ;
 
             if (bc == null) {
-                // EDTF unspecified-digit form: e.g. 185X
-                //
-                // Note: we deliberately keep the XX / X shorthand for CE decades
-                // and centuries even though BCE uses explicit ranges below. This
-                // means the validator's output format differs by era — CE stays
-                // compact and readable (185X, 18XX), while BCE gets a range
-                // (-1859/-1850, -0599/-0500). We accept the inconsistency because
-                // the XX shorthand is clear and idiomatic for CE dates, and the
-                // majority of OHM tags are CE; switching CE to ranges purely for
-                // symmetry would make common output noisier for no real gain.
-                return Optional.of(padDecade(decade) + "X" + circa);
+                // CE decade. Two output shapes:
+                //   No qualifier: EDTF unspecified-digit form (e.g. 1850s → 185X).
+                //   Qualified:    explicit range with qualifier on each bound
+                //                 (e.g. ~1850s → 1850~/1859~), because EDTF
+                //                 rejects qualifiers attached to X-forms
+                //                 (185X~ / ~185X are not parseable).
+                if (qualifier.isEmpty()) {
+                    return Optional.of(padDecade(decade) + "X");
+                }
+                int startYear = decade * 10;
+                int endYear = decade * 10 + 9;
+                return Optional.of(padYear(startYear) + qualifier
+                                   + "/" + padYear(endYear) + qualifier);
             }
             // BCE decade: emit a rounded range rather than the astronomically
             // "correct" off-by-one bounds used by the upstream JS. For example
             // 1850s BCE → -1859/-1850 rather than -1858/-1849.
             //
-            // Same reasoning as the BCE century branch: EDTF astronomical year
-            // numbering includes a year 0, so "1850s BCE" (1859–1850 BCE in
-            // human terms) maps astronomically to -1858 through -1849 — an
-            // off-by-one shift that is technically defensible but confusing at
-            // a glance. Round boundaries match reader intuition and probable
-            // author intent. Deliberate divergence from JS parity.
+            // EDTF astronomical year numbering includes a year 0, so
+            // "1850s BCE" (1859–1850 BCE in human terms) maps astronomically
+            // to -1858 through -1849 — an off-by-one shift that is technically
+            // defensible but confusing at a glance. Round boundaries match
+            // reader intuition and probable author intent. Deliberate
+            // divergence from JS parity.
             int startYear = decade * 10 + 9;   // e.g. 1850s → 1859
             int endYear = decade * 10;         // e.g. 1850s → 1850
-            return Optional.of("-" + padYear(startYear) + circa
-                               + "/-" + padYear(endYear) + circa);
+            return Optional.of("-" + padYear(startYear) + qualifier
+                               + "/-" + padYear(endYear) + qualifier);
         }
 
         // --- Century: CNN -------------------------------------------------
         m = CENTURY.matcher(osm);
         if (m.matches()) {
-            String circa = m.group(1) == null ? "" : m.group(1);
+            String prefixQ = m.group(1) == null ? "" : m.group(1);
             int century = Integer.parseInt(m.group(2));
-            String bc = m.group(3);
+            String suffixQ = m.group(3) == null ? "" : m.group(3);
+            String bc = m.group(4);
+            String qualifier = !suffixQ.isEmpty() ? suffixQ : prefixQ;
 
             if (bc == null) {
-                // EDTF: 19th century → 18XX
-                return Optional.of(padCentury(century - 1) + "XX" + circa);
+                // CE century. Plain → XX-form (e.g. C19 → 18XX).
+                // Qualified → range (~C19 / C19~ → 1800~/1899~), because
+                // EDTF rejects qualifiers attached to XX-forms.
+                if (qualifier.isEmpty()) {
+                    return Optional.of(padCentury(century - 1) + "XX");
+                }
+                int startYear = (century - 1) * 100;
+                int endYear = (century - 1) * 100 + 99;
+                return Optional.of(padYear(startYear) + qualifier
+                                   + "/" + padYear(endYear) + qualifier);
             }
             // BCE century: emit a rounded range rather than the astronomically
             // "correct" off-by-one bounds used by the upstream JS. For example
@@ -831,16 +1135,20 @@ public final class DateNormalizer {
             // precision for readability and probable author intent.
             int startYear = century * 100 - 1;       // e.g. C6  → 599
             int endYear = (century - 1) * 100;       // e.g. C6  → 500
-            return Optional.of("-" + padYear(startYear) + circa
-                               + "/-" + padYear(endYear) + circa);
+            return Optional.of("-" + padYear(startYear) + qualifier
+                               + "/-" + padYear(endYear) + qualifier);
         }
 
         // --- early/mid/late decade ----------------------------------------
         m = THIRD_DECADE.matcher(osm);
         if (m.matches()) {
-            String third = m.group(1);
-            int decade = Integer.parseInt(m.group(2));
-            boolean bc = m.group(3) != null;
+            // group(1) is an optional leading qualifier (~ ? %); the output
+            // already carries `~` on each bound (THIRD_DECADE means
+            // approximate by definition), so the input qualifier is consumed
+            // for free and not re-emitted.
+            String third = m.group(2);
+            int decade = Integer.parseInt(m.group(3));
+            boolean bc = m.group(4) != null;
             int[] offsets = offsetsForDecadeThird(third);
 
             int startYear = decade * 10 + offsets[bc ? 1 : 0];
@@ -856,9 +1164,11 @@ public final class DateNormalizer {
         // --- early/mid/late century ---------------------------------------
         m = THIRD_CENTURY.matcher(osm);
         if (m.matches()) {
-            String third = m.group(1);
-            int century = Integer.parseInt(m.group(2)) - 1;
-            boolean bc = m.group(3) != null;
+            // See THIRD_DECADE above: optional leading qualifier in group(1)
+            // is consumed; output already carries `~` on each bound.
+            String third = m.group(2);
+            int century = Integer.parseInt(m.group(3)) - 1;
+            boolean bc = m.group(4) != null;
             int[] offsets = offsetsForCenturyThird(third);
 
             int startYear = century * 100 + offsets[bc ? 1 : 0];
@@ -897,16 +1207,68 @@ public final class DateNormalizer {
         }
 
         // --- before/after -------------------------------------------------
+        // Slash notation for open-ended intervals, matching the range branch.
+        // "/1900" = interval ending at 1900 with unknown start;
+        // "1850/"  = interval starting at 1850 with unknown end.
         m = BEFORE.matcher(osm);
         if (m.matches()) {
-            // Slash notation for open-ended intervals, matching the range branch.
-            // "/1900" = interval ending at 1900 with unknown start.
-            return Optional.of("/" + m.group(1));
+            String inner = beforeAfterInner(m.group(1));
+            if (inner == null) return Optional.empty();
+            return Optional.of("/" + inner);
         }
         m = AFTER.matcher(osm);
         if (m.matches()) {
-            // Slash notation: "1850/" = interval starting at 1850 with unknown end.
-            return Optional.of(m.group(1) + "/");
+            String inner = beforeAfterInner(m.group(1));
+            if (inner == null) return Optional.empty();
+            return Optional.of(inner + "/");
+        }
+        // "during X" — pure unwrap; the prefix adds no semantic content,
+        // so the result is whatever toEdtf would have returned for X alone.
+        m = DURING.matcher(osm);
+        if (m.matches()) {
+            return toEdtf(m.group(1));
+        }
+
+        // --- Open-ended slash-form intervals -----------------------------
+        // Catches forms produced by the preprocess `..` → `/` rewrite,
+        // e.g. "..1945-05-20" → "/1945-05-20", "1945-05-20.." → "1945-05-20/".
+        // Recursive call normalizes the bounded side (year-padding,
+        // qualifier reordering, cYYYY shorthand, etc.).
+        m = LEADING_SLASH.matcher(osm);
+        if (m.matches()) {
+            return toEdtf(m.group(1)).map(s -> "/" + s);
+        }
+        m = TRAILING_SLASH.matcher(osm);
+        if (m.matches()) {
+            return toEdtf(m.group(1)).map(s -> s + "/");
+        }
+
+        // "end of YYYY" — collapse to year-month December (the last month
+        // of the named year). Mirrors the THIRD_CENTURY-style "late C..."
+        // handling but at year granularity.
+        m = END_OF_YEAR.matcher(osm);
+        if (m.matches()) {
+            String year = m.group(1);
+            boolean bc = m.group(2) != null;
+            // Apply the existing N-1 BCE convention for individual years.
+            if (bc) {
+                int y = Integer.parseInt(year.startsWith("-") ? year.substring(1) : year) - 1;
+                return Optional.of("-" + padYear(y) + "-12");
+            }
+            int y = year.startsWith("-") ? Integer.parseInt(year.substring(1)) : Integer.parseInt(year);
+            return Optional.of((year.startsWith("-") ? "-" : "") + padYear(y) + "-12");
+        }
+
+        // Final passthrough: if the post-preprocess input is already valid
+        // EDTF and no specific pattern produced output above, return it
+        // unchanged. This catches forms the specific matchers don't cover
+        // — bracket-set notation ({@code [1907..]}, {@code [196X]}),
+        // X-form decade/century ({@code 192X}, {@code 18XX}), and
+        // open-ended X-form intervals ({@code 192X/}). Without this,
+        // recursing into LEADING_SLASH/TRAILING_SLASH on (e.g.) "192X/"
+        // would fail because toEdtf("192X") returned empty.
+        if (looksLikeValidEdtf(osm)) {
+            return Optional.of(osm);
         }
 
         return Optional.empty();

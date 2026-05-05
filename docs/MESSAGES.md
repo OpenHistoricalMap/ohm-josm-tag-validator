@@ -4,7 +4,8 @@ Most messages use `WARNING` severity. The following codes are `ERROR`
 severity (malformed or structurally-invalid data that consumers cannot
 interpret, plus the missing-`wikidata` rule):
 **4201**, **4202**, **4207**, **4208**, **4217**, **4218**, **4221**,
-**4222**, **4228**, **4231**, **4233**, **4234**, **4238**, **4302**.
+**4222**, **4228**, **4231**, **4233**, **4234**, **4238**, **4248**,
+**4249**, **4302**.
 
 Titles follow the pattern:
 `[ohm] <Category> - <what>; <fixable|unfixable>, please review [<action>]`
@@ -201,13 +202,29 @@ After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` 
 |------|-------|
 | 4216 | `[ohm] Suspicious date - >10 year into the future; autofix as removed` |
 
-**Trigger:** A date tag value is more than 10 years beyond today.  
+**Trigger:** A 4-digit date tag value is more than 10 years beyond today.  
 **Fix:** Deletes the offending key.  
 **Description:** _{key}={value} is more than ten years in the future. Likely a typo; delete the key?_
 
 **Example:**  
 Before: `end_date=2099` on a feature edited in 2026  
 After autofix: `end_date` removed (treated as a typo / data-import artifact).
+
+---
+
+### Invalid date — 5+ digit number
+
+| Code | Title |
+|------|-------|
+| 4246 | `[ohm] Invalid date - 5+ digit number; unfixable, please review` |
+
+**Trigger:** A `*_date` value contains a run of five or more consecutive digits (anywhere in the string) and does not parse as valid EDTF. Catches typos like `20251`, `12345-06`, `1997-04..1997-06006`, and Wikidata Q-numbers mistakenly placed in date tags (`Q1438579`). Legitimate EDTF long-year forms (e.g. `Y20251`, `Y-20251`) and any other syntax the upstream `edtf-java` library accepts are exempt.  
+**Fix:** None — we can't tell whether the intent was `2025`, `12025`, or something else, so the editor must decide. When this rule fires, the rest of the per-key date checks are suppressed for that key (they would otherwise emit a generic "cannot be read" warning that obscures the specific typo diagnosis).  
+**Description:** _{key}={value} contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually._
+
+**Example:**  
+`start_date=20251` → flagged; editor decides whether the intent was `2025` or `12025`.  
+`end_date=Q1438579` → flagged; editor moves the QID to `wikidata=*`.
 
 ---
 
@@ -240,6 +257,46 @@ After autofix: `start_date=1900-06` (day 32 is invalid; trim to year-month).
 **4222 example:**  
 Trigger: `start_date=1900-02-29` (1900 was not a leap year).  
 Suggested manual fix: change to a real date such as `1900-02-28` or `1900-03-01`.
+
+---
+
+### Invalid date — day 31 in a 30-day month
+
+| Code | Title |
+|------|-------|
+| 4249 | `[ohm] Invalid date - day 31 in a 30-day month; autofix day to 30` |
+
+**Trigger:** A `*_date` value with day `31` and a month that has 30 days (Apr / Jun / Sep / Nov). The user's most likely error is forgetting the month is 30-day; the rest of the date is well-formed.  
+**Fix:** Clamps the day to `30`.  
+**Description:** _{key}={value}: month {MM} has 30 days, not 31. Change to {fixed}?_
+
+**Why only Apr/Jun/Sep/Nov?** February cases (Feb 30, Feb 29 on non-leap years) are deliberately not autofixed here — too many possible interpretations (28 vs 29 vs strip-to-month vs the month was wrong). Feb 29 already has its own `4247` strip-to-year autofix, and Feb 30 stays in `4222` for manual review.
+
+**Example:**  
+Before: `start_date=1900-06-31`  
+After autofix: `start_date=1900-06-30`.
+
+---
+
+### Suspicious date — 02/29 placeholder
+
+| Code | Title |
+|------|-------|
+| 4247 | `[ohm] Suspicious date - 02/29; autofix by stripping to year` |
+
+**Trigger:** A `*_date` value with month `02` and day `29`, regardless of year. Almost nothing in history actually happened on Feb 29; in OHM the date is widely used as a placeholder for approximate or made-up values, and the validator nudges editors away from it.  
+**Fix:** Strips the value to `YYYY` (drops the suspect month/day, preserving the year).  
+**Description:** _{key}={value}: Feb 29 is widely used in OHM as a placeholder for approximate or made-up dates. Strip to {YYYY}?_
+
+**Behavior alongside 4222:** This rule fires on every Feb 29. When the year is non-leap, **4222** also fires (calendar-invalid, no fix); both warnings appear and the editor can either accept this rule's autofix or hand-edit per 4222.
+
+**Example (leap year):**  
+Before: `start_date=2024-02-29`  
+After autofix: `start_date=2024`. Only 4247 fires (2024-02-29 is a real calendar date).
+
+**Example (non-leap year):**  
+Before: `start_date=1900-02-29`  
+After autofix: `start_date=1900`. Both 4222 (calendar-invalid, no fix) and 4247 (suspicious, autofix) fire.
 
 ---
 
@@ -316,6 +373,68 @@ After autofix: `end_date=1852`, `end_date:edtf=1850/1852`, `end_date:raw=1850/52
 Before: `start_date=0000..1850`  
 After autofix: `start_date=1850`, `start_date:edtf=/1850`, `start_date:raw=0000..1850`.
 
+**4202 — `before:` / `by:` / `as of:` / `after:` / `during:` shorthand:** OHM contributors often write open-ended bounds with a natural-language prefix (also accepted with a space separator: `before 1900`, `by 1844`, etc.):
+
+- `before X`, `by X`, `as of X` → `/X` (open-ended interval ending at X)
+- `after X` → `X/` (open-ended interval starting at X)
+- `during X` → `X` (the prefix adds no information; just unwrap)
+
+The inner value `X` is normalized in three steps:
+
+- **Strict ISO** (`YYYY`, `YYYY-MM`, `YYYY-MM-DD`): preserved at full precision.
+- **Dash-separated `DD-MM-YYYY` or `MM-DD-YYYY`** (e.g. `01-01-1882`): coarsened to year only — day/month order is ambiguous and a `before`/`after` bound is fuzzy enough that losing the day makes no material difference. (Slash-separated `01/01/1882` is normalized to ISO `1882-01-01` earlier in `preprocess`, so it hits the strict-ISO path.)
+- **Recursive normalization** otherwise: the inner is fed back through `toEdtf` so OHM shorthand on the bound side normalizes too. Handles `before C12` → `/11XX`, `by c1900` → `/1900~`, `as of 1850s` → `/185X`, etc. Only accepted if the recursive result is itself valid EDTF, to avoid feeding garbage into the slash interval.
+
+Inner values that match nothing (`before:gibberish`) fall through and fire 4201.
+
+Before: `start_date=before:01-01-1882`  
+After autofix: `start_date=1882`, `start_date:edtf=/1882`, `start_date:raw=before:01-01-1882`.
+
+Before: `end_date=after:1999-02-03`  
+After autofix: `end_date=1999-02-03`, `end_date:edtf=1999-02-03/`, `end_date:raw=after:1999-02-03`.
+
+Before: `start_date=before C12`  
+After autofix: `start_date=1100`, `start_date:edtf=/11XX`, `start_date:raw=before C12`.
+
+Before: `end_date=during 1975`  
+After autofix: `end_date=1975` (no `:edtf`, no `:raw` — `during X` collapses to plain `X`).
+
+**4202 — qualifier on decade / century:** Decade and century shorthand accept a `~`, `?`, or `%` qualifier in either prefix or suffix position (`~1960s`, `670s~`, `~C3`, `C19~`). Plain (unqualified) inputs emit the EDTF unspecified-digit form (`196X`, `18XX`); qualified inputs emit an explicit slash range with the qualifier on each bound (`~1960s` → `1960~/1969~`, `C19~` → `1800~/1899~`). Qualifiers can't attach to X-form years in EDTF (`196X~` is rejected by the parser), so the explicit-bounds form is the only canonical option when a qualifier is present.
+
+The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an optional leading qualifier (`~late C1`) which is consumed for free — the output is already an explicit range with `~` on each bound (`0070~/0099~`).
+
+**4202 — ordinal-century range:** Inputs of the form `<ordinal>[ - <ordinal>] Century [BC]`, where each side may carry an optional `early`/`mid`/`late` modifier and the trailing word `Century` applies to both halves. The two halves normalize as `CN` expressions and the bounds combine: `5th - mid 8th Century` → `0400/0770` (low of `04XX`, high of `0730~/0770~`).
+
+**4202 — short-year range with qualifier:** Two 1- or 2-digit years separated by a hyphen, with an optional leading qualifier on the left bound (`~47-50` → `0047~/0050`, `47-50` → `0047/0050`). The qualifier applies to the left side only — the syntactic position of the `~` before the first year. Only fires when interpretation as a year-range is unambiguous: a qualifier is present, or the right side is `>12` (can't be a month). Otherwise falls through to year-month parsing (`5-10` → `0005-10`).
+
+**4202 — hyphen-as-range with negative years:** Astronomical BCE notation works on either side of a hyphen-range: `-0800 - -0600` (preprocess strips the spaces around the hyphens, leaving `-0800--0600`) → `-0800/-0600`. Mixed signs work too (`-0800-1500` → `-0800/1500`).
+
+**4202 — per-bound BCE markers in dotdot range:** `182 BC..174 BC` correctly distributes each side's BCE marker rather than corrupting the start as `"182 BC BC"`. Output uses the existing N-1 convention for individual years: `-0181/-0173`.
+
+**4202 — junk-tail strip:** Open-ended slash forms with garbage tails — `1959/..~`, `1959/..`, `1959/.~`, `1959/~` — all collapse to `1959/`. Typically arise from incomplete edits.
+
+**4202 — Unicode dash normalization:** En-dash (`–`, U+2013), em-dash (`—`, U+2014), figure-dash (`‒`, U+2012) and minus-sign (`−`, U+2212) are normalized to ASCII hyphen-minus before pattern matching. Catches inputs pasted from word processors that auto-replace `-`. Example: `0544–0595` → `0544/0595`.
+
+**4202 — multi-dot collapse:** Runs of three or more dots collapse to two — three is always a typo, an ellipsis, or a copy-paste artifact (`[1907...]` → `[1907..]`, `1839...1859` → `1839..1859`, `...15/11/1997` → `..15/11/1997`).
+
+**4202 — junk `..` markers around `/`:** `..` directly adjacent to a `/` (on either side) is stripped. Cleans up partial-edit artifacts like `1839../..1859-12-02` → `1839/1859-12-02`. When this strip fires AND a leading or trailing `..` remains alongside the `/`, that `..` is treated as redundant junk too (`..1839/..1859` → `1839/1859`). The "remaining" strip is gated on whether inner-`..`-adjacent-to-`/` actually fired — so a clean leading `..` like `...15/11/1997` (an open-ended-left marker) is left for the standard step-8 rewrite to convert to `/`.
+
+**4202 — qualifier adjacent to `..`:** A leading or trailing qualifier on a `..` range marker promotes to the bound year via the slash form, since EDTF can't attach a qualifier to `..`:
+- `~..1907` → `/1907~` (open-ended-left, ends approximately 1907)
+- `1907..~` → `1907~/` (open-ended-right, starts approximately 1907)
+
+**4202 — `..` as `before`/`by`/`as of`/`during` separator:** After multi-dot collapse reduces `by...1907` to `by..1907`, the BEFORE pattern accepts `..` as a separator alongside the existing space and colon (`by..1907` → `/1907`, `during..1934` → `1934`). Same applies to the symmetric AFTER and DURING patterns.
+
+**4202 — X-form with stray qualifier:** EDTF rejects qualifiers attached to X-forms (`196X?`, `18XX~`). Preprocess strips the qualifier, leaving the unspecified-digit form unchanged: `/196X?` → `/196X`. (The semantically distinct option of expanding the X-form to a specific year — e.g. `/196X?` → `/1960` — is not done because it changes the bound's meaning.)
+
+**4202 — qualified hyphen range:** Hyphen ranges with a leading qualifier (`~1848-1854`, `?47-50`) propagate the qualifier to the start side and rewrite as a slash interval: `~1848-1854` → `1848~/1854`, `?47-50` → `47?/50`. Year padding still happens (`~47-50` → `0047~/0050`).
+
+**4202 — "end of YYYY":** `end of 1955` → `1955-12` (collapses the year-level "end-of" qualifier to the last calendar month). Symmetric handlers for `beginning of` and `mid of` aren't implemented yet.
+
+**4202 — valid-EDTF passthrough:** When preprocess produces a result that the EDTF parser already accepts (e.g. `192X`, `[1907..]`, `199X`) and no specific normalizer matched, the result is returned as-is. This lets the canonicalization pipeline recurse cleanly through wrappers like `192X/..` → `192X/`.
+
+The same path runs from `checkAllEdtfKeys` for `*_date:edtf` siblings, so `end_date:edtf=before:1882` autofixes to `end_date:edtf=/1882` with the original moved to `end_date:edtf:raw`.
+
 ---
 
 ### Invalid date — *_date:edtf invalid
@@ -350,35 +469,53 @@ Suggested manual fix: replace with a valid EDTF expression.
 
 ---
 
+### Date normalization — *_date:edtf not canonical
+
+| Code | Title |
+|------|-------|
+| 4248 | `[ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form` |
+
+**Trigger:** `*_date:edtf` is valid EDTF (the parser accepts it) but is not in the canonical form — typically because year segments are unpadded (`700~`, `/787`, `636/700`) or because slash-form intervals retain non-canonical sub-expressions. The EDTF library is lenient about year padding (it accepts 3-digit years), but downstream bound-extraction misbehaves on unpadded years (e.g. `lowerBoundIso("/787")` returns `7870`), which causes spurious base-vs-`:edtf` mismatch warnings (4232/4242). Canonicalizing the `:edtf` value resolves both the cosmetic non-canonical state and the downstream mismatches.
+
+**Severity:** ERROR — even though the parser accepts the input, downstream bound-extraction misbehaves on unpadded years and causes spurious mismatch warnings, so this is a real defect that needs the editor's attention. Treated alongside the other malformed-`:edtf` codes (4208, 4228).
+
+**Fix:** Re-runs the value through `DateNormalizer.toEdtf` and writes the result, preserving the original in `*_date:edtf:raw`.
+
+**Description:** _{key}={value} is valid EDTF but not canonical. Normalize to {newEdtf} and preserve original in {raw}?_
+
+**Examples:**  
+- `start_date:edtf=700~` → `start_date:edtf=0700~`, `start_date:edtf:raw=700~`  
+- `start_date:edtf=/787` → `start_date:edtf=/0787`  
+- `start_date:edtf=636/700` → `start_date:edtf=0636/0700`
+
+**Already-canonical values** (e.g. `0700~`, `1880/1891`, `185X`) silently pass — no warning.
+
+---
+
 ### Date mismatch — base vs. :edtf disagreement
 
 | Code | Title |
 |------|-------|
 | 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` |
 | 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf` |
-| 4232 | `[ohm] Date mismatch - *_date more precise than *_date:edtf; autofix *_date:edtf=*_date` |
 
-**4210 trigger:** `*_date` is present and valid, but disagrees with the bound implied by `*_date:edtf`.  
+**4210 trigger:** `*_date` is present and valid, but disagrees with the bound implied by `*_date:edtf` — specifically, it falls **outside** the bounds. A `*_date` that is *more precise within bounds* is the expected OHM convention (the high-precision authoritative value lives on `*_date`, the wider/qualified context on `:edtf`) and is not flagged.  
 **4210 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}. Manual review needed._
 
 **4211 trigger:** `*_date:edtf` is valid but no `*_date` base tag exists.  
 **4211 fix:** Derives and sets `*_date` from `*_date:edtf`.  
 **4211 description:** _{key}:edtf={edtf} implies {key}={derived}._
 
-**4232 trigger:** `*_date` is more specific (e.g. full ISO date) than `*_date:edtf` (e.g. year only).  
-**4232 fix:** Replaces `*_date:edtf` with the value from `*_date`.
-
 **4210 example:**  
 Trigger: `start_date=2020`, `start_date:edtf=1900/1950` (base year is well outside the EDTF range).  
 Suggested manual fix: pick the authoritative value and update the other to match.
 
+**4210 non-example (silent):**  
+`start_date=1890-03-15`, `start_date:edtf=1890~` — base is more precise than `:edtf` and falls within the implied bounds. Expected state, no warning.
+
 **4211 example:**  
 Before: `start_date:edtf=1900/1950`, no `start_date`  
 After autofix: `start_date=1900` derived as the lower bound.
-
-**4232 example:**  
-Before: `start_date=1900-03-15`, `start_date:edtf=1900`  
-After autofix: `start_date:edtf=1900-03-15` (lifts to match the more specific base).
 
 ---
 
@@ -540,7 +677,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4325)
+## TagConsistencyTest (codes 4300–4326)
 
 **Source slot contract (v0.5).** Three keys, three roles:
 
@@ -825,6 +962,22 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 
 ---
 
+### Suspicious tags — node duplicates parent way
+
+| Code | Title |
+|------|-------|
+| 4326 | `[ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags` |
+
+**Trigger:** A node carries one or more tags, and every one of those tags is duplicated (same key, same value) on at least one of the node's parent ways. Typically arises when an editor tags both the way and one of its constituent nodes for the same feature — only the way needs the tags. Multiple parent ways are tolerated; the rule fires when *any* parent way fully covers the node's tag set.  
+**Fix:** Removes every tag from the node.  
+**Description:** _All {N} tag(s) on this node are duplicated on parent way w/{way_id}; remove the node tags?_
+
+**Example:**  
+Trigger: a building way (`building=yes`, `start_date=1924`) with corner nodes each carrying `start_date=1924`.  
+After autofix: corner nodes have no tags. The building way is unchanged.
+
+---
+
 ## Retired codes
 
 | Code | Reason |
@@ -834,6 +987,7 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 | 4227 | Rule D2 now fires the unified "Invalid *_date:edtf" fixable/unfixable messages (4228) |
 | 4229 | Merged with `CODE_EDTF_INVALID_NO_BASE` (4208) under the unified unfixable message |
 | 4230 | Retired as redundant — invalid `:edtf` with a base tag now fires only the unified `:edtf` message (4208/4228) |
+| 4232 | Retired — a `*_date` more precise than its `*_date:edtf` (with base falling within `:edtf`'s bounds) is the expected OHM convention, not a defect. Only true mismatches (`*_date` outside `:edtf`'s bounds) fire now, via 4210. |
 | 4306 | Retired in v0.5 — non-URL `source` is now valid (slot typing loosened) |
 | 4310 | Retired in v0.5 — `source:name` without a companion URL is a valid state (textual citation only) |
 | 4311 | Retired in v0.5 — duplicate values in `source` and `source:url` are harmless under the loosened contract |
