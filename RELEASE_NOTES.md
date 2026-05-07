@@ -1,3 +1,20 @@
+# v0.5.6 — Two new suspicious-date rules (4250/4251) + three normalizer fixes
+
+## New rules
+
+- **4250** `[ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range` (WARNING). Fires when `*_date:edtf` is a negative year with trailing EDTF X-digit placeholders, e.g. `-07XX` or `-123X`. The X digits represent unspecified digits, but the bounds go in the opposite direction for negative (BCE) years: `-07XX` spans `-0799` (earlier/more ancient) to `-0700` (later/less ancient). Autofix rewrites to an explicit EDTF range (`-0799/-0700`) and updates `start_date`/`end_date` to the appropriate bound. Also fixes a latent `formatDateBound` bug where the upper/lower bounds were inverted for negative X-forms.
+- **4251** `[ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?` (WARNING). Fires when `*_date:edtf` is of the form `?/YYYY` or `YYYY/?` — a `?` at an interval endpoint is not valid EDTF syntax. The correct open-ended forms are `/YYYY` and `YYYY/`. Autofix strips the `?` and updates `start_date`/`end_date` to the bound of the resulting interval.
+
+## DateNormalizer fixes (no new rule codes; surface as existing 4228 fixable)
+
+Three preprocess bugs fixed so previously-unfixable values now normalize correctly:
+
+- **`5 - 1 BCE`-style spaced-hyphen BCE ranges** now normalize to EDTF intervals. `5 - 1 BCE` → `-0004/0000`. A preprocess step added before whitespace-collapsing catches `N - N BCE` and rewrites to `N..N BCE` so standard BCE handling applies. Also fixed a latent bug where `1 BCE` (astronomical year 0) was emitting `-0000` instead of `0000`.
+- **`YYYY/..~` junk-tail after slash** now normalizes to `YYYY/`. The qualifier-adjacent-to-`..` rewrite step now guards against values already containing a `/`, so `1900/..~` correctly reaches the existing `/[.~]+$` strip and becomes `1900/`.
+- **`[YYYY-ZZZZ]` bracket-enclosed ranges** now normalize to `YYYY/ZZZZ`. A preprocess step strips the brackets so `HYPHEN_RANGE_YY` can handle the content: `[1900-1950]` → `1900-1950` → `1900..1950` → `1900/1950`.
+
+---
+
 # v0.5.5 — DateNormalizer expansion: many new fixable patterns, latent-bug fixes, retired 4232
 
 A substantial expansion of `DateNormalizer`'s coverage of OHM-style date shorthand, plus a few latent bugs in existing autofix paths surfaced and fixed. Driven by direct user-Claude conversation working through inventories of unfixable values from real OHM data.

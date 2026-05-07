@@ -235,6 +235,15 @@ E   n/9100221   [ohm] Chronology - member duplicate to its predecessor; unfixabl
 E   n/9100222   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
 E   n/9100502   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/9100503   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100801   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100802   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100811   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100812   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100901   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=5 - 1 BCE is not valid EDTF. Normalize to -0004/0000 and preserve original in start_date:edtf:raw?
+E   n/9100901   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100902   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900/..~ is not valid EDTF. Normalize to 1900/ and preserve original in start_date:edtf:raw?
+E   n/9100903   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=[1900-1950] is not valid EDTF. Normalize to 1900/1950 and preserve original in start_date:edtf:raw?
+E   n/9100903   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -969,6 +978,20 @@ W   n/9100504   [ohm] Suspicious tag - historic; unfixable, should only be used 
 W   n/9100601   [ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate   name=Historic House: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed.
 W   n/9100602   [ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate   name=Historical Society Building: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed.
 W   n/9100603   [ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate   name=Prehistoric Cave: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed.
+W   n/9100801   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date:edtf=-07XX: negative year with X digit(s). Bounds are -0799 (earlier) to -0700 (later). Replace with -0799/-0700?
+W   n/9100801   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
+W   n/9100802   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-123X: negative year with X digit(s). Bounds are -1239 (earlier) to -1230 (later). Replace with -1239/-1230?
+W   n/9100802   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
+W   n/9100803   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   birth_date:edtf=-05XX: negative year with X digit(s). Bounds are -0599 (earlier) to -0500 (later). Replace with -0599/-0500?
+W   n/9100811   [ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?   start_date:edtf=?/1900: ? is not a valid EDTF interval endpoint. Strip ? to get open-ended form /1900
+W   n/9100811   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   n/9100811   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=bridge: confirm the entity has actually passed into history before applying this tag.
+W   n/9100812   [ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?   end_date:edtf=1850/?: ? is not a valid EDTF interval endpoint. Strip ? to get open-ended form 1850/
+W   n/9100812   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=yes: confirm the entity has actually passed into history before applying this tag.
+W   n/9100901   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   n/9100901   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
+W   n/9100902   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   n/9100903   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.

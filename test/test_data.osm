@@ -38825,4 +38825,67 @@
     <tag k='source' v='https://example.com/u-parent' />
     <tag k='start_date' v='1900' />
   </relation>
+  <!-- Fixtures W: ?/YYYY and YYYY/? open-interval question-mark forms (rule 4251).
+       W1: start_date:edtf=?/1900  → autofix to start_date=1900, start_date:edtf=/1900
+       W2: end_date:edtf=1850/?    → autofix to end_date=1850,   end_date:edtf=1850/ -->
+  <node id='9100811' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Old Bridge' />
+    <tag k='historic' v='bridge' />
+    <tag k='start_date:edtf' v='?/1900' />
+    <tag k='source' v='https://example.com/w1' />
+  </node>
+  <node id='9100812' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Old Mill' />
+    <tag k='historic' v='yes' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date:edtf' v='1850/?' />
+    <tag k='source' v='https://example.com/w2' />
+  </node>
+  <!-- Fixtures V: negative EDTF X-digit forms (rule 4250).
+       V1: start_date:edtf=-07XX  → autofix to start_date=-0799, start_date:edtf=-0799/-0700
+       V2: end_date:edtf=-123X   → autofix to end_date=-1230,   end_date:edtf=-1239/-1230
+       V3: other :edtf key (birth_date:edtf=-05XX) → fix :edtf only, no base update -->
+  <node id='9100801' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Ancient Temple' />
+    <tag k='historic' v='archaeological_site' />
+    <tag k='start_date' v='-0700' />
+    <tag k='start_date:edtf' v='-07XX' />
+    <tag k='source' v='https://example.com/v1' />
+  </node>
+  <node id='9100802' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Bronze Age Settlement' />
+    <tag k='historic' v='archaeological_site' />
+    <tag k='start_date' v='-1200' />
+    <tag k='end_date:edtf' v='-123X' />
+    <tag k='source' v='https://example.com/v2' />
+  </node>
+  <node id='9100803' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Iron Age Person' />
+    <tag k='birth_date' v='-0500' />
+    <tag k='birth_date:edtf' v='-05XX' />
+    <tag k='source' v='https://example.com/v3' />
+  </node>
+  <!-- Fixtures X: normalizer preprocess improvements (no new rule codes;
+       these all route through 4228 "invalid but fixable" after the fix).
+       X1: start_date:edtf=5 - 1 BCE  → normalizes to -0004/0000
+       X2: start_date:edtf=1900/..~   → strip trailing junk, normalizes to 1900/
+       X3: start_date:edtf=[1900-1950] → strip brackets, normalizes to 1900/1950 -->
+  <node id='9100901' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Roman Settlement' />
+    <tag k='historic' v='archaeological_site' />
+    <tag k='start_date:edtf' v='5 - 1 BCE' />
+    <tag k='source' v='https://example.com/x1' />
+  </node>
+  <node id='9100902' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Victorian House' />
+    <tag k='building' v='yes' />
+    <tag k='start_date:edtf' v='1900/..~' />
+    <tag k='source' v='https://example.com/x2' />
+  </node>
+  <node id='9100903' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Old Theatre' />
+    <tag k='amenity' v='theatre' />
+    <tag k='start_date:edtf' v='[1900-1950]' />
+    <tag k='source' v='https://example.com/x3' />
+  </node>
 </osm>

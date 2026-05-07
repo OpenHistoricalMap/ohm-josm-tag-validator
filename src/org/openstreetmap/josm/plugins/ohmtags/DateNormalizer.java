@@ -565,6 +565,15 @@ public final class DateNormalizer {
         // like "1839...1859" and "[1907...]".
         s = s.replaceAll("\\.{3,}", "..");
 
+        // "5 - 1 BCE" style spaced-hyphen BCE range: must be caught BEFORE the
+        // whitespace-collapse step below eats the spaces and turns "5 - 1 BCE"
+        // into "5-1 BCE" (which no pattern handles). Rewrite to ".." form so
+        // the standard BCE normalization and RANGE branch can handle it.
+        Matcher spacedBce = SPACED_HYPHEN_BCE_RANGE.matcher(s);
+        if (spacedBce.matches()) {
+            s = spacedBce.group(1) + ".." + spacedBce.group(2) + " BCE";
+        }
+
         // Strip whitespace adjacent to hyphens, dots (EDTF range ..), slashes.
         s = s.replaceAll("\\s*-\\s*", "-");
         s = s.replaceAll("\\s*\\.\\.\\s*", "..");
@@ -576,8 +585,13 @@ public final class DateNormalizer {
         //   "1907..~" → "1907~/"  (open-ended-right, starts ~1907)
         // EDTF can't attach a qualifier directly to a `..` range marker,
         // so we promote the qualifier to the bound year via the slash form.
-        s = s.replaceAll("^([~?%])\\.\\.+(.+)$", "/$2$1");
-        s = s.replaceAll("^(.+)\\.\\.+([~?%])$", "$1$2/");
+        // Guard: only fire when no `/` is already present — otherwise a value
+        // like "1900/..~" (already a slash interval) would be wrongly mutated
+        // to "1900/~/" instead of reaching the "/[.~]+$" strip below.
+        if (!s.contains("/")) {
+            s = s.replaceAll("^([~?%])\\.\\.+(.+)$", "/$2$1");
+            s = s.replaceAll("^(.+)\\.\\.+([~?%])$", "$1$2/");
+        }
 
         // Strip "junk-edge" `..` markers immediately adjacent to `/` —
         // e.g. "1839../..1859" → "1839/1859". These typically arise from
@@ -758,6 +772,13 @@ public final class DateNormalizer {
             s = sr.group(1) + ".." + sr.group(2);
         }
 
+        // 6b. Bracket-enclosed hyphen range: "[YYYY-ZZZZ]". Strip the brackets
+        //     so HYPHEN_RANGE_YY (step 7 below) can normalise the result.
+        Matcher br = BRACKET_HYPHEN_RANGE.matcher(s);
+        if (br.matches()) {
+            s = br.group(1) + "-" + br.group(2);
+        }
+
         // 7. Hyphen-as-range-separator between two 4-digit years (e.g.
         //    "1850-1900"). Safe to interpret as a range because no valid
         //    ISO year-month has a 4-digit month. We require both parts to
@@ -846,6 +867,24 @@ public final class DateNormalizer {
         }
         return null;
     }
+
+    /**
+     * "N - N BCE" spaced-hyphen range (e.g. {@code 5 - 1 BCE}). Must be
+     * detected BEFORE the whitespace-collapse step strips the spaces and
+     * turns it into {@code 5-1 BCE}, which nothing matches. Rewritten in
+     * preprocess to {@code N..N BCE} so standard BCE normalization applies.
+     * Captures (1) left number, (2) right number (trailing BCE is consumed).
+     */
+    private static final Pattern SPACED_HYPHEN_BCE_RANGE =
+        Pattern.compile("^(-?\\d{1,4}) - (-?\\d{1,4})\\s+(?i:B\\.?C\\.?E?\\.?)$");
+
+    /**
+     * Bracket-enclosed year range: {@code [YYYY-ZZZZ]}. The brackets are
+     * stripped in preprocess so {@link #HYPHEN_RANGE_YY} can handle the
+     * result. Either year may carry a leading minus sign.
+     */
+    private static final Pattern BRACKET_HYPHEN_RANGE =
+        Pattern.compile("^\\[(-?\\d{4})-(-?\\d{4})\\]$");
 
     /**
      * Matches two 4-digit years separated by a hyphen (a likely range).
@@ -1041,7 +1080,8 @@ public final class DateNormalizer {
                     year = year.substring(1);
                 }
                 int y = Integer.parseInt(year) - 1;
-                year = "-" + padYear(y);
+                // y=0 means 1 BCE = astronomical year 0; "-0000" is not valid EDTF.
+                year = (y == 0) ? padYear(0) : "-" + padYear(y);
             } else if (year.startsWith("-")) {
                 int y = Integer.parseInt(year.substring(1));
                 year = "-" + padYear(y);
@@ -1609,7 +1649,11 @@ public final class DateNormalizer {
         String canon = d.toEdtfString();
         String stripped = canon.replaceAll("[~?%]+$", "");
         if (stripped.matches("^-?\\d{2,3}X{1,2}$")) {
-            return Optional.of(stripped.replace('X', upper ? '9' : '0'));
+            boolean isNegative = stripped.startsWith("-");
+            // For negative years, "earlier" (lower bound) = more negative = X→'9';
+            // "later" (upper bound) = less negative = X→'0'. Reversed from positive.
+            char xRepl = isNegative ? (upper ? '0' : '9') : (upper ? '9' : '0');
+            return Optional.of(stripped.replace('X', xRepl));
         }
         // Otherwise format from the typed fields, preserving precision.
         int year = d.year();

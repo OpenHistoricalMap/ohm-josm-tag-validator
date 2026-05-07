@@ -237,6 +237,8 @@ public class DateTagTest extends Test {
     protected static final int CODE_FEB_29_PLACEHOLDER = 4247;
     protected static final int CODE_EDTF_NOT_CANONICAL = 4248;
     protected static final int CODE_CALENDAR_DAY_31_IN_30_DAY_MONTH = 4249;
+    protected static final int CODE_NEGATIVE_EDTF_X_FORM = 4250;
+    protected static final int CODE_OPEN_INTERVAL_QUESTION = 4251;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -325,6 +327,14 @@ public class DateTagTest extends Test {
      */
     private static final Pattern PACKED_DATE_MDD =
         Pattern.compile("^(\\d{4})-(\\d{3})$");
+
+    /**
+     * Negative year with trailing X digit(s): {@code -07XX}, {@code -123X}.
+     * Group 1 captures the numeric prefix (e.g. {@code -07}),
+     * group 2 captures the X run (e.g. {@code XX}).
+     */
+    private static final Pattern NEGATIVE_EDTF_X_FORM =
+        Pattern.compile("^(-\\d{2,3})(X{1,2})$");
 
     /** The bot username trusted to have authored correct {@code :raw} values. */
     private static final String TRUSTED_BOT_USER = "tagcleanupbot";
@@ -1206,6 +1216,108 @@ public class DateTagTest extends Test {
     private static final Pattern TOP_LEVEL_EDTF_KEY =
         Pattern.compile("^[^:]+:edtf$");
 
+    /**
+     * Rule 4250: {@code *_date:edtf} value is a negative year with trailing X
+     * digit(s) (e.g. {@code -07XX}, {@code -123X}). For negative (BCE) years
+     * the X-digit bounds are reversed relative to positive years: {@code -07XX}
+     * spans {@code -0799} (799 BCE, the earlier bound) to {@code -0700}
+     * (700 BCE, the later bound). Offers an autofix replacing the X form with
+     * the explicit EDTF interval {@code -0799/-0700}, which is unambiguous and
+     * correctly ordered for the OHM time-slider.
+     *
+     * <p>Also updates the base {@code start_date}/{@code end_date} tag to the
+     * correct bound (earlier for start, later for end) when the key is one of
+     * those two standard date keys.
+     *
+     * @return {@code true} if the rule fired; caller should skip further checks
+     */
+    private boolean checkNegativeEdtfXForm(OsmPrimitive p, String edtfKey, String value) {
+        Matcher m = NEGATIVE_EDTF_X_FORM.matcher(value);
+        if (!m.matches()) return false;
+
+        String prefix = m.group(1);   // e.g. "-07", "-123"
+        String xs     = m.group(2);   // e.g. "XX", "X"
+        int xCount = xs.length();
+        String moreNegative = prefix + "9".repeat(xCount);  // earlier bound, e.g. "-0799"
+        String lessNegative = prefix + "0".repeat(xCount);  // later bound,  e.g. "-0700"
+        String rangeEdtf    = moreNegative + "/" + lessNegative;
+
+        String baseKey = edtfKey.substring(0, edtfKey.length() - ":edtf".length());
+        String correctBase = "start_date".equals(baseKey) ? moreNegative
+                           : "end_date".equals(baseKey)   ? lessNegative
+                           : null;
+
+        List<Command> cmds = new ArrayList<>();
+        cmds.add(new ChangePropertyCommand(Arrays.asList(p), edtfKey, rangeEdtf));
+        if (correctBase != null) {
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, correctBase));
+        }
+        Command fix = new SequenceCommand(tr("Convert {0} to EDTF range", edtfKey), cmds);
+
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_NEGATIVE_EDTF_X_FORM)
+            .message(tr("[ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range"),
+                     marktr("{0}={1}: negative year with X digit(s). "
+                       + "Bounds are {2} (earlier) to {3} (later). Replace with {4}?"),
+                        edtfKey, value, moreNegative, lessNegative, rangeEdtf)
+            .primitives(p)
+            .fix(() -> fix)
+            .build());
+        return true;
+    }
+
+    /**
+     * Rule 4251: {@code *_date:edtf} value is an interval with a bare {@code ?} at
+     * one endpoint: {@code ?/YYYY} or {@code YYYY/?}. {@code ?} is a date-level
+     * uncertainty qualifier, not a valid standalone interval endpoint. The intended
+     * meaning is an open-ended interval — {@code /YYYY} (open left) or {@code YYYY/}
+     * (open right) — so the fix simply strips the {@code ?}.
+     *
+     * <p>The base {@code start_date}/{@code end_date} tag is also updated to the
+     * bound derived from the corrected open-ended interval when the key is one of
+     * those two standard date keys.
+     *
+     * @return {@code true} if the rule fired; caller should skip further checks
+     */
+    private boolean checkOpenIntervalQuestion(OsmPrimitive p, String edtfKey, String value) {
+        String fixed;
+        if (value.startsWith("?/")) {
+            fixed = "/" + value.substring(2);       // ?/YYYY → /YYYY
+        } else if (value.endsWith("/?")) {
+            fixed = value.substring(0, value.length() - 2) + "/";  // YYYY/? → YYYY/
+        } else {
+            return false;
+        }
+
+        // Only fix when the stripped form is actually valid EDTF.
+        if (!DateNormalizer.looksLikeValidEdtf(fixed)) return false;
+
+        String baseKey = edtfKey.substring(0, edtfKey.length() - ":edtf".length());
+        String correctBase = null;
+        if ("start_date".equals(baseKey) || "end_date".equals(baseKey)) {
+            Optional<String> bound = "start_date".equals(baseKey)
+                ? DateNormalizer.lowerBoundIso(fixed)
+                : DateNormalizer.upperBoundIso(fixed);
+            correctBase = bound.orElse(null);
+        }
+
+        List<Command> cmds = new ArrayList<>();
+        cmds.add(new ChangePropertyCommand(Arrays.asList(p), edtfKey, fixed));
+        if (correctBase != null) {
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, correctBase));
+        }
+        Command fix = new SequenceCommand(tr("Fix {0} interval endpoint", edtfKey), cmds);
+
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_OPEN_INTERVAL_QUESTION)
+            .message(tr("[ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?"),
+                     marktr("{0}={1}: ? is not a valid EDTF interval endpoint. "
+                       + "Strip ? to get open-ended form {2}"),
+                        edtfKey, value, fixed)
+            .primitives(p)
+            .fix(() -> fix)
+            .build());
+        return true;
+    }
+
     private void checkAllEdtfKeys(OsmPrimitive p) {
         for (String key : p.keySet()) {
             if (!TOP_LEVEL_EDTF_KEY.matcher(key).matches()) continue;
@@ -1218,6 +1330,12 @@ public class DateTagTest extends Test {
             // double-firing. For other :edtf keys (e.g. birth_date:edtf),
             // no such rule exists — we still catch them here.
             if (value.startsWith("\\") && key.equals("start_date:edtf")) continue;
+
+            // Negative year with X digit(s): -07XX, -123X → autofix to range.
+            if (checkNegativeEdtfXForm(p, key, value)) continue;
+
+            // ?/YYYY or YYYY/? → strip the spurious ? endpoint.
+            if (checkOpenIntervalQuestion(p, key, value)) continue;
 
             boolean isValid = DateNormalizer.looksLikeValidEdtf(value);
             Optional<String> normalized = DateNormalizer.toEdtf(value);

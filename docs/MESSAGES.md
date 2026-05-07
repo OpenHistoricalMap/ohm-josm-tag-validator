@@ -492,6 +492,52 @@ Suggested manual fix: replace with a valid EDTF expression.
 
 ---
 
+### Negative *_date:edtf with X digit(s)
+
+| Code | Title |
+|------|-------|
+| 4250 | `[ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range` |
+
+**Trigger:** `*_date:edtf` is a negative (BCE) year with one or two trailing X unspecified-digit characters: e.g. `-07XX`, `-123X`. This form is misleading because the X-digit bounds are reversed relative to positive years. For positive `07XX` the range is `0700–0799`; for negative `-07XX` the range is `−0799–−0700` (799 BCE to 700 BCE), with the more-negative (more ancient) year at the lower/start end. Writing the X form directly risks incorrect base-tag derivation and confuses consumers that don't account for the sign inversion.
+
+**Severity:** WARNING with autofix.
+
+**Fix:** Replaces the X form with an explicit EDTF slash interval — X digits replaced by `9` for the earlier bound, `0` for the later — and updates the base `start_date` / `end_date` tag to the correct bound (earlier for start, later for end). Only `start_date:edtf` and `end_date:edtf` receive the base-tag update; other `:edtf` keys get the `:edtf` fix only.
+
+**Description:** _{key}={value}: negative year with X digit(s). Bounds are {earlier} (earlier) to {later} (later). Replace with {range}?_
+
+**Examples:**  
+Before: `start_date=-0700`, `start_date:edtf=-07XX`  
+After autofix: `start_date=-0799`, `start_date:edtf=-0799/-0700`
+
+Before: `end_date:edtf=-123X` (no base)  
+After autofix: `end_date=-1230`, `end_date:edtf=-1239/-1230`
+
+---
+
+### *_date:edtf with ? at interval endpoint
+
+| Code | Title |
+|------|-------|
+| 4251 | `[ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?` |
+
+**Trigger:** `*_date:edtf` is an interval with a bare `?` as one endpoint: `?/YYYY` (intended open-ended left) or `YYYY/?` (intended open-ended right). `?` is a date-level uncertainty qualifier — it cannot stand alone as an interval endpoint. The intended meaning is an open-ended interval, which EDTF expresses with an empty slot: `/YYYY` or `YYYY/`.
+
+**Severity:** WARNING with autofix.
+
+**Fix:** Strips the `?` to produce a valid EDTF open-ended interval. Also updates the base `start_date` / `end_date` tag to the bound derived from the corrected interval (the one specific year present), consistent with OHM's open-endpoint fallback convention. Only `start_date:edtf` and `end_date:edtf` receive the base-tag update; other `:edtf` keys get the `:edtf` fix only.
+
+**Description:** _{key}={value}: ? is not a valid EDTF interval endpoint. Strip ? to get open-ended form {fixed}_
+
+**Examples:**  
+Before: `start_date:edtf=?/1900` (no base)  
+After autofix: `start_date=1900`, `start_date:edtf=/1900`
+
+Before: `end_date=1850`, `end_date:edtf=1850/?`  
+After autofix: `end_date=1850`, `end_date:edtf=1850/`
+
+---
+
 ### Date mismatch — base vs. :edtf disagreement
 
 | Code | Title |
