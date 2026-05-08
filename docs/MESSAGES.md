@@ -549,7 +549,7 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 **4210 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}. Manual review needed._
 
 **4211 trigger:** `*_date:edtf` is valid but no `*_date` base tag exists.  
-**4211 fix:** Derives and sets `*_date` from `*_date:edtf`.  
+**4211 fix:** Derives and sets `*_date` from `*_date:edtf`. If `*_date:edtf` would equal the derived `*_date` (i.e. it carries no info beyond the base — no range, no qualifier), `*_date:edtf` is also deleted so the base alone holds the value.  
 **4211 description:** _{key}:edtf={edtf} implies {key}={derived}._
 
 **4210 example:**  
@@ -561,7 +561,11 @@ Suggested manual fix: pick the authoritative value and update the other to match
 
 **4211 example:**  
 Before: `start_date:edtf=1900/1950`, no `start_date`  
-After autofix: `start_date=1900` derived as the lower bound.
+After autofix: `start_date=1900` derived as the lower bound. (`:edtf` is preserved because the range carries info beyond the base.)
+
+**4211 example — redundant `:edtf` cleared:**  
+Before: `start_date:edtf=1850`, no `start_date`  
+After autofix: `start_date=1850`, `start_date:edtf` deleted.
 
 ---
 

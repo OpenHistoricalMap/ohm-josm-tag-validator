@@ -1,3 +1,14 @@
+# v0.5.7 — Rule 4211 also clears redundant `*_date:edtf` after move to base
+
+When rule **4211** (`[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf`) fires and the existing `*_date:edtf` value would equal the derived `*_date`, the autofix now also deletes `*_date:edtf` in the same `SequenceCommand`. Same redundancy-suppression philosophy already codified in `edtfWriteValue` and applied by `buildTripleFix` / `buildBaseAndEdtfFix` (v0.5.0): `:edtf` exists to carry info beyond the base — ranges, qualifiers, X-forms, open-ended bounds — and a `:edtf` that duplicates the base is noise.
+
+- **Cleared (redundant):** `start_date:edtf=1850`, no `start_date` → autofix to `start_date=1850`, `start_date:edtf` deleted.
+- **Preserved (informative):** `start_date:edtf=1900/1950`, no `start_date` → autofix to `start_date=1900`, `start_date:edtf=1900/1950` left intact (the range still carries info beyond the lower bound).
+
+Rules 4250 / 4251 also derive a base from `:edtf`, but they legitimately rewrite `:edtf` to a richer form (range, open interval) — out of scope for this change. No new codes; no test-fixture diffs (existing fixtures don't exercise the redundant case).
+
+---
+
 # v0.5.6 — Two new suspicious-date rules (4250/4251) + three normalizer fixes
 
 ## New rules

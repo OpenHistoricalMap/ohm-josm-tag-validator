@@ -1702,10 +1702,19 @@ public class DateTagTest extends Test {
 
         if (base == null) {
             // Case 1: suggest adding the base tag (no :raw written — no
-            // original human input to preserve).
+            // original human input to preserve). When :edtf equals the
+            // derived base (e.g. :edtf="1850" → base="1850"), :edtf would
+            // be redundant after the move, so delete it in the same fix.
             if (expectedBase != null) {
-                Command fix = new ChangePropertyCommand(Arrays.asList(p),
-                                                        baseKey, expectedBase);
+                Command fix;
+                if (edtf.equals(expectedBase)) {
+                    List<Command> cmds = new ArrayList<>();
+                    cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, expectedBase));
+                    cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", null));
+                    fix = new SequenceCommand(tr("Move {0}:edtf to {0}", baseKey), cmds);
+                } else {
+                    fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, expectedBase);
+                }
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_MISSING_BASE)
                     .message(tr("[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf"),
                              marktr("{0}:edtf={1} implies {0}={2}."),
