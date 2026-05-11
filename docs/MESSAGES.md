@@ -66,6 +66,31 @@ Suggested manual fix: choose one of `start_date=2021` (typo), `start_date=2021-0
 
 ---
 
+### Ambiguous YYYY-MM..MM tail
+
+| Code | Title |
+|------|-------|
+| 4253 | `[ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review` |
+
+**Trigger:** `*_date` or `*_date:edtf` (in fact any top-level `:edtf` key) matches `^(\d{4})-(0[1-9]|1[0-2])\.\.(0[1-9]|1[0-2])$` — a year-month with a `..` tail that's *also* a valid month value (01-12). Two readings, both legitimate in OHM tagging and supported elsewhere by separate autofix rules:
+
+- **tail-as-month sharing the year prefix** → `YYYY-MM/YYYY-tail` (e.g. `1904-05..08` → "May to August 1904").
+- **tail-as-2-digit-year sharing the century prefix** → `YYYY-MM/{century}{tail}` (e.g. `1904-05..08` → "May 1904 to 1908"), parallel to the existing `YYYY..YY` abbreviated-tail-range rule (Path 0b').
+
+There's no signal in the value alone to pick the right reading. `DateNormalizer.toEdtf` refuses to normalize this shape (the legacy generic-RANGE-branch behavior produced a backwards interval like `1904-05/0008` by interpreting `08` as year 8 CE — neither of the user-intended readings), so this rule fires the unfixable warning instead.
+
+**Fix:** None. Manual review required: rewrite the value explicitly as `YYYY-MM/YYYY-MM` (month interpretation) or `YYYY-MM/YYYY` (year interpretation).
+
+**Description:** _{key}={value}: tail "{tail}" could be a month sharing the year prefix ({YYYY-MM/YYYY-tail}) or a 2-digit year sharing the century prefix ({YYYY-MM/expanded-year}). Manual review needed: rewrite the value explicitly._
+
+**Coverage:** The rule restricts the tail to 01-12 — i.e. only the indeterminate cases. Tails outside that range (e.g. `1904-05..13`) are unambiguously year-only but produce a backwards interval; left to existing normalize behavior, not in scope here.
+
+**Example:**  
+Trigger: `end_date:edtf=1904-05..08`.  
+Suggested manual fix: rewrite as `end_date:edtf=1904-05/1904-08` for "May to August 1904", or `end_date:edtf=1904-05/1908` for "May 1904 to 1908".
+
+---
+
 ### Ambiguous century/decade
 
 | Code | Title |

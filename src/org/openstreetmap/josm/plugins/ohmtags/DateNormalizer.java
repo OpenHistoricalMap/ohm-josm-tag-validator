@@ -53,6 +53,22 @@ public final class DateNormalizer {
         Pattern.compile("^(.+)\\.\\.(.+?)( BCE?)?$");
 
     /**
+     * {@code YYYY-MM..MM} where both the start month and the tail are valid
+     * month values (01-12). Structurally ambiguous: the tail could be the
+     * month sharing the year prefix ({@code 1904-05..08} as "May to August
+     * 1904", i.e. {@code 1904-05/1904-08}) or a 2-digit year sharing the
+     * century prefix ({@code 1904-05..08} as "May 1904 to 1908", parallel
+     * to the existing {@code YYYY..YY} abbreviated-tail-range rule). The
+     * generic RANGE branch would silently interpret the tail as a bare
+     * 2-digit year and produce a backwards interval (e.g.
+     * {@code 1904-05/0008}). Intercepted here to return
+     * {@link Optional#empty()}; the validator's dedicated rule emits a
+     * tailored unfixable warning describing the two interpretations.
+     */
+    private static final Pattern YYYY_MM_DOTDOT_MONTH_TAIL_AMBIGUOUS =
+        Pattern.compile("^\\d{4}-(?:0[1-9]|1[0-2])\\.\\.(?:0[1-9]|1[0-2])$");
+
+    /**
      * Simple year with optional qualifier. Qualifier may be prefix or suffix
      * and may be {@code ~}, {@code ?}, or {@code %}. The regex's group order
      * (year/monthDay before suffix qualifier before BCE marker) keeps trailing
@@ -989,6 +1005,14 @@ public final class DateNormalizer {
                     return Optional.of(low + "/" + high);
                 }
             }
+            return Optional.empty();
+        }
+
+        // --- Ambiguous tail: YYYY-MM..MM with both sides valid months ----
+        //   Refuse to normalize; the validator's dedicated rule
+        //   (CODE_AMBIGUOUS_MONTH_YEAR_TAIL) emits the unfixable warning
+        //   explaining the two valid interpretations.
+        if (YYYY_MM_DOTDOT_MONTH_TAIL_AMBIGUOUS.matcher(osm).matches()) {
             return Optional.empty();
         }
 

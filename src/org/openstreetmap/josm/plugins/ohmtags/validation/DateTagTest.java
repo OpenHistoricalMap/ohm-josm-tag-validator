@@ -240,6 +240,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_NEGATIVE_EDTF_X_FORM = 4250;
     protected static final int CODE_OPEN_INTERVAL_QUESTION = 4251;
     protected static final int CODE_LONG_EDTF_RANGE = 4252;
+    protected static final int CODE_AMBIGUOUS_MONTH_YEAR_TAIL = 4253;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -313,6 +314,22 @@ public class DateTagTest extends Test {
      */
     private static final Pattern DOTDOT_TAIL_RANGE =
         Pattern.compile("^(\\d{4})\\.\\.(\\d{2})$");
+
+    /**
+     * Ambiguous {@code YYYY-MM..MM} where the tail (right of {@code ..}) is
+     * a valid month value (01-12) and so is the start month. Two readings,
+     * both supported elsewhere in OHM tagging:
+     * <ul>
+     *   <li>tail-as-month sharing the year prefix → {@code YYYY-MM/YYYY-tail}
+     *       (e.g. {@code 1904-05..08} → "May to August 1904")</li>
+     *   <li>tail-as-2-digit-year sharing the century prefix → {@code YYYY-MM/{century}{tail}}
+     *       (e.g. {@code 1904-05..08} → "May 1904 to 1908", per the
+     *       existing {@code YYYY..YY} abbreviated-tail-range rule)</li>
+     * </ul>
+     * Captures (1) the 4-digit year, (2) the start month, (3) the tail.
+     */
+    private static final Pattern AMBIGUOUS_MONTH_YEAR_TAIL =
+        Pattern.compile("^(\\d{4})-(0[1-9]|1[0-2])\\.\\.(0[1-9]|1[0-2])$");
 
     /**
      * Implausibly-ancient-start range like {@code 0000..1850} or
@@ -1335,6 +1352,45 @@ public class DateTagTest extends Test {
     }
 
     /**
+     * Rule 4253: detects {@code YYYY-MM..MM} where the tail is a valid month
+     * value (01-12), which is structurally ambiguous between a month sharing
+     * the year prefix ({@code 1904-05..08} → "May to August 1904") and a
+     * 2-digit year sharing the century prefix ({@code 1904-05..08} → "May
+     * 1904 to 1908", per the {@code YYYY..YY} abbreviated-tail-range rule).
+     * Both interpretations are valid in OHM tagging; there's no signal in
+     * the value alone to pick one, so emits an unfixable warning naming both.
+     *
+     * <p>{@link DateNormalizer#toEdtf} refuses to normalize the same shape,
+     * so the bad legacy autofix ({@code 1904-05/0008}) cannot fire.
+     *
+     * <p>Works for both base keys ({@code start_date}, {@code end_date}) and
+     * any {@code :edtf} key; the caller picks the context.
+     *
+     * @return {@code true} if the rule fired; caller should skip further checks
+     */
+    private boolean checkAmbiguousMonthYearTail(OsmPrimitive p, String key, String value) {
+        Matcher m = AMBIGUOUS_MONTH_YEAR_TAIL.matcher(value);
+        if (!m.matches()) return false;
+        String year = m.group(1);
+        String startMonth = m.group(2);
+        String tail = m.group(3);
+        int yearInt = Integer.parseInt(year);
+        int century = (yearInt / 100) * 100;
+        String yearAsTail = String.format("%04d", century + Integer.parseInt(tail));
+        String monthInterp = year + "-" + startMonth + "/" + year + "-" + tail;
+        String yearInterp  = year + "-" + startMonth + "/" + yearAsTail;
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_MONTH_YEAR_TAIL)
+            .message(tr("[ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review"),
+                     marktr("{0}={1}: tail \"{2}\" could be a month sharing the year prefix "
+                       + "({3}) or a 2-digit year sharing the century prefix ({4}). "
+                       + "Manual review needed: rewrite the value explicitly."),
+                        key, value, tail, monthInterp, yearInterp)
+            .primitives(p)
+            .build());
+        return true;
+    }
+
+    /**
      * Rule 4252: fires a WARNING when {@code start_date:edtf} or
      * {@code end_date:edtf} is a closed interval spanning more than 100 years.
      * Open-ended intervals ({@code YYYY/} or {@code /YYYY}) are skipped.
@@ -1406,6 +1462,9 @@ public class DateTagTest extends Test {
 
             // ?/YYYY or YYYY/? → strip the spurious ? endpoint.
             if (checkOpenIntervalQuestion(p, key, value)) continue;
+
+            // YYYY-MM..MM with month-valid tail → ambiguous month-vs-year tail.
+            if (checkAmbiguousMonthYearTail(p, key, value)) continue;
 
             boolean isValid = DateNormalizer.looksLikeValidEdtf(value);
             Optional<String> normalized = DateNormalizer.toEdtf(value);
@@ -1959,6 +2018,13 @@ public class DateTagTest extends Test {
                             baseKey, base, cYear, withOrdinalSuffix(cYear))
                 .primitives(p)
                 .build());
+            return;
+        }
+
+        // Path 0a': YYYY-MM..MM with month-valid tail → ambiguous tail
+        //   (could be a month sharing the year prefix or a 2-digit year
+        //   sharing the century prefix). No autofix; fires 4253 unfixable.
+        if (checkAmbiguousMonthYearTail(p, baseKey, base)) {
             return;
         }
 

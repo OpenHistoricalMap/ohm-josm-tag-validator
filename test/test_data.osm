@@ -38904,4 +38904,14 @@
     <tag k='start_date:edtf' v='1800/1950' />
     <tag k='source' v='https://example.com/x6' />
   </node>
+  <node id='9100907' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test YYYY-MM..MM ambiguous tail (edtf)' />
+    <tag k='end_date:edtf' v='1904-05..08' />
+    <tag k='source' v='https://example.com/x7' />
+  </node>
+  <node id='9100908' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test YYYY-MM..MM ambiguous tail (base)' />
+    <tag k='start_date' v='1904-05..08' />
+    <tag k='source' v='https://example.com/x8' />
+  </node>
 </osm>

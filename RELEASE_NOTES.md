@@ -1,3 +1,30 @@
+# v0.6.0 — New rule 4253: ambiguous `YYYY-MM..MM` tail
+
+New WARNING **4253** `[ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review`. Fires on `*_date` or any top-level `*:edtf` key matching `^(\d{4})-(0[1-9]|1[0-2])\.\.(0[1-9]|1[0-2])$` — a year-month with a `..` tail that's *also* a valid month value (01-12). Two readings, both legitimate in OHM tagging:
+
+- tail-as-month sharing the year prefix → `YYYY-MM/YYYY-tail` (e.g. `1904-05..08` → "May to August 1904")
+- tail-as-2-digit-year sharing the century prefix → `YYYY-MM/{century}{tail}` (e.g. `1904-05..08` → "May 1904 to 1908"), parallel to the existing `YYYY..YY` abbreviated-tail-range rule (Path 0b').
+
+No signal in the value alone to pick between them; rule fires unfixable with both interpretations spelled out in the description.
+
+## Bad legacy autofix removed
+
+Before this change, `DateNormalizer.toEdtf("1904-05..08")` returned `1904-05/0008` — the generic RANGE branch interpreted `08` as year 8 CE, padded to four digits, producing a backwards/nonsense interval. This was surfaced by 4228 as a fixable normalization, so the autofix would silently rewrite to that garbage on click. `DateNormalizer.toEdtf` now returns `Optional.empty()` for the same shape, so the bad autofix can never fire.
+
+Scope is restricted to month-valid tails (01-12) — the indeterminate band. Tails outside that range (e.g. `1904-05..13`) are unambiguously year-only but currently produce backwards intervals; left untouched here to avoid quietly changing unrelated outputs.
+
+## Files touched
+
+- `DateNormalizer.java` — new `YYYY_MM_DOTDOT_MONTH_TAIL_AMBIGUOUS` pattern + early-return guard before the generic RANGE branch.
+- `DateTagTest.java` — new `CODE_AMBIGUOUS_MONTH_YEAR_TAIL = 4253`, helper `checkAmbiguousMonthYearTail`, called from both `checkDateFamily` (Path 0a', before the abbreviated-tail-range Path 0b) and `checkAllEdtfKeys` (early, before the normalize path).
+- `docs/MESSAGES.md` — new section between trailing-hyphen and century/decade ambiguity rules.
+- `test/test_data.osm` — two probe nodes (9100907 `:edtf` side, 9100908 base side).
+- `test/expected.txt` — two new golden rows.
+
+MessageApiAuditor count 88 → 89, regression suite green.
+
+---
+
 # v0.5.8 — Message title pattern cleanup
 
 Every `tr("[ohm] …")` title is now aligned with the convention from `CLAUDE.md`: `[ohm] <Category> - <what>; <fixable|unfixable, please review | autofix by …>`. No rule-coverage changes, no semantic changes — purely a consistency pass. 10 distinct title fixes, ~310 fixture rows updated, MessageApiAuditor site count 87 → 88.

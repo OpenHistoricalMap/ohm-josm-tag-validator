@@ -995,6 +995,8 @@ W   n/9100901   [ohm] Suspicious tag - historic; unfixable, please review   hist
 W   n/9100902   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/9100903   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/9100906   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
+W   n/9100907   [ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review   end_date:edtf=1904-05..08: tail "08" could be a month sharing the year prefix (1904-05/1904-08) or a 2-digit year sharing the century prefix (1904-05/1908). Manual review needed: rewrite the value explicitly.
+W   n/9100908   [ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review   start_date=1904-05..08: tail "08" could be a month sharing the year prefix (1904-05/1904-08) or a 2-digit year sharing the century prefix (1904-05/1908). Manual review needed: rewrite the value explicitly.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
