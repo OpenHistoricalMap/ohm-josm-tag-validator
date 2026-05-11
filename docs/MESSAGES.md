@@ -752,6 +752,7 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
 | 4243 | `[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review` |
+| 4254 | `[ohm] Chronology - relation has no members; unfixable, please review` |
 | 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; autofix by collapsing to min/max bounds` |
 | 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; unfixable, please review` |
 
@@ -768,6 +769,8 @@ After autofix: `start_date=1850`, `end_date=2000`, `start_date:raw=1850;1900;195
 **Per-key suppression:** When 4245 fires (with or without autofix), the per-key date checks for `start_date` and `end_date` are skipped on this primitive — they would otherwise flag the semicolon strings as `Invalid date - *_date cannot be read`, which is true but redundant noise once 4245 has explained the situation.
 
 These six rules apply only to `type=chronology` relations. Comparisons use only strict `start_date` / `end_date` values in `YYYY`, `YYYY-MM`, or `YYYY-MM-DD` form (no `:edtf`, no `:raw`, no Julian, no EDTF intervals). Members whose dates can't be parsed strictly are skipped from the range comparisons but still flagged by 4237 if a tag is missing. Findings select only the offending member(s); the outside-parent rule (4234) additionally selects the parent chronology relation since the violation is intrinsically about the parent ↔ member relationship.
+
+**4254 (WARNING) trigger:** `type=chronology` relation has zero members (`getMembers().size() == 0`). Typically an editing accident — relation created from a template but members never added, or all members removed, leaving the wrapper behind. JOSM core has a generic empty-relation warning; this one fires on top of it with OHM-specific framing ("add the constituent features or delete the relation"). Fires before the other chronology rules so the noise of "no members to compare" doesn't compound. No autofix — the user has to choose between adding members or deleting the relation.
 
 **4234 (ERROR) trigger:** Any member's `start_date` falls before the parent chronology relation's own `start_date`, or any member's `end_date` falls after the parent's `end_date`. Skipped if neither parent date is strictly parseable.
 
@@ -1071,21 +1074,46 @@ Suggested manual fix: split by hand into `source`, `source:1`, `source:url`, `so
 | Code | Title |
 |------|-------|
 | 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag` |
+| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; fixable, please review` |
 | 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag` |
 
-**4308 trigger:** A `*:source` tag references Wikipedia but no `wikipedia` tag exists on the feature.  
-**4308 description:** _{key}={value}: please add an appropriate 'wikipedia' tag._
+**Suppression model (v0.7).** A `wikidata=*` tag is treated as canonical attribution — its QID resolves to a Wikipedia article via Wikidata sitelinks. Both 4308 and 4309 silently accept this. A `wikipedia=*` tag is also accepted for 4308 (the article exists), but for 4309 a `wikipedia=*` is a *fix path* (lookup the QID) rather than a substitute.
 
-**4309 trigger:** A `*:source` tag references Wikidata but no `wikidata` tag exists on the feature.  
-**4309 description:** _{key}={value}: please add an appropriate 'wikidata' tag._
+**4308 trigger:** A `*:source` tag references Wikipedia but neither `wikipedia=*` nor `wikidata=*` exists on the feature.  
+**4308 description:** _{key}={value}: please add an appropriate 'wikipedia' or 'wikidata' tag._
+
+**4309 fixable trigger:** A `*:source` tag references Wikidata, no `wikidata=*` exists, and exactly one canonical `wikipedia=*` tag is present. Autofix queries the Wikidata API (same mechanism as 4302's autofix) and adds `wikidata=Q…`.  
+**4309 fixable description:** _{key}={value}: derive 'wikidata=Q…' by looking up the wikipedia article on the Wikidata API._
+
+**4309 unfixable trigger:** A `*:source` tag references Wikidata and either (a) multiple `wikipedia*` tags exist (ambiguous which is canonical) or (b) no `wikipedia=*` exists at all.  
+**4309 unfixable description:** _{key}={value}: please add an appropriate 'wikidata' tag._
 
 **4308 example:**  
-Trigger: `name:source=wikipedia` but no `wikipedia=*` on the feature.  
-Suggested manual fix: add `wikipedia=en:Some Article Title`.
+Trigger: `name:source=wikipedia` but no `wikipedia=*` or `wikidata=*` on the feature.  
+Suggested manual fix: add `wikipedia=en:Some Article Title` (preferred — the source mentioned Wikipedia) or `wikidata=Q…`.
 
-**4309 example:**  
-Trigger: `name:source=wikidata` but no `wikidata=*` on the feature.  
-Suggested manual fix: add `wikidata=Q12345`.
+**4309 example (fixable):**  
+Trigger: `start_date:source=wikidata` with `wikipedia=en:Eiffel Tower`, no `wikidata=*`.  
+Click Fix → plugin queries Wikidata API, extracts `Q243`, writes `wikidata=Q243`.
+
+**4309 example (unfixable, multiple wikipedia):**  
+Trigger: `start_date:source=wikidata` with `wikipedia:en=Eiffel Tower` AND `wikipedia:fr=Tour Eiffel`, no `wikidata=*`.  
+Suggested manual fix: add `wikidata=Q243` (or whichever QID is canonical).
+
+### Attribute-source content rules (v0.7)
+
+In addition to 4308/4309 above, the v0.5 source-content rules (4304/4305 are plain-source-only; 4307, 4312, 4314, 4315, 4316, 4317, 4324, 4325) now also fire on attribute-source slots whenever the value is not a wikipedia/wikidata literal. The same autofix logic applies, with autofix targets landing in the matching `<attr>:source*` companion slots:
+
+- **4307** (URL missing scheme) fires on `<attr>:source` and `<attr>:source:url` and `<attr>:source:N` values that look URL-shaped without scheme.
+- **4312** (URL conflict) fires when `<attr>:source` and `<attr>:source:url` hold different URLs. Autofix moves `<attr>:source:url` value to `<attr>:source:N+1`.
+- **4314** (1 URL + 1 text) fires on `<attr>:source` with semicolon-separated URL + text. Autofix splits to `<attr>:source` (text) and `<attr>:source:url` (URL).
+- **4315** (multi-URL) fires on `<attr>:source` with multiple semicolon-separated URLs. Autofix enumerates into `<attr>:source:N+1`, `<attr>:source:N+2`, … (never overwriting existing N).
+- **4316** (multi-text) fires on `<attr>:source` with semicolon-separated text-only items. Unfixable.
+- **4317** (mixed types) fires on `<attr>:source` with 3+ semicolon-separated items mixing URLs and text. Unfixable.
+- **4324** (URL in source:name) fires on `<attr>:source:name` containing a URL. Autofix moves to `<attr>:source:url`.
+- **4325** (text in source:url) fires on `<attr>:source:url` containing non-URL text. Autofix walks the fallback chain `<attr>:source` → `<attr>:source:name` → `<attr>:source:note`.
+
+The autofix enumeration scheme (4312, 4315) always lands at `<attr>:source:N+1` where N is the highest existing numeric index on the matching prefix. **Never overwrites** existing `<attr>:source:N[:*]` slots.
 
 ---
 

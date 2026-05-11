@@ -39068,4 +39068,56 @@
     <tag k='name' v='Wild West (Springfield)' />
     <tag k='source' v='https://example.com/x45' />
   </node>
+  <node id='9100950' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4307 attr-source URL missing scheme' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='usgs.gov/topo1925' />
+    <tag k='source' v='https://example.com/x50' />
+  </node>
+  <node id='9100951' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4315 attr-source multi-URL' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='https://example.com/a;https://example.com/b;https://example.com/c' />
+    <tag k='source' v='https://example.com/x51' />
+  </node>
+  <node id='9100952' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4316 attr-source multi-text unfixable' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='Archive folder 12; Field notes 1923' />
+    <tag k='source' v='https://example.com/x52' />
+  </node>
+  <node id='9100953' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4317 attr-source mixed types unfixable' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='https://example.com/a; USGS topo; https://example.com/b' />
+    <tag k='source' v='https://example.com/x53' />
+  </node>
+  <node id='9100954' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4309 fixable with single wikipedia tag' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='wikidata' />
+    <tag k='wikipedia' v='en:Eiffel Tower' />
+    <tag k='source' v='https://example.com/x54' />
+  </node>
+  <node id='9100955' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4309 unfixable with multiple wikipedia tags' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='wikidata' />
+    <tag k='wikipedia:en' v='Eiffel Tower' />
+    <tag k='wikipedia:fr' v='Tour Eiffel' />
+    <tag k='source' v='https://example.com/x55' />
+  </node>
+  <node id='9100956' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4308/4309 silent when wikidata present' />
+    <tag k='start_date' v='1900' />
+    <tag k='start_date:source' v='wikipedia' />
+    <tag k='wikidata' v='Q243' />
+    <tag k='source' v='https://example.com/x56' />
+  </node>
+  <relation id='9100990' visible='true' version='1'>
+    <tag k='type' v='chronology' />
+    <tag k='name' v='Test 4254 empty chronology' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='2000' />
+  </relation>
 </osm>

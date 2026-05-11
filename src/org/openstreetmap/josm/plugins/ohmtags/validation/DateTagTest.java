@@ -241,6 +241,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_OPEN_INTERVAL_QUESTION = 4251;
     protected static final int CODE_LONG_EDTF_RANGE = 4252;
     protected static final int CODE_AMBIGUOUS_MONTH_YEAR_TAIL = 4253;
+    protected static final int CODE_CHRONOLOGY_EMPTY = 4254;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -2621,6 +2622,21 @@ public class DateTagTest extends Test {
      * relation; offending member ids appear in the description text.
      */
     private void checkChronologyConsistency(Relation r) {
+        // Rule 4254: empty chronology relation. JOSM core has a generic
+        // empty-relation warning, but chronologies are OHM-special — flag
+        // them with a domain-specific message that points at the typical
+        // remedies (add members or delete the relation).
+        if (r.getMembers().isEmpty()) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_EMPTY)
+                .message(tr("[ohm] Chronology - relation has no members; unfixable, please review"),
+                         marktr("Chronology relation has no members. Add the constituent "
+                            + "features as members, or delete this relation if it''s no "
+                            + "longer needed."))
+                .primitives(r)
+                .build());
+            return;
+        }
+
         List<MemberInfo> infos = new ArrayList<>();
         for (RelationMember rm : r.getMembers()) {
             OsmPrimitive m = rm.getMember();

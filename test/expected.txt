@@ -272,6 +272,7 @@ E   n/9100933   [ohm] Invalid date - *_date:edtf; fixable, please review   end_d
 E   n/9100934   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 1 BC is not valid EDTF. Normalize to 0000-01/0000-04 and preserve original in end_date:edtf:raw?
 E   n/9100935   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid 197X is not valid EDTF. Normalize to 1973~/1976~ and preserve original in end_date:edtf:raw?
 E   n/9100936   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=MID 197x is not valid EDTF. Normalize to 1973~/1976~ and preserve original in end_date:edtf:raw?
+E   n/9100954   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -321,6 +322,7 @@ E   r/9000045   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   r/9000046   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/9100020   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   r/9100720   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9100990   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=2200-05-32: day 32 is out of range. Trim to 2200-05?
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   end_date=4C ? end_date=0399, end_date:edtf=03XX, end_date:raw=4C
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   start_date=1C ? start_date=0000, start_date:edtf=00XX, start_date:raw=1C
@@ -1029,6 +1031,12 @@ W   n/9100941   [ohm] Name warning - dates in name; autofix by stripping the dat
 W   n/9100942   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1880-1922): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
 W   n/9100943   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (c. 1900): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
 W   n/9100944   [ohm] Name warning - parentheses in name; unfixable, please review   name=Wild West (Springfield 1950): dates in parentheses are discouraged in names; move the date to start_date / end_date instead.
+W   n/9100950   [ohm] Source optimization - URL missing 'http[s]://'; autofix by prepending https://   start_date:source=usgs.gov/topo1925 looks like a URL missing the scheme. Prepend 'https://'?
+W   n/9100951   [ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys   start_date:source=https://example.com/a;https://example.com/b;https://example.com/c: enumerate into start_date:source, start_date:source:1, start_date:source:2, ...?
+W   n/9100952   [ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review   start_date:source=Archive folder 12; Field notes 1923: semicolons in text are ambiguous. If these are separate sources, split manually into start_date:source, start_date:source:1, start_date:source:2, ?; if the semicolons are punctuation in a single citation, leave alone.
+W   n/9100953   [ohm] Source mismatch - source contains multiple values of different types; unfixable, please review   start_date:source=https://example.com/a; USGS topo; https://example.com/b: 3 or more items mixing URLs and text. Manual review needed ? split into start_date:source, start_date:source:N, start_date:source:url, start_date:source:N:url as appropriate.
+W   n/9100954   [ohm] Missing tag - wikidata, referenced in source keys; fixable, please review   start_date:source=wikidata: derive 'wikidata=Q?' by looking up the wikipedia article on the Wikidata API.
+W   n/9100955   [ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag   start_date:source=wikidata: please add an appropriate 'wikidata' tag.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1068,6 +1076,7 @@ W   r/9100110   [ohm] Chronology - gap between parent start & oldest member; unf
 W   r/9100110   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
 W   r/9100210   [ohm] Suspicious member - role=label; unfixable, please review   OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ? Download parent relations / ways). role=label members on this relation: n/9100201.
 W   r/9100310   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
+W   r/9100990   [ohm] Chronology - relation has no members; unfixable, please review   Chronology relation has no members. Add the constituent features as members, or delete this relation if it's no longer needed.
 W   w/114353260   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/114490699   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/198163917   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1277,6 +1286,7 @@ W   w/201795860   [ohm] Date mismatch - *_date does not match *_date:edtf; unfix
 W   w/201796311   [ohm] Chronology - member without dates; unfixable, please review   Member w/201796311 of chronology relation r/2887877 has neither start_date nor end_date.
 W   w/201796312   [ohm] Chronology - member without dates; unfixable, please review   Member w/201796312 of chronology relation r/2887877 has neither start_date nor end_date.
 W   w/201800179   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1955 but start_date:edtf=1950/1956 implies start_date=1950. Manual review needed.
+W   w/201800179   [ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url   start_date:source=https://www.gribblenation.org/2024/11/interstate-77-in-cleveland.html; USGS topographic maps: move text to start_date:source and URL to start_date:source:url?
 W   w/201820357   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/201820358   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/201820395   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   

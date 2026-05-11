@@ -410,7 +410,11 @@ public class TagConsistencyTest extends Test {
             if (attrSourceMatch.matches()
                 && !SOURCE_KEY.matcher(key).matches()
                 && !SOURCE_NAME_KEY.matcher(key).matches()) {
-                checkAttrSourceTag(p, key, p.get(key), attrSourceMatch.group(1));
+                // attrSourceMatch.group(1) captures the attribute name without
+                // the trailing colon (e.g. "start_date"). Append ":" so the
+                // downstream key-construction convention (attrPrefix +
+                // "source") gives the right prefixed key.
+                checkAttrSourceTag(p, key, p.get(key), attrSourceMatch.group(1) + ":");
                 continue;
             }
         }
@@ -759,42 +763,60 @@ public class TagConsistencyTest extends Test {
      * the v0.5 contract — no rule fires for that case.
      */
     private void checkSourceTag(OsmPrimitive p, String key, String value, String numIdx) {
+        checkSourceTag(p, key, value, numIdx, "");
+    }
+
+    /**
+     * Source-content checks, parameterized by an {@code attrPrefix} so the
+     * same logic applies to plain {@code source} (prefix = "") and any
+     * attribute-scoped source slot (prefix = {@code "<attr>:"}, e.g.
+     * {@code "start_date:"}). Wikipedia/Wikidata literal handling is
+     * skipped here for attribute-source (those values are routed through
+     * {@link #checkAttrSourceTag} which applies the attribution-completeness
+     * rules 4308/4309).
+     */
+    private void checkSourceTag(OsmPrimitive p, String key, String value, String numIdx, String attrPrefix) {
         if (value == null || value.isEmpty()) return;
 
         // Semicolon-separated — might be multiple sources the user bundled
         // together. Only fires for the plain source key (not source:N),
         // since source:1, source:2 etc. are already the enumeration target.
         if (numIdx == null && value.contains(";")) {
-            checkSemicolonSeparatedSource(p, key, value);
+            checkSemicolonSeparatedSource(p, key, value, attrPrefix);
             return;
         }
 
-        // Wikipedia / Wikidata as source: specific warnings, no autofix.
-        if ("wikipedia".equalsIgnoreCase(value)) {
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIPEDIA)
-                .message(tr("[ohm] Suspicious source - source=wikipedia; unfixable, please review"),
-                         marktr("{0}={1}: Wikipedia is not a reasonable source for "
-                            + "geometry claims. Please link to an actual map, image, "
-                            + "or other primary source."),
-                            key, value)
-                .primitives(p)
-                .build());
-            return;
-        }
-        if ("wikidata".equalsIgnoreCase(value)) {
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIDATA)
-                .message(tr("[ohm] Suspicious source - source=wikidata; unfixable, please review"),
-                         marktr("{0}={1}: Wikidata is not a reasonable source for "
-                            + "geometry claims. Please link to an actual map, image, "
-                            + "or other primary source."),
-                            key, value)
-                .primitives(p)
-                .build());
-            return;
+        // Wikipedia / Wikidata as source literals: only emit the
+        // geometry-claim warnings (4304/4305) for plain source. Attribute-
+        // source handles these through 4308/4309 (checkAttrSourceTag), which
+        // is about attribution completeness rather than source quality.
+        if (attrPrefix.isEmpty()) {
+            if ("wikipedia".equalsIgnoreCase(value)) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIPEDIA)
+                    .message(tr("[ohm] Suspicious source - source=wikipedia; unfixable, please review"),
+                             marktr("{0}={1}: Wikipedia is not a reasonable source for "
+                                + "geometry claims. Please link to an actual map, image, "
+                                + "or other primary source."),
+                                key, value)
+                    .primitives(p)
+                    .build());
+                return;
+            }
+            if ("wikidata".equalsIgnoreCase(value)) {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_IS_WIKIDATA)
+                    .message(tr("[ohm] Suspicious source - source=wikidata; unfixable, please review"),
+                             marktr("{0}={1}: Wikidata is not a reasonable source for "
+                                + "geometry claims. Please link to an actual map, image, "
+                                + "or other primary source."),
+                                key, value)
+                    .primitives(p)
+                    .build());
+                return;
+            }
         }
 
-        // URL-shaped but missing scheme? Offer to prepend https://. (4307
-        // also runs against source:url / source:N:url in checkSourceUrlPair.)
+        // URL-shaped but missing scheme? Offer to prepend https://. Applies
+        // to plain source and attribute-source equally.
         if (!URL_WITH_SCHEME.matcher(value).matches()
             && URL_MISSING_SCHEME.matcher(value).matches()) {
             emitMissingSchemeFix(p, key, value);
@@ -832,8 +854,24 @@ public class TagConsistencyTest extends Test {
      * maximum guarantees no clobbering and tolerates gaps.
      */
     private static int nextSourceIndex(OsmPrimitive p) {
+        return nextSourceIndex(p, "");
+    }
+
+    /**
+     * Compute the next available {@code <attrPrefix>source:N} index, where
+     * {@code attrPrefix} is either empty (plain {@code source:N}) or a
+     * trailing-colon form like {@code "start_date:"} (giving
+     * {@code start_date:source:N}). Never overwrites; always returns
+     * {@code max(N) + 1} or {@code 1} when none exist.
+     */
+    private static int nextSourceIndex(OsmPrimitive p, String attrPrefix) {
+        // Build a pattern that matches the prefixed enumeration: e.g.
+        //   ^source:(\d+)$              (plain)
+        //   ^start_date:source:(\d+)$   (attribute-scoped)
+        // Pattern.quote escapes any regex metachars in the prefix.
+        Pattern pat = Pattern.compile("^" + Pattern.quote(attrPrefix) + "source:(\\d+)$");
         return p.keySet().stream()
-            .map(SOURCE_KEY::matcher)
+            .map(pat::matcher)
             .filter(Matcher::matches)
             .map(m -> m.group(1))
             .filter(g -> g != null)
@@ -865,7 +903,7 @@ public class TagConsistencyTest extends Test {
      * <p>Semicolons inside a URL (e.g. {@code jsessionid=XXX}) will be
      * incorrectly split here — we accept that false-positive risk per spec.
      */
-    private void checkSemicolonSeparatedSource(OsmPrimitive p, String key, String value) {
+    private void checkSemicolonSeparatedSource(OsmPrimitive p, String key, String value, String attrPrefix) {
         String[] parts = value.split(";");
         // Trim and filter empties.
         List<String> items = new ArrayList<>();
@@ -885,26 +923,29 @@ public class TagConsistencyTest extends Test {
             }
         }
 
+        String urlSlotKey = attrPrefix + "source:url";
+
         // Case: exactly 2 items, one URL + one text. Under v0.5 contract:
-        // source=text, source:url=URL.
+        // <attr>source=text, <attr>source:url=URL.
         if (items.size() == 2 && urlCount == 1 && textCount == 1) {
             String urlPart = URL_WITH_SCHEME.matcher(items.get(0)).matches()
                 ? items.get(0) : items.get(1);
             String textPart = urlPart.equals(items.get(0)) ? items.get(1) : items.get(0);
 
-            String existingUrl = p.get("source:url");
+            String existingUrl = p.get(urlSlotKey);
             boolean urlSlotEmpty = existingUrl == null || existingUrl.isEmpty();
             boolean urlSlotMatches = urlPart.equals(existingUrl);
 
             if (!urlSlotEmpty && !urlSlotMatches) {
-                // source:url already holds a different URL — autofix would
-                // clobber it.
+                // <attr>source:url already holds a different URL — autofix
+                // would clobber it.
                 errors.add(TestError.builder(this, Severity.WARNING,
                                              CODE_SOURCE_SEMICOLON_URL_TEXT)
                     .message(tr("[ohm] Source mismatch - source contains 1 URL & 1 text string but source:url already holds a different value; unfixable, please review"),
-                             marktr("{0}={1}: cannot split into source={2} and source:url={3} "
-                                + "because source:url already holds {4}. Manual review needed."),
-                                key, value, textPart, urlPart, existingUrl)
+                             marktr("{0}={1}: cannot split into {5}={2} and {6}={3} "
+                                + "because {6} already holds {4}. Manual review needed."),
+                                key, value, textPart, urlPart, existingUrl,
+                                attrPrefix + "source", urlSlotKey)
                     .primitives(p)
                     .build());
                 return;
@@ -913,14 +954,15 @@ public class TagConsistencyTest extends Test {
             List<Command> cmds = new ArrayList<>();
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, textPart));
             if (urlSlotEmpty) {
-                cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source:url", urlPart));
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlSlotKey, urlPart));
             }
             Command fix = new SequenceCommand(
-                tr("Split source into text and source:url"), cmds);
+                tr("Split {0} into text and {1}", attrPrefix + "source", urlSlotKey), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_SOURCE_SEMICOLON_URL_TEXT)
                 .message(tr("[ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url"),
-                         marktr("{0}={1}: move text to source and URL to source:url?"), key, value)
+                         marktr("{0}={1}: move text to {2} and URL to {3}?"),
+                            key, value, attrPrefix + "source", urlSlotKey)
                 .primitives(p)
                 .fix(() -> fix)
                 .build());
@@ -929,7 +971,7 @@ public class TagConsistencyTest extends Test {
 
         // Case: all URLs (2+). Enumerate per the shared convention.
         if (urlCount == items.size()) {
-            emitMultiUrlSplit(p, key, value, items);
+            emitMultiUrlSplit(p, key, value, items, attrPrefix);
             return;
         }
 
@@ -942,9 +984,9 @@ public class TagConsistencyTest extends Test {
                 .message(tr("[ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review"),
                          marktr("{0}={1}: semicolons in text are ambiguous. "
                             + "If these are separate sources, split manually into "
-                            + "source, source:1, source:2, …; if the semicolons are "
+                            + "{2}, {2}:1, {2}:2, …; if the semicolons are "
                             + "punctuation in a single citation, leave alone."),
-                            key, value)
+                            key, value, attrPrefix + "source")
                 .primitives(p)
                 .build());
             return;
@@ -955,9 +997,9 @@ public class TagConsistencyTest extends Test {
                                      CODE_SOURCE_SEMICOLON_MIXED)
             .message(tr("[ohm] Source mismatch - source contains multiple values of different types; unfixable, please review"),
                      marktr("{0}={1}: 3 or more items mixing URLs and text. "
-                      + "Manual review needed — split into source, source:N, "
-                      + "source:url, source:N:url as appropriate."),
-                        key, value)
+                      + "Manual review needed — split into {2}, {2}:N, "
+                      + "{2}:url, {2}:N:url as appropriate."),
+                        key, value, attrPrefix + "source")
             .primitives(p)
             .build());
     }
@@ -973,34 +1015,34 @@ public class TagConsistencyTest extends Test {
      * starting at {@code source:(M+1)}, where M is the highest existing
      * numeric index. This matches the shared enumeration convention.
      */
-    private void emitMultiUrlSplit(OsmPrimitive p, String key, String value, List<String> items) {
+    private void emitMultiUrlSplit(OsmPrimitive p, String key, String value, List<String> items, String attrPrefix) {
+        String sourceBase = attrPrefix + "source";
+        Pattern enumeratedPat = Pattern.compile("^" + Pattern.quote(sourceBase) + ":(\\d+)$");
         boolean hasExistingEnumerated = p.keySet().stream()
-            .map(SOURCE_KEY::matcher)
-            .filter(Matcher::matches)
-            .anyMatch(m -> m.group(1) != null);
+            .anyMatch(k -> enumeratedPat.matcher(k).matches());
 
         List<Command> cmds = new ArrayList<>();
         if (!hasExistingEnumerated) {
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "source", items.get(0)));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), sourceBase, items.get(0)));
             for (int i = 1; i < items.size(); i++) {
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p),
-                                                   "source:" + i, items.get(i)));
+                                                   sourceBase + ":" + i, items.get(i)));
             }
         } else {
-            int start = nextSourceIndex(p);
+            int start = nextSourceIndex(p, attrPrefix);
             // Clear the combined-value source tag — items are being relocated.
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), key, null));
             for (int i = 0; i < items.size(); i++) {
                 cmds.add(new ChangePropertyCommand(Arrays.asList(p),
-                                                   "source:" + (start + i), items.get(i)));
+                                                   sourceBase + ":" + (start + i), items.get(i)));
             }
         }
 
-        Command fix = new SequenceCommand(tr("Enumerate source URLs"), cmds);
+        Command fix = new SequenceCommand(tr("Enumerate {0} URLs", sourceBase), cmds);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_SEMICOLON_MULTI_URL)
             .message(tr("[ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys"),
-                     marktr("{0}={1}: enumerate into source, source:1, source:2, ...?"),
-                        key, value)
+                     marktr("{0}={1}: enumerate into {2}, {2}:1, {2}:2, ...?"),
+                        key, value, sourceBase)
             .primitives(p)
             .fix(() -> fix)
             .build());
@@ -1022,21 +1064,40 @@ public class TagConsistencyTest extends Test {
      * (Codes 4311 and 4313 are retired; identical URLs and text-companion
      * + URL-in-:url are valid layouts under the new contract.)
      */
+    /**
+     * Matches any {@code <prefix>source[:N]?:url} key, capturing (1) the
+     * full prefix up to and including the {@code source} segment, (2) the
+     * optional numeric sub-index. Covers both plain {@code source:url} /
+     * {@code source:N:url} and attribute-scoped variants like
+     * {@code start_date:source:url} / {@code start_date:source:N:url}.
+     */
+    private static final Pattern ANY_SOURCE_URL_KEY =
+        Pattern.compile("^((?:[A-Za-z][A-Za-z0-9_-]*:)*source)(?::(\\d+))?:url$");
+
+    /** Same shape as {@link #ANY_SOURCE_URL_KEY} but for {@code :name}. */
+    private static final Pattern ANY_SOURCE_NAME_KEY =
+        Pattern.compile("^((?:[A-Za-z][A-Za-z0-9_-]*:)*source)(?::(\\d+))?:name$");
+
     private void checkSourceUrlConsolidation(OsmPrimitive p) {
         // Snapshot all url-shaped keys before invoking per-pair checks. We
         // only read keys (not modifying the primitive) so iteration is safe;
-        // a snapshot avoids any future surprise.
+        // a snapshot avoids any future surprise. Covers plain and
+        // attribute-scoped source:url keys uniformly.
         List<String[]> pairs = new ArrayList<>();
         for (String key : p.keySet()) {
-            Matcher m = SOURCE_URL_KEY.matcher(key);
+            Matcher m = ANY_SOURCE_URL_KEY.matcher(key);
             if (m.matches()) {
-                String numIdx = m.group(1);
-                String companionKey = (numIdx == null) ? "source" : "source:" + numIdx;
-                pairs.add(new String[] { key, companionKey });
+                String sourceBase = m.group(1);   // e.g. "source" or "start_date:source"
+                String numIdx = m.group(2);
+                String companionKey = (numIdx == null) ? sourceBase : sourceBase + ":" + numIdx;
+                // attrPrefix = everything before the "source" segment, with
+                // its trailing colon kept. Empty for plain source.
+                String attrPrefix = sourceBase.equals("source") ? "" : sourceBase.substring(0, sourceBase.length() - "source".length());
+                pairs.add(new String[] { key, companionKey, attrPrefix });
             }
         }
         for (String[] pair : pairs) {
-            checkSourceUrlPair(p, pair[0], pair[1]);
+            checkSourceUrlPair(p, pair[0], pair[1], pair[2]);
         }
     }
 
@@ -1045,7 +1106,7 @@ public class TagConsistencyTest extends Test {
      * {@code source[:N]?}. See {@link #checkSourceUrlConsolidation} for the
      * rules.
      */
-    private void checkSourceUrlPair(OsmPrimitive p, String urlKey, String companionKey) {
+    private void checkSourceUrlPair(OsmPrimitive p, String urlKey, String companionKey, String attrPrefix) {
         String source = p.get(companionKey);
         String sourceUrl = p.get(urlKey);
         if (sourceUrl == null || sourceUrl.isEmpty()) return;
@@ -1057,8 +1118,8 @@ public class TagConsistencyTest extends Test {
             return;
         }
 
-        // 4325: non-URL text in :url. Fallback chain: source / source:name
-        // / source:note.
+        // 4325: non-URL text in :url. Fallback chain: <attr>source /
+        // <attr>source:name / <attr>source:note.
         if (!URL_WITH_SCHEME.matcher(sourceUrl).matches()) {
             emitTextInUrlFix(p, urlKey, sourceUrl, companionKey);
             return;
@@ -1068,9 +1129,9 @@ public class TagConsistencyTest extends Test {
         // If companion has semicolons, defer to the semicolon handler.
         if (source != null && source.contains(";")) return;
 
-        // 4312: both slots hold URLs but differ — move :url to next source:N.
-        // (Identical URLs and text-companion + URL-in-:url are both valid
-        // under the v0.5 contract; no warning.)
+        // 4312: both slots hold URLs but differ — move :url to next
+        // <attr>source:N. (Identical URLs and text-companion + URL-in-:url
+        // are both valid under the v0.5 contract; no warning.)
         if (source != null && !source.isEmpty()
             && !source.equals(sourceUrl)
             && URL_WITH_SCHEME.matcher(source).matches()) {
@@ -1080,7 +1141,7 @@ public class TagConsistencyTest extends Test {
                             companionKey, source, urlKey, sourceUrl)
                 .primitives(p)
                 .fix(() -> {
-                    String newKey = "source:" + nextSourceIndex(p);
+                    String newKey = attrPrefix + "source:" + nextSourceIndex(p, attrPrefix);
                     List<Command> moveCmds = new ArrayList<>();
                     moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), newKey, sourceUrl));
                     moveCmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, null));
@@ -1144,13 +1205,14 @@ public class TagConsistencyTest extends Test {
     private void checkSourceNameContents(OsmPrimitive p) {
         List<String[]> hits = new ArrayList<>();
         for (String key : p.keySet()) {
-            Matcher m = SOURCE_NAME_KEY.matcher(key);
+            Matcher m = ANY_SOURCE_NAME_KEY.matcher(key);
             if (!m.matches()) continue;
             String value = p.get(key);
             if (value == null || value.isEmpty()) continue;
             if (!URL_WITH_SCHEME.matcher(value).matches()) continue;
-            String numIdx = m.group(1);
-            String urlKey = (numIdx == null) ? "source:url" : "source:" + numIdx + ":url";
+            String sourceBase = m.group(1);   // "source" or "<attr>:source"
+            String numIdx = m.group(2);
+            String urlKey = (numIdx == null) ? sourceBase + ":url" : sourceBase + ":" + numIdx + ":url";
             hits.add(new String[] { key, value, urlKey });
         }
         for (String[] hit : hits) {
@@ -1186,34 +1248,102 @@ public class TagConsistencyTest extends Test {
 
     /**
      * Check an attribute-scoped source key like {@code start_date:source}.
-     * Only Wikipedia/Wikidata values are checked here (requiring companion
-     * tags). Other values are not validated.
+     *
+     * <p>Wikipedia / Wikidata literal values trigger attribution-completeness
+     * warnings (4308 / 4309); any other value is handed off to the same
+     * source-content pipeline used for plain {@code source} keys (URL-shape,
+     * semicolon split, slot-typing — see {@code checkSourceTag}).
+     *
+     * <p>Suppression model (latest convention):
+     * <ul>
+     *   <li>{@code wikidata=*} present → silent for both 4308 and 4309
+     *       (a QID is canonical and resolves to a Wikipedia article via
+     *       sitelinks).</li>
+     *   <li>{@code wikipedia=*} present (no {@code wikidata=*}) → silent for
+     *       4308 (attribution target exists); 4309 fires fixable with an
+     *       autofix that queries the Wikidata API to look up the QID.</li>
+     *   <li>multiple {@code wikipedia*} tags, no {@code wikidata=*} → 4309
+     *       fires unfixable (ambiguous which article is canonical).</li>
+     *   <li>neither tag present → 4308 / 4309 fires unfixable.</li>
+     * </ul>
      */
     private void checkAttrSourceTag(OsmPrimitive p, String key, String value, String attrPrefix) {
         if (value == null || value.isEmpty()) return;
 
         if ("wikipedia".equalsIgnoreCase(value)) {
-            if (!hasAnyKeyStartingWith(p, "wikipedia")) {
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
-                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag"),
-                             marktr("{0}={1}: please add an appropriate ''wikipedia'' tag."),
-                                key, value)
-                    .primitives(p)
-                    .build());
-            }
+            // Suppression: any wikipedia* or wikidata=* tag is enough.
+            if (p.get("wikidata") != null) return;
+            if (hasAnyKeyStartingWith(p, "wikipedia")) return;
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
+                .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag"),
+                         marktr("{0}={1}: please add an appropriate ''wikipedia'' or "
+                            + "''wikidata'' tag."),
+                            key, value)
+                .primitives(p)
+                .build());
             return;
         }
         if ("wikidata".equalsIgnoreCase(value)) {
-            if (p.get("wikidata") == null) {
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
-                    .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag"),
-                             marktr("{0}={1}: please add an appropriate ''wikidata'' tag."),
+            // Suppression: wikidata=* is the canonical attribution; silent.
+            if (p.get("wikidata") != null) return;
+
+            // Try to autofix from wikipedia. Single canonical wikipedia=*
+            // is fixable (lookup-via-API); multiple wikipedia* tags are
+            // ambiguous (unfixable).
+            String canonical = canonicalWikipediaForLookup(p);
+            int wikipediaCount = countWikipediaKeys(p);
+            if (canonical != null && wikipediaCount == 1) {
+                TestError.Builder builder = TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
+                    .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; fixable, please review"),
+                             marktr("{0}={1}: derive ''wikidata=Q…'' by looking up the "
+                                + "wikipedia article on the Wikidata API."),
                                 key, value)
-                    .primitives(p)
-                    .build());
+                    .primitives(p);
+                builder.fix(() -> {
+                    Optional<String> qidOpt = lookupWikidataQid(canonical);
+                    if (qidOpt.isEmpty()) return null;
+                    return new ChangePropertyCommand(Arrays.asList(p), "wikidata", qidOpt.get());
+                });
+                errors.add(builder.build());
+                return;
             }
+            // Multiple wikipedia tags → unfixable, can't pick a canonical
+            // article. No wikipedia at all → also unfixable.
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
+                .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag"),
+                         marktr("{0}={1}: please add an appropriate ''wikidata'' tag."),
+                            key, value)
+                .primitives(p)
+                .build());
             return;
         }
+
+        // Non-literal value: hand off to the unified source-content pipeline
+        // so URL-shape, semicolon split, and slot-typing rules apply uniformly
+        // to attribute-source slots. Routes through the same checkSourceTag
+        // entry as plain source, passing the attribute prefix so autofix
+        // targets land in the matching <attr>:source* slots.
+        checkSourceTag(p, key, value, null, attrPrefix);
+    }
+
+    /**
+     * Return the value of the single canonical {@code wikipedia} key on the
+     * primitive, or {@code null} if there is no such key. "Canonical" here
+     * means the plain {@code wikipedia=*} tag (no language sub-key); the
+     * lookup helper {@link #lookupWikidataQid} parses {@code <lang>:<title>}
+     * out of that value.
+     */
+    private static String canonicalWikipediaForLookup(OsmPrimitive p) {
+        return p.get("wikipedia");
+    }
+
+    /** Count of distinct {@code wikipedia*} keys on the primitive. */
+    private static int countWikipediaKeys(OsmPrimitive p) {
+        int n = 0;
+        for (String key : p.keySet()) {
+            if (key.equals("wikipedia") || key.startsWith("wikipedia:")) n++;
+        }
+        return n;
     }
 
     /** True if any key on the primitive equals or starts with {@code prefix + ":"}. */

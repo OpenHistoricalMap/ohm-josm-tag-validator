@@ -1,3 +1,62 @@
+# v0.7.0 — Attribute-source rule extension + empty-chronology rule
+
+This release expands the source-rule coverage to **attribute-scoped source slots** (e.g. `start_date:source`, `name:source`, `wikidata:source`) and adds a new chronology rule (4254) for empty chronology relations. Minor version bump because the rule-coverage surface grows substantially.
+
+## New rule 4254 — empty chronology relations
+
+`[ohm] Chronology - relation has no members; unfixable, please review`
+
+Fires (WARNING) when a `type=chronology` relation has zero members. Empty chronologies are typically editing accidents — the wrapper was left behind after members were removed, or never had members added. JOSM core has a generic empty-relation warning; this one adds OHM-specific framing ("add the constituent features as members, or delete this relation if it's no longer needed"). Fires before the other chronology rules so the rule output doesn't get cluttered with "no members to compare" noise.
+
+## Source rules extended to attribute-source slots
+
+The v0.5 source-content rules previously applied only to plain `source` / `source:N` / `source:url` / `source:name` keys. They now also fire on the attribute-scoped variants — any `<attr>:source*` key, where `<attr>` is any prefix like `start_date`, `end_date`, `name`, `wikidata`, etc. Autofix targets land in the matching `<attr>:source*` companion slots, never overwriting an existing `<attr>:source:N[:*]`.
+
+Rules touched:
+
+- **4307** (URL missing scheme) — now also fires on `<attr>:source`, `<attr>:source:url`, `<attr>:source:N`.
+- **4312** (URL conflict between `source` and `source:url`) — now also fires for `<attr>:source` vs `<attr>:source:url`; autofix moves the URL value to `<attr>:source:N+1`.
+- **4314** (1 URL + 1 text in single value) — now also fires on `<attr>:source` and splits into `<attr>:source` (text) and `<attr>:source:url` (URL).
+- **4315** (multi-URL) — now also fires on `<attr>:source` with autofix enumeration into `<attr>:source:N+1`, …
+- **4316** (multi-text) — now also fires on `<attr>:source`. Unfixable.
+- **4317** (mixed types, 3+ items) — now also fires on `<attr>:source`. Unfixable.
+- **4324** (URL in `source:name`) — now also fires on `<attr>:source:name`.
+- **4325** (text in `source:url`) — now also fires on `<attr>:source:url`.
+
+**4304 / 4305** (`source=wikipedia` / `source=wikidata` literal — "not a reasonable source for geometry") **are NOT extended** to attribute-source. The attribution-completeness rules (4308 / 4309) already cover the wikipedia/wikidata-literal case on attribute-source with the right semantic.
+
+## 4308 / 4309 refined
+
+`[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag` (4308)  
+`[ohm] Missing tag - wikidata, referenced in source keys; fixable, please review` (4309 new fixable)  
+`[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag` (4309 existing unfixable)
+
+The suppression model is now:
+
+- `wikidata=*` is treated as canonical attribution for **both rules** — its QID resolves to a Wikipedia article via Wikidata sitelinks, so neither 4308 nor 4309 needs to fire.
+- `wikipedia=*` is also accepted for 4308 (article exists), but for 4309 a `wikipedia=*` is a **fix path**, not a substitute.
+
+So 4309's new behavior:
+
+- `wikidata=*` present → silent.
+- no `wikidata`, exactly one canonical `wikipedia=*` → **fire fixable**, autofix queries the Wikidata API and adds `wikidata=Q…` (same lookup mechanism as 4302's autofix).
+- no `wikidata`, multiple `wikipedia*` tags (e.g. `wikipedia:en` + `wikipedia:fr`) → fire unfixable, ambiguous which article is canonical.
+- neither `wikidata` nor `wikipedia` → fire unfixable.
+
+4308's new behavior: silent if `wikipedia=*` OR `wikidata=*` present; fire unfixable otherwise.
+
+## Files touched
+
+- `src/.../validation/DateTagTest.java` — new `CODE_CHRONOLOGY_EMPTY = 4254`, empty-relation check at the head of `checkChronologyConsistency`.
+- `src/.../validation/TagConsistencyTest.java` — `checkAttrSourceTag` refactored to apply the new 4308/4309 suppression and to delegate non-literal values to the unified source-content pipeline; `checkSourceTag` / `checkSemicolonSeparatedSource` / `emitMultiUrlSplit` / `nextSourceIndex` / `checkSourceUrlPair` / `checkSourceNameContents` parameterized by an attribute prefix; new `ANY_SOURCE_URL_KEY` / `ANY_SOURCE_NAME_KEY` patterns covering both plain and attribute-scoped variants.
+- `docs/MESSAGES.md` — new 4254 section, rewritten attribute-source section covering the unified source-rule surface and the 4308/4309 suppression model.
+- `test/test_data.osm` — 8 new probe fixtures (attribute-source variants + empty chronology + 4309 wikipedia-lookup paths).
+- `test/expected.txt` — 9 new golden rows including one real-data hit (`w/201800179`, which had `start_date:source=URL; text` and now correctly fires 4314).
+
+`MessageApiAuditor` count: 91 → 93 (4309 fixable variant + 4254 add two new emission sites). Regression suite green.
+
+---
+
 # v0.6.2 — Date-range fixes, name-date detection, release helper
 
 A multi-feature bundle: new `DateNormalizer` patterns, an existing-rule fix, a new rule, and a small release helper script.
