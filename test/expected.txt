@@ -35,7 +35,7 @@ E   n/2083588580   [ohm] Invalid date - *_date; fixable, please review   end_dat
 E   n/2083588580   [ohm] Invalid date - *_date; fixable, please review   start_date=1961..1964-06 ? start_date=1961, start_date:edtf=1961/1964-06, start_date:raw=1961..1964-06
 E   n/2083589874   [ohm] Invalid date - *_date; fixable, please review   start_date=2005..2016-02 ? start_date=2005, start_date:edtf=2005/2016-02, start_date:raw=2005..2016-02
 E   n/2083701639   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=? cannot be normalized.
-E   n/2083871134   [ohm] Invalid date - *_date; fixable, please review   end_date=early C4 ? end_date=0330, end_date:edtf=0300~/0330~, end_date:raw=early C4
+E   n/2083871134   [ohm] Invalid date - *_date; fixable, please review   end_date=early C4 ? end_date=0329, end_date:edtf=0300~/0329~, end_date:raw=early C4
 E   n/2087583620   [ohm] Invalid date - *_date; fixable, please review   end_date=1997-04-15..2003-05 ? end_date=2003-05, end_date:edtf=1997-04-15/2003-05, end_date:raw=1997-04-15..2003-05
 E   n/2087583620   [ohm] Invalid date - *_date; fixable, please review   start_date=1991..1994-04-29 ? start_date=1991, start_date:edtf=1991/1994-04-29, start_date:raw=1991..1994-04-29
 E   n/2087583884   [ohm] Invalid date - *_date; fixable, please review   end_date=2018-04..2018-10 ? end_date=2018-10, end_date:edtf=2018-04/2018-10, end_date:raw=2018-04..2018-10
@@ -252,6 +252,26 @@ E   n/9100912   [ohm] Invalid date - *_date:edtf; fixable, please review   end_d
 E   n/9100913   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900. is not valid EDTF. Normalize to 1900/ and preserve original in start_date:edtf:raw?
 E   n/9100914   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900-05. is not valid EDTF. Normalize to 1900-05/ and preserve original in start_date:edtf:raw?
 E   n/9100915   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900-05-15. is not valid EDTF. Normalize to 1900-05-15/ and preserve original in start_date:edtf:raw?
+E   n/9100916   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=[[1900..1950]] is not valid EDTF. Normalize to 1900/1950 and preserve original in end_date:edtf:raw?
+E   n/9100917   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=[[1900-05..1950-08]] is not valid EDTF. Normalize to 1900-05/1950-08 and preserve original in start_date:edtf:raw?
+E   n/9100918   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=[[ 1900..1950 ]] is not valid EDTF. Normalize to 1900/1950 and preserve original in end_date:edtf:raw?
+E   n/9100920   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 1900 is not valid EDTF. Normalize to 1900-01/1900-04 and preserve original in end_date:edtf:raw?
+E   n/9100921   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid 1900 is not valid EDTF. Normalize to 1900-05/1900-08 and preserve original in end_date:edtf:raw?
+E   n/9100922   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=late 1900 is not valid EDTF. Normalize to 1900-09/1900-12 and preserve original in end_date:edtf:raw?
+E   n/9100923   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 1900-05 is not valid EDTF. Normalize to 1900-05-01/1900-05-10 and preserve original in end_date:edtf:raw?
+E   n/9100924   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=late 1900-04 is not valid EDTF. Normalize to 1900-04-21/1900-04-30 and preserve original in end_date:edtf:raw?
+E   n/9100925   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 1900-02 is not valid EDTF. Normalize to 1900-02-01/1900-02-09 and preserve original in end_date:edtf:raw?
+E   n/9100926   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=late 1900-02 is not valid EDTF. Normalize to 1900-02-20/1900-02-28 and preserve original in end_date:edtf:raw?
+E   n/9100927   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=late 1904-02 is not valid EDTF. Normalize to 1904-02-20/1904-02-29 and preserve original in end_date:edtf:raw?
+E   n/9100928   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=Early 1900 is not valid EDTF. Normalize to 1900-01/1900-04 and preserve original in end_date:edtf:raw?
+E   n/9100929   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=MID 1850s is not valid EDTF. Normalize to 1853~/1856~ and preserve original in end_date:edtf:raw?
+E   n/9100930   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=EARLY C19 is not valid EDTF. Normalize to 1800~/1829~ and preserve original in end_date:edtf:raw?
+E   n/9100931   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 100 BC is not valid EDTF. Normalize to -0099-01/-0099-04 and preserve original in end_date:edtf:raw?
+E   n/9100932   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=late 100 BC is not valid EDTF. Normalize to -0099-09/-0099-12 and preserve original in end_date:edtf:raw?
+E   n/9100933   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 100-05 BC is not valid EDTF. Normalize to -0099-05-01/-0099-05-10 and preserve original in end_date:edtf:raw?
+E   n/9100934   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 1 BC is not valid EDTF. Normalize to 0000-01/0000-04 and preserve original in end_date:edtf:raw?
+E   n/9100935   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid 197X is not valid EDTF. Normalize to 1973~/1976~ and preserve original in end_date:edtf:raw?
+E   n/9100936   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=MID 197x is not valid EDTF. Normalize to 1973~/1976~ and preserve original in end_date:edtf:raw?
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -305,7 +325,7 @@ E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; au
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   end_date=4C ? end_date=0399, end_date:edtf=03XX, end_date:raw=4C
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   start_date=1C ? start_date=0000, start_date:edtf=00XX, start_date:raw=1C
 E   w/198164162   [ohm] Invalid date - *_date; fixable, please review   end_date=260 ? end_date=0260, end_date:edtf=(absent), end_date:raw=260
-E   w/198164162   [ohm] Invalid date - *_date; fixable, please review   start_date=mid 2C ? start_date=0130, start_date:edtf=0130~/0170~, start_date:raw=mid 2C
+E   w/198164162   [ohm] Invalid date - *_date; fixable, please review   start_date=mid 2C ? start_date=0130, start_date:edtf=0130~/0169~, start_date:raw=mid 2C
 E   w/198164162   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/198168262   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
 E   w/198168263   [ohm] Invalid date - *_date; fixable, please review   start_date=500bc ? start_date=-0499, start_date:edtf=(absent), start_date:raw=500bc
@@ -346,7 +366,7 @@ E   w/198201497   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/198201498   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198201499   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198201626   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=end 12 cannot be normalized.
-E   w/198201626   [ohm] Invalid date - *_date; fixable, please review   end_date=mid C20 ? end_date=1970, end_date:edtf=1930~/1970~, end_date:raw=mid C20
+E   w/198201626   [ohm] Invalid date - *_date; fixable, please review   end_date=mid C20 ? end_date=1969, end_date:edtf=1930~/1969~, end_date:raw=mid C20
 E   w/198201790   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1902/2018 ? start_date=1902, start_date:edtf=1902/2018
 E   w/198201791   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1902/2018 ? start_date=1902, start_date:edtf=1902/2018
 E   w/198258772   [ohm] Invalid date - *_date; fixable, please review   start_date=1960-09-16..1963 ? start_date=1960-09-16, start_date:edtf=1960-09-16/1963, start_date:raw=1960-09-16..1963
@@ -366,7 +386,7 @@ E   w/198292703   [ohm] Invalid date - *_date contains a readable EDTF date; fix
 E   w/198293512   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1728? ? start_date=1728, start_date:edtf=1728?
 E   w/198296208   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1716? ? start_date=1716, start_date:edtf=1716?
 E   w/198300399   [ohm] Invalid date - *_date; fixable, please review   start_date=31/07/2015 ? start_date=2015-07-31, start_date:edtf=(absent), start_date:raw=31/07/2015
-E   w/198530068   [ohm] Invalid date - *_date; fixable, please review   start_date=early C18 ? start_date=1700, start_date:edtf=1700~/1730~, start_date:raw=early C18
+E   w/198530068   [ohm] Invalid date - *_date; fixable, please review   start_date=early C18 ? start_date=1700, start_date:edtf=1700~/1729~, start_date:raw=early C18
 E   w/198533013   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=(absent), end_date:raw=Jul 27, 2019
 E   w/198533016   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=(absent), end_date:raw=Jul 27, 2019
 E   w/198533018   [ohm] Invalid date - *_date; fixable, please review   end_date=Jul 27, 2019 ? end_date=2019-07-27, end_date:edtf=(absent), end_date:raw=Jul 27, 2019
@@ -567,7 +587,7 @@ E   w/200505677   [ohm] Invalid date - *_date cannot be read; unfixable, please 
 E   w/200505678   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=1901-04-07;2014-06-29 cannot be normalized.
 E   w/200604322   [ohm] Invalid date - *_date; fixable, please review   start_date=2005-2007 ? start_date=2005, start_date:edtf=2005/2007, start_date:raw=2005-2007
 E   w/200623105   [ohm] Invalid date - *_date; fixable, please review   start_date=c17 ? start_date=1600, start_date:edtf=16XX, start_date:raw=c17
-E   w/200625619   [ohm] Invalid date - *_date; fixable, please review   start_date=early C20 ? start_date=1900, start_date:edtf=1900~/1930~, start_date:raw=early C20
+E   w/200625619   [ohm] Invalid date - *_date; fixable, please review   start_date=early C20 ? start_date=1900, start_date:edtf=1900~/1929~, start_date:raw=early C20
 E   w/200657093   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
 E   w/200657094   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
 E   w/200657217   [ohm] Invalid date - *_date; fixable, please review   start_date=September 2005 ? start_date=2005-09, start_date:edtf=(absent), start_date:raw=September 2005
@@ -767,7 +787,7 @@ W   n/2083579139   [ohm] Missing tag - source on named feature; unfixable, pleas
 W   n/2083589874   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083701639   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083854278   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
-W   n/2083854278   [ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf   start_date:raw=early C12 implies start_date=1100, start_date:edtf=1100~/1130~.
+W   n/2083854278   [ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf   start_date:raw=early C12 implies start_date=1100, start_date:edtf=1100~/1129~.
 W   n/2083871134   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083871134   [ohm] Suspicious tag - historic; unfixable, please review   historic=city_gate: confirm the entity has actually passed into history before applying this tag.
 W   n/2087583620   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -952,6 +972,7 @@ W   n/9000064   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixabl
 W   n/9000065   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=1100-1031: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000066   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   end_date=1875-0229: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to end_date=YYYY-MM-DD or trim to end_date=YYYY if the day-precision was unintentional.
 W   n/9000067   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=0500-1031: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
+W   n/9000067   [ohm] Name warning - dates in name; autofix by stripping the date range   name=packed-date edge ? 0500-1031 valid MD year less than MMDD: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=packed-date edge ? valid MD year less than MMDD?
 W   n/9000068   [ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review   start_date=1500-732: looks like a packed YYYY-MDD date (3-digit suffix, leading zero on the month omitted) with the month-day hyphen missing, but the autofix is held back (year is below the 1000 threshold for packed-date autofixes, or the implied M-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000069   [ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review   start_date=0900-731: looks like a packed YYYY-MDD date (3-digit suffix, leading zero on the month omitted) with the month-day hyphen missing, but the autofix is held back (year is below the 1000 threshold for packed-date autofixes, or the implied M-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000071   [ohm] Suspicious feature - 1 feature that should be 3; autofix by collapsing to min/max bounds   start_date=1850;1900;1950 and end_date=1899;1949;2000: looks like 3 features merged into one. The autofix collapses to start_date=1850 and end_date=2000 (min/max), preserves the originals in start_date:raw=1850;1900;1950 and end_date:raw=1899;1949;2000, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
@@ -1003,6 +1024,11 @@ W   n/9100903   [ohm] Suspicious date - man-made object w/out start_date; unfixa
 W   n/9100906   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
 W   n/9100907   [ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review   end_date:edtf=1904-05..08: tail "08" could be a month sharing the year prefix (1904-05/1904-08) or a 2-digit year sharing the century prefix (1904-05/1908). Manual review needed: rewrite the value explicitly.
 W   n/9100908   [ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review   start_date=1904-05..08: tail "08" could be a month sharing the year prefix (1904-05/1904-08) or a 2-digit year sharing the century prefix (1904-05/1908). Manual review needed: rewrite the value explicitly.
+W   n/9100940   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1950-): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100941   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West 1942-04-1948-09: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100942   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1880-1922): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100943   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (c. 1900): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100944   [ohm] Name warning - parentheses in name; unfixable, please review   name=Wild West (Springfield 1950): dates in parentheses are discouraged in names; move the date to start_date / end_date instead.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1023,7 +1049,9 @@ W   r/2893867   [ohm] Chronology - member without dates; unfixable, please revie
 W   r/9000030   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9000032 (in chronology relation r/9000030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   r/9000030   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9000030 starts at 1500 but oldest member n/9000031 starts at 1800, leaving a 299 year(s) gap at the start of the chronology.
 W   r/9000045   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000045 (1800..1850) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
+W   r/9000045   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Boundary chronology member 1 1800-1850: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Boundary chronology member 1?
 W   r/9000046   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000046 (1850..1900) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
+W   r/9000046   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Boundary chronology member 2 1850-1900: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Boundary chronology member 2?
 W   r/9100020   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
 W   r/9100030   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100022 (in chronology relation r/9100030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   r/9100030   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.

@@ -433,6 +433,22 @@ After autofix: `end_date=1975` (no `:edtf`, no `:raw` — `during X` collapses t
 
 **4202 — qualifier on decade / century:** Decade and century shorthand accept a `~`, `?`, or `%` qualifier in either prefix or suffix position (`~1960s`, `670s~`, `~C3`, `C19~`). Plain (unqualified) inputs emit the EDTF unspecified-digit form (`196X`, `18XX`); qualified inputs emit an explicit slash range with the qualifier on each bound (`~1960s` → `1960~/1969~`, `C19~` → `1800~/1899~`). Qualifiers can't attach to X-form years in EDTF (`196X~` is rejected by the parser), so the explicit-bounds form is the only canonical option when a qualifier is present.
 
+**4202 — `early` / `mid` / `late` partial year or month (case-insensitive):** The modifier splits a year or a month into non-overlapping thirds, emitted as a slash interval at the next-finer precision. Year-thirds use 4-month buckets; month-thirds use 10-day buckets (with a 9/10/9-or-10 split on February so all three thirds fit within 28/29 days). All three buckets are mutually exclusive — `mid` does not share an endpoint with `early` or `late`.
+
+- `early YYYY` → `YYYY-01/YYYY-04`; `mid YYYY` → `YYYY-05/YYYY-08`; `late YYYY` → `YYYY-09/YYYY-12`.
+- `early YYYY-MM` → `YYYY-MM-01/YYYY-MM-10`; `mid YYYY-MM` → `YYYY-MM-11/YYYY-MM-20`; `late YYYY-MM` → `YYYY-MM-21/YYYY-MM-{30|31}` (`30` for Apr/Jun/Sep/Nov, `31` otherwise).
+- **February special case**: `early YYYY-02` → `YYYY-02-01/YYYY-02-09`; `mid YYYY-02` → `YYYY-02-10/YYYY-02-19`; `late YYYY-02` → `YYYY-02-20/YYYY-02-{28|29}`, with proleptic-Gregorian leap-year detection (`29` on years divisible by 4, except century years not divisible by 400; applied to the astronomical year for BCE input).
+
+**Case-insensitive on the modifier.** `Early 1900`, `MID 1850s`, `EARLY C19` all match. The existing `early/mid/late YYYY0s` (decade) and `early/mid/late CN` (century) rules also became case-insensitive in this pass.
+
+**BCE support.** Trailing `BC` / `BCE` is accepted on both the year and year-month forms. The year is converted to astronomical form via `astro = -(BC - 1)` so `1 BC` → `0000`, `100 BC` → `-0099`. The month/day buckets are the same regardless of sign — they describe the position within the named year/month, not direction in time. Examples: `early 100 BC` → `-0099-01/-0099-04`; `late 100 BC` → `-0099-09/-0099-12`; `early 100-05 BC` → `-0099-05-01/-0099-05-10`; `early 1 BC` → `0000-01/0000-04`.
+
+**X-form decade with modifier.** `early|mid|late YYY[Y]X` is rewritten in preprocess to the equivalent `YYY[Y]0s` form and then normalized by the existing `THIRD_DECADE` path: `mid 197X` → `mid 1970s` → `1973~/1976~`. The X is accepted in either case (`MID 197x` works the same as `mid 197X`).
+
+**Non-overlap fix for decade and century thirds.** The existing `THIRD_DECADE` and `THIRD_CENTURY` offset tables previously had a one-year overlap at each boundary (`early 1850s` ended at 1853, `mid 1850s` started at 1853; `mid C19` ended at 1870, `late C19` started at 1870). Updated to non-overlapping `3/4/3` (decade) and `30/40/30` (century) splits — `early 1850s` → `1850~/1852~`, `mid 1850s` → `1853~/1856~`, `late 1850s` → `1857~/1859~`; `early C19` → `1800~/1829~`, `mid C19` → `1830~/1869~`, `late C19` → `1870~/1899~`.
+
+**Known limitation:** BCE on the existing `THIRD_DECADE` / `THIRD_CENTURY` paths has a long-standing off-by-2 bug (the BC-to-astronomical conversion increments instead of decrements). Not exercised by any regression fixture. Tracked separately; not in scope of this rule. BCE on the new year and year-month forms (this rule) is correct.
+
 The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an optional leading qualifier (`~late C1`) which is consumed for free — the output is already an explicit range with `~` on each bound (`0070~/0099~`).
 
 **4202 — ordinal-century range:** Inputs of the form `<ordinal>[ - <ordinal>] Century [BC]`, where each side may carry an optional `early`/`mid`/`late` modifier and the trailing word `Century` applies to both halves. The two halves normalize as `CN` expressions and the bounds combine: `5th - mid 8th Century` → `0400/0770` (low of `04XX`, high of `0730~/0770~`).
@@ -444,6 +460,14 @@ The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an opt
 **4202 — per-bound BCE markers in dotdot range:** `182 BC..174 BC` correctly distributes each side's BCE marker rather than corrupting the start as `"182 BC BC"`. Output uses the existing N-1 convention for individual years: `-0181/-0173`.
 
 **4202 — junk-tail strip:** Open-ended slash forms with garbage tails — `1959/..~`, `1959/..`, `1959/.~`, `1959/~` — all collapse to `1959/`. Typically arise from incomplete edits.
+
+**4202 / 4228 — double-bracket dotdot range:** Values wrapped in `[[...]]` with a `..` separator inside are unwrapped so the standard RANGE branch can normalize the inner. Optional whitespace between the brackets and the inner is tolerated. Each side of the `..` is validated as a date by the recursive normalizer; if either side fails, the whole value falls through to the unfixable path. Examples:
+
+- `[[1900..1950]]` → `1900/1950`
+- `[[1900-05..1950-08]]` → `1900-05/1950-08`
+- `[[ 1900..1950 ]]` → `1900/1950`
+
+Surfaces as 4228 fixable on `*_date:edtf` keys (autofix to the slash form, original preserved in `:edtf:raw`); surfaces as 4202 fixable on base `*_date` keys (autofix writes the full triple).
 
 **4202 / 4228 — single-dot open-ended marker:** Leading or trailing `.` (single, not the standard `..`) before/after a clean ISO date is rewritten to `/` so the value becomes a valid EDTF open-ended interval:
 
@@ -803,14 +827,24 @@ table at the bottom).
 | Code | Title |
 |------|-------|
 | 4300 | `[ohm] Missing tag - name=*; unfixable, please review` |
+| 4301 | `[ohm] Name warning - dates in name; autofix by stripping the date range` |
 | 4301 | `[ohm] Name warning - parentheses in name; unfixable, please review` |
 | 4320 | `[ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate` |
 
 **4300 trigger:** Feature has language-variant name keys (e.g. `name:en`) but no plain `name` key. **Skipped on `type=route` relations** — routes are conventionally identified by `ref` (route number / designation), so name-family-only routes are legitimate.  
 **4300 description:** _Feature has name-family keys ({key}, etc.) but no plain 'name' key. Please add a canonical name._
 
-**4301 trigger:** A `name` key contains parentheses **and** the parenthesised content includes a year-like number (3-4 consecutive digits). The rule is narrowed to date-bearing parens — `(Springfield)` or `(north section)` no longer fire; `(1880-1922)` and `(c. 1900)` do.  
-**4301 description:** _{key}={value}: dates in parentheses are discouraged in names; move the date to start_date / end_date instead._
+**4301 fixable trigger (parens with clean date shape):** A `name`-family key contains a parens group whose trimmed contents match a strict date-shape regex — a single year, year-month, full ISO date, open-ended-left / right, two-bound year range, two-bound year-month range, or any of those with a `~` / `?` / `%` qualifier, `c.` / `ca.` / `circa`, or `before` / `after` prefix (case-insensitive). Autofix strips the parens span and collapses whitespace.
+
+**4301 fixable trigger (clean inline date range):** A `name`-family key contains a substring matching `\bYYYY-YYYY\b` or `\bYYYY-MM-YYYY-MM\b` (two-bound only — single-year inline like `Building 1950` is deliberately NOT caught, too easily a building/model number). Autofix strips the matched span and collapses whitespace.
+
+**4301 unfixable trigger (parens with year-like content but not a clean shape):** A `name`-family key contains a parens group whose contents have a year-like number (3-4 digits) but don't match the clean date shape — e.g. `(Springfield 1950)` mixes a place name with a year. No autofix; manual review needed.
+
+**4301 fixable description:** _{key}={value}: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave {key}={fixed}?_
+
+**4301 unfixable description:** _{key}={value}: dates in parentheses are discouraged in names; move the date to start_date / end_date instead._
+
+Detection order: parens-with-clean-shape, then inline-clean-range, then parens-with-year-like-but-not-clean. At most one warning fires per name value.
 
 **4300 example (fires):**  
 Trigger: way with `name:en=Empire State Building`, `name:fr=Empire State Building`, no plain `name`.  
@@ -819,12 +853,29 @@ Suggested manual fix: add `name=Empire State Building` (or whichever language is
 **4300 example (does not fire):**  
 A relation with `type=route`, `route=bus`, `name:en=Pacific Coast Highway`, `ref=1`. Routes can rely on `ref` for canonical identity.
 
-**4301 example (fires):**  
-Trigger: `name=Old Town Hall (1880-1922)`  
-Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_date`/`end_date` instead.
+**4301 example (fixable, parens):**  
+Before: `name=Wild West (1880-1922)`  
+After autofix: `name=Wild West`. Encode dates in `start_date` / `end_date` instead.
+
+**4301 example (fixable, parens with open-end):**  
+Before: `name=Wild West (1950-)`  
+After autofix: `name=Wild West`.
+
+**4301 example (fixable, parens with circa prefix):**  
+Before: `name=Wild West (c. 1900)`  
+After autofix: `name=Wild West`.
+
+**4301 example (fixable, inline two-bound range):**  
+Before: `name=Wild West 1942-04-1948-09`  
+After autofix: `name=Wild West`. Move the date range to `start_date=1942-04`, `end_date=1948-09`.
+
+**4301 example (unfixable, parens with mixed content):**  
+Trigger: `name=Wild West (Springfield 1950)`. The parens have a year-like token but also non-date text, so the autofix can't safely strip the whole parens; manual review required.
 
 **4301 example (does not fire):**  
 `name=City Park (Springfield)` — parenthesised disambiguator with no year-like content; left alone.
+
+`name=Building 1950` — single 4-digit number inline; could be a year but also a building / model / route number, so the rule does not fire.
 
 **4320 trigger:** Any name-family value contains the substring "historic" (case-insensitive). Matches `Historic`, `historical`, `Prehistoric`, `Ahistorical`, etc. — any historicizing frame, however constructed. The reasoning: "historic" framing reflects a present-day vantage; in OHM's time-aware data model, the entity at the time it existed wouldn't have called itself "historic". The Forum in Rome was just a Forum, not "historic", in 50 BCE.  
 **4320 description:** _{key}={value}: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed._

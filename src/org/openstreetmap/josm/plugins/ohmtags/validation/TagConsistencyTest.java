@@ -383,14 +383,8 @@ public class TagConsistencyTest extends Test {
             if (NAME_FAMILY_KEY.matcher(key).matches()) {
                 hasAnyNameFamily = true;
                 String value = p.get(key);
-                if (value != null && containsDateInParens(value)) {
-                    errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
-                        .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
-                                 marktr("{0}={1}: dates in parentheses are discouraged in names; "
-                                    + "move the date to start_date / end_date instead."),
-                                    key, value)
-                        .primitives(p)
-                        .build());
+                if (value != null) {
+                    checkNameForDateContent(p, key, value);
                 }
                 if (value != null && HISTORIC_IN_NAME.matcher(value).find()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_HISTORIC)
@@ -621,10 +615,44 @@ public class TagConsistencyTest extends Test {
         Pattern.compile("\\b\\d{3,4}\\b");
 
     /**
+     * Date or date-range shape strict enough to autofix-strip from a name.
+     * Matched (with {@link Matcher#matches}) against the trimmed inner of a
+     * parens group OR against a candidate inline span. Accepts a single
+     * year, year-month, full date, open-ended-left / right, two-bound year
+     * range, two-bound year-month range, and the common prefix forms
+     * (qualifier, {@code c.} / {@code ca.} / {@code circa}, {@code before},
+     * {@code after}). Case-insensitive on the prefix keywords.
+     */
+    private static final Pattern CLEAN_DATE_SHAPE = Pattern.compile(
+        "(?i)^\\s*"
+        + "(?:c\\.?\\s+|ca\\.?\\s+|circa\\s+|before\\s+|after\\s+|[~?%])?"
+        + "(?:"
+        +     "\\d{4}-\\d\\d-\\d{4}-\\d\\d|"   // YYYY-MM-YYYY-MM (longest first)
+        +     "\\d{4}-\\d{4}|"                  // YYYY-YYYY
+        +     "\\d{4}-\\d\\d-\\d\\d|"           // YYYY-MM-DD
+        +     "\\d{4}-\\d\\d|"                  // YYYY-MM
+        +     "\\d{4}-|"                        // YYYY-  (open-ended right)
+        +     "-\\d{4}|"                        // -YYYY  (open-ended left)
+        +     "\\d{4}"                          // YYYY
+        + ")\\s*$"
+    );
+
+    /**
+     * Inline (no parens) date-range patterns conservative enough to autofix-strip
+     * from a name: a two-bound range only. Single-year inline (e.g. "Building
+     * 1950") is deliberately NOT matched here — too easily a building number,
+     * model number, etc.
+     */
+    private static final Pattern INLINE_DATE_RANGE = Pattern.compile(
+        "\\b\\d{4}-\\d\\d-\\d{4}-\\d\\d\\b"   // YYYY-MM-YYYY-MM (longest first)
+        + "|\\b\\d{4}-\\d{4}\\b"               // YYYY-YYYY
+    );
+
+    /**
      * True if {@code value} contains a parenthesised group whose contents
-     * include a year-like number sequence. Used to narrow rule 4301 to
-     * names that actually encode dates in parens, not non-date
-     * disambiguation like {@code (Springfield)} or {@code (north section)}.
+     * include a year-like number sequence. Used as the unfixable-fallback
+     * trigger for rule 4301 — parens with year-like content but not a clean
+     * date shape.
      */
     private static boolean containsDateInParens(String value) {
         Matcher m = PARENS_GROUP.matcher(value);
@@ -634,6 +662,85 @@ public class TagConsistencyTest extends Test {
             }
         }
         return false;
+    }
+
+    /**
+     * Remove a span {@code [start, end)} from {@code value}, collapse any
+     * whitespace runs left at the join point to a single space, and trim.
+     * Used by the rule 4301 autofix for stripping a parens group (with its
+     * surrounding spaces) or an inline date range out of a name.
+     */
+    private static String removeSpanCollapseWhitespace(String value, int start, int end) {
+        String joined = value.substring(0, start) + value.substring(end);
+        return joined.replaceAll("\\s+", " ").trim();
+    }
+
+    /**
+     * Rule 4301: name-family value contains date-like content.
+     *
+     * <p>Three paths, checked in order; at most one warning fires per value:
+     *
+     * <ol>
+     *   <li><b>Clean date in parens</b> (e.g. {@code (1950-)}, {@code (1880-1922)},
+     *       {@code (c. 1900)}) — autofix-fixable, strip the parens span and
+     *       collapse whitespace.</li>
+     *   <li><b>Clean inline date range</b> ({@code YYYY-YYYY} or
+     *       {@code YYYY-MM-YYYY-MM}) — autofix-fixable, strip the matched
+     *       span and collapse whitespace. Single-year inline (e.g.
+     *       {@code Building 1950}) is deliberately not detected here.</li>
+     *   <li><b>Parens with year-like content but not a clean shape</b> (e.g.
+     *       {@code (Springfield 1950)}) — unfixable; the parens have date-ish
+     *       content but not a clean enough shape to autofix.</li>
+     * </ol>
+     */
+    private void checkNameForDateContent(OsmPrimitive p, String key, String value) {
+        // Path 1: clean date in parens — fixable, strip parens.
+        Matcher pm = PARENS_GROUP.matcher(value);
+        while (pm.find()) {
+            String inside = pm.group(1);
+            if (CLEAN_DATE_SHAPE.matcher(inside).matches()) {
+                String fixed = removeSpanCollapseWhitespace(value, pm.start(), pm.end());
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
+                    .message(tr("[ohm] Name warning - dates in name; autofix by stripping the date range"),
+                             marktr("{0}={1}: dates in names are discouraged; move to "
+                                + "start_date / end_date. Strip the date range to leave "
+                                + "{0}={2}?"),
+                                key, value, fixed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
+                return;
+            }
+        }
+
+        // Path 2: clean inline date range — fixable, strip inline.
+        Matcher im = INLINE_DATE_RANGE.matcher(value);
+        if (im.find()) {
+            String fixed = removeSpanCollapseWhitespace(value, im.start(), im.end());
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
+                .message(tr("[ohm] Name warning - dates in name; autofix by stripping the date range"),
+                         marktr("{0}={1}: dates in names are discouraged; move to "
+                            + "start_date / end_date. Strip the date range to leave "
+                            + "{0}={2}?"),
+                            key, value, fixed)
+                .primitives(p)
+                .fix(() -> fix)
+                .build());
+            return;
+        }
+
+        // Path 3: parens with year-like content but not a clean shape — unfixable.
+        if (containsDateInParens(value)) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
+                .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
+                         marktr("{0}={1}: dates in parentheses are discouraged in names; "
+                            + "move the date to start_date / end_date instead."),
+                            key, value)
+                .primitives(p)
+                .build());
+        }
     }
 
     /** True if the primitive is a {@link Relation} with {@code type=route}. */

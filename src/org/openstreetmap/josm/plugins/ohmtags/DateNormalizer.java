@@ -116,10 +116,25 @@ public final class DateNormalizer {
         Pattern.compile("^([~?%])?C(\\d+)([~?%])?( BCE?)?$");
 
     private static final Pattern THIRD_DECADE =
-        Pattern.compile("^([~?%])?(early|mid|late) (\\d+)0s( BCE?)?$");
+        Pattern.compile("^(?i)([~?%])?(early|mid|late) (\\d+)0s( BCE?)?$");
 
     private static final Pattern THIRD_CENTURY =
-        Pattern.compile("^([~?%])?(early|mid|late) C(\\d+)( BCE?)?$");
+        Pattern.compile("^(?i)([~?%])?(early|mid|late) C(\\d+)( BCE?)?$");
+
+    /**
+     * {@code early|mid|late YYYY} or {@code early|mid|late YYYY-MM}, with an
+     * optional trailing {@code BC} / {@code BCE} marker. Case-insensitive on
+     * the modifier. Captures (1) modifier, (2) 4-digit year, (3) optional
+     * 2-digit month, (4) optional BCE marker. The handler in
+     * {@link #toEdtf} splits the year into thirds (January-April /
+     * May-August / September-December) or splits the month into thirds (days
+     * 1-10 / 11-20 / 21-end for most months, with the special-case Feb 1-9 /
+     * 10-19 / 20-end so it fits the shorter month). For BCE input the year
+     * is converted to astronomical form (BC N → year {@code -(N-1)}, so
+     * "100 BC" is astronomical -0099).
+     */
+    private static final Pattern THIRD_PARTIAL_YEAR_OR_MONTH =
+        Pattern.compile("^(?i)(early|mid|late)\\s+(\\d{1,4})(?:-(\\d\\d))?( BCE?)?$");
 
     /**
      * Matches "before X", "by X", or "as of X" (and the colon-prefix
@@ -795,6 +810,16 @@ public final class DateNormalizer {
             s = br.group(1) + "-" + br.group(2);
         }
 
+        // 6c. Double-bracket-enclosed dotdot range: "[[date1..date2]]".
+        //     Strip the wrappers (and any whitespace immediately inside them)
+        //     so the standard RANGE branch in toEdtf can normalise the inner.
+        //     The RANGE branch recurses on each side and validates each as a
+        //     date; if either is unparseable the whole value falls through
+        //     to the unfixable path. Examples that this enables:
+        //       "[[1900..1950]]"        → "1900/1950"
+        //       "[[1900-05..1950-08]]"  → "1900-05/1950-08"
+        s = s.replaceAll("^\\[\\[\\s*(.+\\.\\..+?)\\s*\\]\\]$", "$1");
+
         // 7. Hyphen-as-range-separator between two 4-digit years (e.g.
         //    "1850-1900"). Safe to interpret as a range because no valid
         //    ISO year-month has a 4-digit month. We require both parts to
@@ -853,6 +878,15 @@ public final class DateNormalizer {
         if (s.contains("//")) {
             s = s.replaceAll("/+", "/");
         }
+
+        // 8b. X-form decade with early/mid/late modifier: "mid 197X",
+        //     "early 18X". Rewrite to the equivalent YY[Y]0s form so the
+        //     existing THIRD_DECADE pattern in toEdtf can match. The X is
+        //     accepted in either case; the modifier is also case-insensitive
+        //     (matches the rest of the early/mid/late family).
+        s = s.replaceAll(
+            "(?i)^([~?%]?)(early|mid|late)\\s+(\\d+)[Xx]( BCE?)?$",
+            "$1$2 $30s$4");
 
         // 9. Uppercase lowercase 'x' in X-forms (e.g. "185x" → "185X").
         //    We do this last because the other preprocessing steps produce
@@ -1224,7 +1258,7 @@ public final class DateNormalizer {
             // already carries `~` on each bound (THIRD_DECADE means
             // approximate by definition), so the input qualifier is consumed
             // for free and not re-emitted.
-            String third = m.group(2);
+            String third = m.group(2).toLowerCase();
             int decade = Integer.parseInt(m.group(3));
             boolean bc = m.group(4) != null;
             int[] offsets = offsetsForDecadeThird(third);
@@ -1244,7 +1278,7 @@ public final class DateNormalizer {
         if (m.matches()) {
             // See THIRD_DECADE above: optional leading qualifier in group(1)
             // is consumed; output already carries `~` on each bound.
-            String third = m.group(2);
+            String third = m.group(2).toLowerCase();
             int century = Integer.parseInt(m.group(3)) - 1;
             boolean bc = m.group(4) != null;
             int[] offsets = offsetsForCenturyThird(third);
@@ -1257,6 +1291,70 @@ public final class DateNormalizer {
                 return Optional.of("-" + padYear(startYear) + "~/-" + padYear(endYear) + "~");
             }
             return Optional.of(padYear(startYear) + "~/" + padYear(endYear) + "~");
+        }
+
+        // --- early/mid/late YYYY or early/mid/late YYYY-MM ----------------
+        //   Splits a year or a month into thirds. Year-thirds use a
+        //   four-month bucket on each side; month-thirds use a ten-day
+        //   bucket on most months and a nine-day bucket on February so all
+        //   three thirds fit within Feb's 28/29 days. Output is a clean
+        //   slash interval at day precision; no qualifier on the bounds
+        //   (the interval itself already expresses the approximation).
+        //
+        //   BCE: the year is converted via astronomical = -(BC - 1) so
+        //   "100 BC" becomes -0099, "1 BC" becomes 0000. Month/day buckets
+        //   are the same regardless of sign — they describe the position
+        //   within the named year/month, not direction in time.
+        m = THIRD_PARTIAL_YEAR_OR_MONTH.matcher(osm);
+        if (m.matches()) {
+            String thirdLc = m.group(1).toLowerCase();
+            int yearInt = Integer.parseInt(m.group(2));
+            String monthStr = m.group(3);  // null if year-only form
+            boolean bc = m.group(4) != null;
+            String yearStr;
+            int leapYearTest;
+            if (bc) {
+                int astro = 1 - yearInt;        // 1 BC → 0; 100 BC → -99
+                yearStr = astro < 0
+                    ? "-" + padYear(-astro)
+                    : padYear(astro);
+                leapYearTest = astro;            // proleptic Gregorian leap year on astronomical
+            } else {
+                yearStr = padYear(yearInt);
+                leapYearTest = yearInt;
+            }
+            if (monthStr == null) {
+                // Year-thirds.
+                String lo, hi;
+                switch (thirdLc) {
+                    case "early": lo = "01"; hi = "04"; break;
+                    case "mid":   lo = "05"; hi = "08"; break;
+                    default:      lo = "09"; hi = "12"; break;   // "late"
+                }
+                return Optional.of(yearStr + "-" + lo + "/" + yearStr + "-" + hi);
+            }
+            int monthInt = Integer.parseInt(monthStr);
+            if (monthInt >= 1 && monthInt <= 12) {
+                String loDay, hiDay;
+                if (monthInt == 2) {
+                    // Feb-special: 9-day / 10-day / variable late bucket.
+                    switch (thirdLc) {
+                        case "early": loDay = "01"; hiDay = "09"; break;
+                        case "mid":   loDay = "10"; hiDay = "19"; break;
+                        default:      loDay = "20"; hiDay = isLeapYear(leapYearTest) ? "29" : "28"; break;
+                    }
+                } else {
+                    // Standard 10-day / 10-day / variable late bucket.
+                    switch (thirdLc) {
+                        case "early": loDay = "01"; hiDay = "10"; break;
+                        case "mid":   loDay = "11"; hiDay = "20"; break;
+                        default:      loDay = "21"; hiDay = monthEndDay(monthInt); break;
+                    }
+                }
+                return Optional.of(yearStr + "-" + monthStr + "-" + loDay
+                                 + "/" + yearStr + "-" + monthStr + "-" + hiDay);
+            }
+            // Invalid month — fall through.
         }
 
         // --- Natural-language season: "fall of 1814", "spring 1920" -------
@@ -1767,19 +1865,37 @@ public final class DateNormalizer {
         return String.format("%02d", century);
     }
 
+    /** Gregorian leap-year test. */
+    private static boolean isLeapYear(int year) {
+        if (year % 4 != 0) return false;
+        if (year % 100 != 0) return true;
+        return year % 400 == 0;
+    }
+
+    /** Last day of month {@code 1..12}, excluding February (callers handle Feb). */
+    private static String monthEndDay(int month) {
+        // Jan, Mar, May, Jul, Aug, Oct, Dec = 31; Apr, Jun, Sep, Nov = 30.
+        switch (month) {
+            case 4: case 6: case 9: case 11: return "30";
+            default: return "31";
+        }
+    }
+
     private static int[] offsetsForDecadeThird(String third) {
+        // Non-overlapping splits of the 10-year decade (3 / 4 / 3 years).
         switch (third) {
-            case "early": return new int[]{0, 3};
-            case "mid":   return new int[]{3, 7};
+            case "early": return new int[]{0, 2};
+            case "mid":   return new int[]{3, 6};
             case "late":  return new int[]{7, 9};
             default: throw new IllegalArgumentException(third);
         }
     }
 
     private static int[] offsetsForCenturyThird(String third) {
+        // Non-overlapping splits of the 100-year century (30 / 40 / 30 years).
         switch (third) {
-            case "early": return new int[]{0, 30};
-            case "mid":   return new int[]{30, 70};
+            case "early": return new int[]{0, 29};
+            case "mid":   return new int[]{30, 69};
             case "late":  return new int[]{70, 99};
             default: throw new IllegalArgumentException(third);
         }

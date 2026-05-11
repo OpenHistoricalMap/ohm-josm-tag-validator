@@ -38944,4 +38944,128 @@
     <tag k='start_date:edtf' v='1900-05-15.' />
     <tag k='source' v='https://example.com/x15' />
   </node>
+  <node id='9100916' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test double-bracket dotdot range edtf (year)' />
+    <tag k='end_date:edtf' v='[[1900..1950]]' />
+    <tag k='source' v='https://example.com/x16' />
+  </node>
+  <node id='9100917' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test double-bracket dotdot range edtf (year-month)' />
+    <tag k='start_date:edtf' v='[[1900-05..1950-08]]' />
+    <tag k='source' v='https://example.com/x17' />
+  </node>
+  <node id='9100918' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test double-bracket dotdot range edtf (with whitespace)' />
+    <tag k='end_date:edtf' v='[[ 1900..1950 ]]' />
+    <tag k='source' v='https://example.com/x18' />
+  </node>
+  <node id='9100920' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test early YYYY edtf' />
+    <tag k='end_date:edtf' v='early 1900' />
+    <tag k='source' v='https://example.com/x20' />
+  </node>
+  <node id='9100921' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test mid YYYY edtf' />
+    <tag k='end_date:edtf' v='mid 1900' />
+    <tag k='source' v='https://example.com/x21' />
+  </node>
+  <node id='9100922' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test late YYYY edtf' />
+    <tag k='end_date:edtf' v='late 1900' />
+    <tag k='source' v='https://example.com/x22' />
+  </node>
+  <node id='9100923' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test early YYYY-MM edtf May (31 days)' />
+    <tag k='end_date:edtf' v='early 1900-05' />
+    <tag k='source' v='https://example.com/x23' />
+  </node>
+  <node id='9100924' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test late YYYY-MM edtf Apr (30 days)' />
+    <tag k='end_date:edtf' v='late 1900-04' />
+    <tag k='source' v='https://example.com/x24' />
+  </node>
+  <node id='9100925' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test early YYYY-02 edtf' />
+    <tag k='end_date:edtf' v='early 1900-02' />
+    <tag k='source' v='https://example.com/x25' />
+  </node>
+  <node id='9100926' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test late YYYY-02 edtf non-leap' />
+    <tag k='end_date:edtf' v='late 1900-02' />
+    <tag k='source' v='https://example.com/x26' />
+  </node>
+  <node id='9100927' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test late YYYY-02 edtf leap' />
+    <tag k='end_date:edtf' v='late 1904-02' />
+    <tag k='source' v='https://example.com/x27' />
+  </node>
+  <node id='9100928' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Early YYYY edtf (case)' />
+    <tag k='end_date:edtf' v='Early 1900' />
+    <tag k='source' v='https://example.com/x28' />
+  </node>
+  <node id='9100929' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test MID decade edtf (upper case)' />
+    <tag k='end_date:edtf' v='MID 1850s' />
+    <tag k='source' v='https://example.com/x29' />
+  </node>
+  <node id='9100930' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test EARLY century edtf (upper case)' />
+    <tag k='end_date:edtf' v='EARLY C19' />
+    <tag k='source' v='https://example.com/x30' />
+  </node>
+  <node id='9100931' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test early YYYY BC edtf' />
+    <tag k='end_date:edtf' v='early 100 BC' />
+    <tag k='source' v='https://example.com/x31' />
+  </node>
+  <node id='9100932' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test late YYYY BC edtf' />
+    <tag k='end_date:edtf' v='late 100 BC' />
+    <tag k='source' v='https://example.com/x32' />
+  </node>
+  <node id='9100933' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test early YYYY-MM BC edtf' />
+    <tag k='end_date:edtf' v='early 100-05 BC' />
+    <tag k='source' v='https://example.com/x33' />
+  </node>
+  <node id='9100934' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test early 1 BC edtf (year 0 astronomical)' />
+    <tag k='end_date:edtf' v='early 1 BC' />
+    <tag k='source' v='https://example.com/x34' />
+  </node>
+  <node id='9100935' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test mid X-form decade edtf' />
+    <tag k='end_date:edtf' v='mid 197X' />
+    <tag k='source' v='https://example.com/x35' />
+  </node>
+  <node id='9100936' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test MID lower-case X-form decade edtf' />
+    <tag k='end_date:edtf' v='MID 197x' />
+    <tag k='source' v='https://example.com/x36' />
+  </node>
+  <node id='9100940' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (1950-)' />
+    <tag k='source' v='https://example.com/x40' />
+  </node>
+  <node id='9100941' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West 1942-04-1948-09' />
+    <tag k='source' v='https://example.com/x41' />
+  </node>
+  <node id='9100942' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (1880-1922)' />
+    <tag k='source' v='https://example.com/x42' />
+  </node>
+  <node id='9100943' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (c. 1900)' />
+    <tag k='source' v='https://example.com/x43' />
+  </node>
+  <node id='9100944' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (Springfield 1950)' />
+    <tag k='source' v='https://example.com/x44' />
+  </node>
+  <node id='9100945' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (Springfield)' />
+    <tag k='source' v='https://example.com/x45' />
+  </node>
 </osm>

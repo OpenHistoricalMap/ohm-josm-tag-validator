@@ -1,3 +1,64 @@
+# v0.6.2 — Date-range fixes, name-date detection, release helper
+
+A multi-feature bundle: new `DateNormalizer` patterns, an existing-rule fix, a new rule, and a small release helper script.
+
+## New `DateNormalizer` rewrites (surface as 4202 fixable on base / 4228 fixable on `:edtf`)
+
+**Double-bracket dotdot range.** `[[date1..date2]]` is now stripped of its `[[…]]` wrappers (with optional whitespace between the brackets and the inner) so the standard RANGE branch can normalize the inner. `[[1900..1950]]` → `1900/1950`; `[[1900-05..1950-08]]` → `1900-05/1950-08`. The inner is validated by the recursive normalizer — if either side isn't parseable, the value falls through to unfixable.
+
+**`early` / `mid` / `late` on a year or year-month** (new — case-insensitive on the modifier, BCE supported). The modifier splits a year or month into non-overlapping thirds at the next-finer precision:
+
+- `early YYYY` → `YYYY-01/YYYY-04`; `mid YYYY` → `YYYY-05/YYYY-08`; `late YYYY` → `YYYY-09/YYYY-12`.
+- `early YYYY-MM` → `YYYY-MM-01/YYYY-MM-10`; `mid` → `…-11/…-20`; `late` → `…-21/…-{30|31}` (`30` for Apr/Jun/Sep/Nov).
+- February special case: `early YYYY-02` → `…-01/…-09`; `mid` → `…-10/…-19`; `late` → `…-20/…-{28|29}`, proleptic-Gregorian leap-year aware.
+- BCE: `early 100 BC` → `-0099-01/-0099-04`; `early 1 BC` → `0000-01/0000-04`.
+
+Case-insensitive on the modifier — `Early 1900`, `MID 1850s`, `EARLY C19` all match. Same case-insensitivity was extended to the existing `early/mid/late YYYY0s` (decade) and `early/mid/late CN` (century) rules in the same pass.
+
+**X-form decade with modifier.** `early|mid|late YYY[Y]X` is rewritten in preprocess to `early|mid|late YYY[Y]0s` so the existing `THIRD_DECADE` path handles it: `mid 197X` → `mid 1970s` → `1973~/1976~`. The X is accepted in either case.
+
+## Existing-rule fix: decade and century thirds no longer overlap
+
+The existing `early/mid/late YYYY0s` and `early/mid/late CN` rules previously had a one-year overlap at the boundaries:
+
+- `early 1850s` ended at 1853 and `mid 1850s` started at 1853 (shared 1853).
+- `mid C19` ended at 1870 and `late C19` started at 1870 (shared 1870).
+
+Updated to non-overlapping `3 / 4 / 3` (decade) and `30 / 40 / 30` (century) splits. `early 1850s` → `1850~/1852~`; `mid 1850s` → `1853~/1856~`; `late 1850s` → `1857~/1859~`. `early C19` → `1800~/1829~`; `mid C19` → `1830~/1869~`; `late C19` → `1870~/1899~`.
+
+Six pre-existing regression rows updated to reflect the corrected bounds.
+
+## New rule: dates in name (extends 4301 to fixable + adds inline detection)
+
+Rule **4301** is extended from a single unfixable warning to three paths:
+
+1. **Fixable** — parens group whose content matches a strict date shape (`YYYY`, `YYYY-`, `-YYYY`, `YYYY-MM`, `YYYY-MM-DD`, `YYYY-YYYY`, `YYYY-MM-YYYY-MM`, plus `c.` / `ca.` / `circa` / `before` / `after` / qualifier prefixes). Autofix strips the parens span and collapses whitespace. Title: `[ohm] Name warning - dates in name; autofix by stripping the date range`.
+2. **Fixable** — clean inline date range matching `\bYYYY-YYYY\b` or `\bYYYY-MM-YYYY-MM\b`. Single-year inline (e.g. `Building 1950`) deliberately NOT detected — too easily a building / model / route number.
+3. **Unfixable** — parens with year-like content but not a clean shape (e.g. `(Springfield 1950)`). Title: existing `[ohm] Name warning - parentheses in name; unfixable, please review`.
+
+Examples:
+
+- `name=Wild West (1950-)` → autofix to `Wild West`.
+- `name=Wild West 1942-04-1948-09` → autofix to `Wild West`.
+- `name=Wild West (Springfield 1950)` → fires unfixable.
+
+## Release helper
+
+New `release.sh` script in the repo root. No-arg invocation, picks the latest local `v*` tag, extracts the matching `# vX.Y.Z` section from `RELEASE_NOTES.md` as the body, shows the literal `gh release create` command it will run plus a preview of the notes, prompts `[y/N]`. Replaces the long inline `gh` command the previous release flows passed around.
+
+## Files touched
+
+- `DateNormalizer.java`: new `YYYY_MM_DOTDOT_MONTH_TAIL_AMBIGUOUS` guard (already in v0.6.0); new step 6c (double-bracket dotdot strip); new step 8a (single-dot rewrite, already in v0.6.1); new step 8b (X-form with modifier rewrite); new `THIRD_PARTIAL_YEAR_OR_MONTH` pattern and handler; new `isLeapYear` / `monthEndDay` helpers; `(?i)` added to `THIRD_DECADE` / `THIRD_CENTURY`; lowercase the captured modifier before switch; decade/century offset tables updated to non-overlapping.
+- `TagConsistencyTest.java`: new `CLEAN_DATE_SHAPE` / `INLINE_DATE_RANGE` patterns; new `checkNameForDateContent` helper and refactored name-handling call site; new `removeSpanCollapseWhitespace` helper.
+- `docs/MESSAGES.md`: new bullets under the 4202 preprocess pattern list (double-bracket, early/mid/late, X-form, overlap fix); 4301 section rewritten for three paths.
+- `test/test_data.osm`: 21 new fixture nodes (3 for double-bracket, 11 for early/mid/late + BCE + X-form, 6 for 4301 name-date + parens variants, 1 extra).
+- `test/expected.txt`: 21 new golden rows + 8 existing rows updated for the overlap fix.
+- `release.sh`: new file, executable.
+
+`MessageApiAuditor` count: 89 → 91 (two new fixable emission sites in `checkNameForDateContent`). Regression suite green.
+
+---
+
 # v0.6.1 — Single-dot open-ended marker rewrite
 
 `*_date:edtf` (and any top-level `*:edtf` key) values whose entire content is a single `.` immediately before or after a clean ISO date are now rewritten to the EDTF open-ended-interval form. Surfaces as **4228 fixable** (`[ohm] Invalid date - *_date:edtf; fixable, please review`), with the autofix writing the slash form and preserving the original in `:edtf:raw`:
