@@ -38914,4 +38914,34 @@
     <tag k='start_date' v='1904-05..08' />
     <tag k='source' v='https://example.com/x8' />
   </node>
+  <node id='9100910' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test leading dot edtf YYYY' />
+    <tag k='end_date:edtf' v='.1900' />
+    <tag k='source' v='https://example.com/x10' />
+  </node>
+  <node id='9100911' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test leading dot edtf YYYY-MM' />
+    <tag k='end_date:edtf' v='.1900-05' />
+    <tag k='source' v='https://example.com/x11' />
+  </node>
+  <node id='9100912' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test leading dot edtf YYYY-MM-DD' />
+    <tag k='end_date:edtf' v='.1900-05-15' />
+    <tag k='source' v='https://example.com/x12' />
+  </node>
+  <node id='9100913' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test trailing dot edtf YYYY' />
+    <tag k='start_date:edtf' v='1900.' />
+    <tag k='source' v='https://example.com/x13' />
+  </node>
+  <node id='9100914' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test trailing dot edtf YYYY-MM' />
+    <tag k='start_date:edtf' v='1900-05.' />
+    <tag k='source' v='https://example.com/x14' />
+  </node>
+  <node id='9100915' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test trailing dot edtf YYYY-MM-DD' />
+    <tag k='start_date:edtf' v='1900-05-15.' />
+    <tag k='source' v='https://example.com/x15' />
+  </node>
 </osm>

@@ -1,3 +1,31 @@
+# v0.6.1 — Single-dot open-ended marker rewrite
+
+`*_date:edtf` (and any top-level `*:edtf` key) values whose entire content is a single `.` immediately before or after a clean ISO date are now rewritten to the EDTF open-ended-interval form. Surfaces as **4228 fixable** (`[ohm] Invalid date - *_date:edtf; fixable, please review`), with the autofix writing the slash form and preserving the original in `:edtf:raw`:
+
+- `.YYYY[-MM[-DD]]` → `/YYYY[-MM[-DD]]` ("up to and including the date")
+- `YYYY[-MM[-DD]].` → `YYYY[-MM[-DD]]/` ("the date onward")
+
+Anchored on the whole value — only fires when the dot is the sole leading/trailing character. Internal `..` (the standard OHM range form, e.g. `1900..1950`) is untouched.
+
+## Also affects base `*_date` tags
+
+Because the rewrite lives in `DateNormalizer.preprocess`, base `*_date` values matching the same shape also normalize. This converts two real-data nodes (`n/2091813675`, `n/2091813676`) that had `start_date=.2012-03-29` from previously unfixable to fixable. The autofix writes the full triple:
+
+- `start_date=2012-03-29` (base derived from the open-ended bound)
+- `start_date:edtf=/2012-03-29`
+- `start_date:raw=.2012-03-29`
+
+## Files touched
+
+- `DateNormalizer.java` — new step 8a in `preprocess`.
+- `docs/MESSAGES.md` — new bullet under the 4202 preprocess pattern list.
+- `test/test_data.osm` — six probe nodes (`9100910`–`9100915`) covering both directions × Y/YM/YMD precisions.
+- `test/expected.txt` — six new golden rows + two updated rows for the real-data nodes.
+
+No new error codes; surfaces under existing 4202 (base) and 4228 (`:edtf`). MessageApiAuditor 89, regression suite green.
+
+---
+
 # v0.6.0 — New rule 4253: ambiguous `YYYY-MM..MM` tail
 
 New WARNING **4253** `[ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review`. Fires on `*_date` or any top-level `*:edtf` key matching `^(\d{4})-(0[1-9]|1[0-2])\.\.(0[1-9]|1[0-2])$` — a year-month with a `..` tail that's *also* a valid month value (01-12). Two readings, both legitimate in OHM tagging:

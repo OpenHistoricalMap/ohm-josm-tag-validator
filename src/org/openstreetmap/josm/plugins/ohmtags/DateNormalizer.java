@@ -828,6 +828,20 @@ public final class DateNormalizer {
         if (s.startsWith("..")) {
             s = "/" + s.substring(2);
         }
+
+        // 8a. Open-ended range indicators expressed with a single ".".
+        //    Same intent as step 8 but with a single dot — e.g. ".1900" and
+        //    "1900.". Rewritten to "/1900" / "1900/" so the rest of the
+        //    pipeline (and the EDTF parser downstream) sees a valid
+        //    open-ended interval.
+        //
+        //    Anchored on the whole value: only fires when the dot is the
+        //    sole leading/trailing character before/after a clean
+        //    YYYY[-MM[-DD]] body. Internal ".." (the standard OHM range
+        //    form, e.g. "1900..1950") is untouched.
+        s = s.replaceAll("^\\.(\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?)$", "/$1");
+        s = s.replaceAll("^(\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?)\\.$", "$1/");
+
         // Strip junk-tail after a trailing slash: "/..", "/..~", "/.~",
         // "/~". These typically arise from incomplete edits where the user
         // meant just an open-ended "/" (e.g. "1959/..~" → "1959/").

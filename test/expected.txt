@@ -64,8 +64,8 @@ E   n/2090587414   [ohm] Invalid date - *_date; fixable, please review   start_d
 E   n/2090587414   [ohm] Invalid date - 5+ digit number; unfixable, please review   end_date=1997-04..1997-06006 contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually.
 E   n/2090595544   [ohm] Invalid date - *_date; fixable, please review   end_date=2006-02..2006-05 ? end_date=2006-05, end_date:edtf=2006-02/2006-05, end_date:raw=2006-02..2006-05
 E   n/2090595545   [ohm] Invalid date - *_date; fixable, please review   end_date=2006-02..2006-05 ? end_date=2006-05, end_date:edtf=2006-02/2006-05, end_date:raw=2006-02..2006-05
-E   n/2091813675   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=.2012-03-29 cannot be normalized.
-E   n/2091813676   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=.2012-03-29 cannot be normalized.
+E   n/2091813675   [ohm] Invalid date - *_date; fixable, please review   start_date=.2012-03-29 ? start_date=2012-03-29, start_date:edtf=/2012-03-29, start_date:raw=.2012-03-29
+E   n/2091813676   [ohm] Invalid date - *_date; fixable, please review   start_date=.2012-03-29 ? start_date=2012-03-29, start_date:edtf=/2012-03-29, start_date:raw=.2012-03-29
 E   n/2092258596   [ohm] Invalid date - *_date; fixable, please review   start_date=1869.. 1913 ? start_date=1869, start_date:edtf=1869/1913, start_date:raw=1869.. 1913
 E   n/2093040334   [ohm] Invalid date - *_date; fixable, please review   end_date=1940.. 44 ? end_date=0044, end_date:edtf=1940/0044, end_date:raw=1940.. 44
 E   n/2093410718   [ohm] Invalid date - *_date; fixable, please review   start_date=1930_01 ? start_date=1930-01, start_date:edtf=(absent), start_date:raw=1930_01
@@ -246,6 +246,12 @@ E   n/9100903   [ohm] Invalid date - *_date:edtf; fixable, please review   start
 E   n/9100903   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/9100904   [ohm] Invalid date - *_date; fixable, please review   start_date=1944..48: abbreviated-tail range; rewrite as start_date=1944, start_date:edtf=1944/1948, start_date:raw=1944..48?
 E   n/9100905   [ohm] Invalid date - *_date; unfixable, please review   start_date=1985..05: abbreviated-tail range crosses a century boundary -- intended end year is ambiguous. Rewrite as start_date=YYYY/YYYY (e.g. full years).
+E   n/9100910   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=.1900 is not valid EDTF. Normalize to /1900 and preserve original in end_date:edtf:raw?
+E   n/9100911   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=.1900-05 is not valid EDTF. Normalize to /1900-05 and preserve original in end_date:edtf:raw?
+E   n/9100912   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=.1900-05-15 is not valid EDTF. Normalize to /1900-05-15 and preserve original in end_date:edtf:raw?
+E   n/9100913   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900. is not valid EDTF. Normalize to 1900/ and preserve original in start_date:edtf:raw?
+E   n/9100914   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900-05. is not valid EDTF. Normalize to 1900-05/ and preserve original in start_date:edtf:raw?
+E   n/9100915   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900-05-15. is not valid EDTF. Normalize to 1900-05-15/ and preserve original in start_date:edtf:raw?
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800

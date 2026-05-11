@@ -445,6 +445,13 @@ The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an opt
 
 **4202 — junk-tail strip:** Open-ended slash forms with garbage tails — `1959/..~`, `1959/..`, `1959/.~`, `1959/~` — all collapse to `1959/`. Typically arise from incomplete edits.
 
+**4202 / 4228 — single-dot open-ended marker:** Leading or trailing `.` (single, not the standard `..`) before/after a clean ISO date is rewritten to `/` so the value becomes a valid EDTF open-ended interval:
+
+- `.YYYY[-MM[-DD]]` → `/YYYY[-MM[-DD]]` (open-ended-left, "anything up to and including the date")
+- `YYYY[-MM[-DD]].` → `YYYY[-MM[-DD]]/` (open-ended-right, "the date onward")
+
+Anchored on the whole value — only fires when the dot is the sole leading/trailing character. Internal `..` (the standard OHM range form, e.g. `1900..1950`) is untouched. Most commonly seen on `*_date:edtf` (surfaces as 4228 fixable), but also normalizes the base side (surfaces as 4202 fixable, autofix derives the bound for the base tag).
+
 **4202 — Unicode dash normalization:** En-dash (`–`, U+2013), em-dash (`—`, U+2014), figure-dash (`‒`, U+2012) and minus-sign (`−`, U+2212) are normalized to ASCII hyphen-minus before pattern matching. Catches inputs pasted from word processors that auto-replace `-`. Example: `0544–0595` → `0544/0595`.
 
 **4202 — multi-dot collapse:** Runs of three or more dots collapse to two — three is always a typo, an ellipsis, or a copy-paste artifact (`[1907...]` → `[1907..]`, `1839...1859` → `1839..1859`, `...15/11/1997` → `..15/11/1997`).
