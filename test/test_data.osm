@@ -38888,4 +38888,20 @@
     <tag k='start_date:edtf' v='[1900-1950]' />
     <tag k='source' v='https://example.com/x3' />
   </node>
+  <node id='9100904' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Dotdot Tail Range' />
+    <tag k='start_date' v='1944..48' />
+    <tag k='source' v='https://example.com/x4' />
+  </node>
+  <node id='9100905' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Dotdot Tail Range Century Wrap' />
+    <tag k='start_date' v='1985..05' />
+    <tag k='source' v='https://example.com/x5' />
+  </node>
+  <node id='9100906' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test Long EDTF Range' />
+    <tag k='start_date' v='1800' />
+    <tag k='start_date:edtf' v='1800/1950' />
+    <tag k='source' v='https://example.com/x6' />
+  </node>
 </osm>

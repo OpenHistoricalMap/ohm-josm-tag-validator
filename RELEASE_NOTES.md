@@ -1,3 +1,43 @@
+# v0.5.8 — Message title pattern cleanup
+
+Every `tr("[ohm] …")` title is now aligned with the convention from `CLAUDE.md`: `[ohm] <Category> - <what>; <fixable|unfixable, please review | autofix by …>`. No rule-coverage changes, no semantic changes — purely a consistency pass. 10 distinct title fixes, ~310 fixture rows updated, MessageApiAuditor site count 87 → 88.
+
+## Title fixes
+
+- **4207** — stripped trailing `.` from the title (only title in the codebase with one).
+- **4211** — `; autofix *_date based on *_date:edtf` → `; autofix by deriving *_date from *_date:edtf`.
+- **4216** — `; autofix as removed` → `; autofix by deleting the key`.
+- **4223** — `; autofix to delete tags` → `; autofix by deleting tags`.
+- **4307** — `Source optimization - repair URL missing 'http[s]://'` → `Source optimization - URL missing 'http[s]://'; autofix by prepending https://` (the title now carries the convention's severity clause).
+- **4319** — `; unfixable, should only be used once an object actually is historic` → `; unfixable, please review` (the advice was already in the description).
+- **4326** — `; fixable, remove all node tags` → `; autofix by removing all node tags` (rule has an autofix; the title now uses the autofix-pattern form).
+- **4245** — split into two distinct titles. The fixable branch now emits `; autofix by collapsing to min/max bounds` and the unfixable branch (when `start_date:raw` or `end_date:raw` would be clobbered) emits `; unfixable, please review` with a description explaining the `:raw` conflict.
+
+## `and` → `&` standardization
+
+Nine titles standardized to use `&` instead of `and` to save horizontal space in the validator panel:
+
+- **4236** (×2) — `gap between parent start & oldest member`, `gap between latest member end & parent end`.
+- **4245** — `please review & consider splitting` (now folded into the new split titles above).
+- **4303** — `please review & add`.
+- **4308** / **4309** — `please review & add tag`.
+- **4312** — `source & source:url are different URLs`.
+- **4324** (unfixable) — `URL in source:name & source:url already set`.
+- **4325** (unfixable) — `text value in source:url & all sibling slots full`.
+
+`and/or` (rule 4205) is left alone as a fixed idiom.
+
+## Documentation
+
+- `docs/MESSAGES.md` synced to all the above title changes.
+- Fixed a long-standing misattribution: the "Invalid date — *_date:edtf invalid" section listed code **4226** with the title `; fixable, please review (backslash truncated — Rule D1)`, but in source that title is actually emitted by code **4228** (the unified fixable `:edtf` path). 4226 (`CODE_BACKSLASH_TRUNCATED`) emits only the `Suspicious date - start_date:edtf range extends after end_date; unfixable, please review` title, correctly listed in the "Backslash patterns" section. The misattributed row has been removed and the Rule D1 backslash-strip example moved under 4228 where it belongs.
+
+## Test fixtures
+
+`test/test_data.osm` adds three nodes (`9100904`, `9100905`, `9100906`) covering the `YYYY..YY` tail-range, century-wrap, and long EDTF range cases. These pair with `test/expected.txt` rows that have been in the repo since v0.5.5/0.5.6 — the data nodes themselves were missed in those earlier commits and ride along here.
+
+---
+
 # v0.5.7 — Rule 4211 also clears redundant `*_date:edtf` after move to base
 
 When rule **4211** (`[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf`) fires and the existing `*_date:edtf` value would equal the derived `*_date`, the autofix now also deletes `*_date:edtf` in the same `SequenceCommand`. Same redundancy-suppression philosophy already codified in `edtfWriteValue` and applied by `buildTripleFix` / `buildBaseAndEdtfFix` (v0.5.0): `:edtf` exists to carry info beyond the base — ranges, qualifiers, X-forms, open-ended bounds — and a `:edtf` that duplicates the base is noise.

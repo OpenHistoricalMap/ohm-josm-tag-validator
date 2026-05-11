@@ -341,7 +341,7 @@ public class TagConsistencyTest extends Test {
             Command fix = new SequenceCommand(tr("Remove redundant node tags"), cmds);
             errors.add(TestError.builder(this, Severity.WARNING,
                                          CODE_NODE_TAGS_REDUNDANT_WITH_PARENT_WAY)
-                .message(tr("[ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags"),
+                .message(tr("[ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags"),
                          marktr("All {0} tag(s) on this node are duplicated on parent way w/{1}; "
                             + "remove the node tags?"),
                             nodeTags.size(), Long.toString(w.getId()))
@@ -367,7 +367,7 @@ public class TagConsistencyTest extends Test {
         String historic = p.get("historic");
         if (historic != null) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_HISTORIC_SUSPICIOUS)
-                .message(tr("[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic"),
+                .message(tr("[ohm] Suspicious tag - historic; unfixable, please review"),
                          marktr("historic={0}: confirm the entity has actually passed into "
                             + "history before applying this tag."),
                             historic)
@@ -466,7 +466,7 @@ public class TagConsistencyTest extends Test {
         // signal — see issue #23.
         if (!hasAnySourceTag(p) && !isChronologyRelation(p)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_MISSING_SOURCE)
-                .message(tr("[ohm] Missing tag - source on named feature; unfixable, please review and add"),
+                .message(tr("[ohm] Missing tag - source on named feature; unfixable, please review & add"),
                          marktr("other mappers are lost without it."))
                 .primitives(p)
                 .build());
@@ -705,7 +705,7 @@ public class TagConsistencyTest extends Test {
         String fixed = "https://" + value;
         Command fix = new ChangePropertyCommand(Arrays.asList(p), key, fixed);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_MISSING_SCHEME)
-            .message(tr("[ohm] Source optimization - repair URL missing ''http[s]://''"),
+            .message(tr("[ohm] Source optimization - URL missing ''http[s]://''; autofix by prepending https://"),
                      marktr("{0}={1} looks like a URL missing the scheme. Prepend ''https://''?"),
                         key, value)
             .primitives(p)
@@ -968,7 +968,7 @@ public class TagConsistencyTest extends Test {
             && !source.equals(sourceUrl)
             && URL_WITH_SCHEME.matcher(source).matches()) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_CONFLICTS)
-                .message(tr("[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#"),
+                .message(tr("[ohm] Source mismatch - source & source:url are different URLs; autofix by moving source:url to source:#"),
                          marktr("{0}={1} and {2}={3} are different URLs. Move {2} to the next numbered source key?"),
                             companionKey, source, urlKey, sourceUrl)
                 .primitives(p)
@@ -1005,7 +1005,7 @@ public class TagConsistencyTest extends Test {
 
         if (target == null) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_URL_HAS_TEXT)
-                .message(tr("[ohm] Source mismatch - text value in source:url and all sibling slots full; unfixable, please review"),
+                .message(tr("[ohm] Source mismatch - text value in source:url & all sibling slots full; unfixable, please review"),
                          marktr("{0}={1} is not a URL but {2}, {3}, and {4} all hold values. "
                             + "Manual review needed."),
                             urlKey, value, companionKey, nameKey, noteKey)
@@ -1065,7 +1065,7 @@ public class TagConsistencyTest extends Test {
                     .build());
             } else if (!existingUrl.equals(value)) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_SOURCE_NAME_HAS_URL)
-                    .message(tr("[ohm] Source mismatch - URL in source:name and source:url already set; unfixable, please review"),
+                    .message(tr("[ohm] Source mismatch - URL in source:name & source:url already set; unfixable, please review"),
                              marktr("{0}={1} is a URL but {2}={3} already holds a different URL. "
                                 + "Manual review needed."),
                                 nameKey, value, urlKey, existingUrl)
@@ -1088,7 +1088,7 @@ public class TagConsistencyTest extends Test {
         if ("wikipedia".equalsIgnoreCase(value)) {
             if (!hasAnyKeyStartingWith(p, "wikipedia")) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
-                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag"),
+                    .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag"),
                              marktr("{0}={1}: please add an appropriate ''wikipedia'' tag."),
                                 key, value)
                     .primitives(p)
@@ -1099,7 +1099,7 @@ public class TagConsistencyTest extends Test {
         if ("wikidata".equalsIgnoreCase(value)) {
             if (p.get("wikidata") == null) {
                 errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIDATA)
-                    .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag"),
+                    .message(tr("[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag"),
                              marktr("{0}={1}: please add an appropriate ''wikidata'' tag."),
                                 key, value)
                     .primitives(p)

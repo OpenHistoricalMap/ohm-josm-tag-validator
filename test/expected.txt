@@ -244,6 +244,8 @@ E   n/9100901   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   n/9100902   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900/..~ is not valid EDTF. Normalize to 1900/ and preserve original in start_date:edtf:raw?
 E   n/9100903   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=[1900-1950] is not valid EDTF. Normalize to 1900/1950 and preserve original in start_date:edtf:raw?
 E   n/9100903   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9100904   [ohm] Invalid date - *_date; fixable, please review   start_date=1944..48: abbreviated-tail range; rewrite as start_date=1944, start_date:edtf=1944/1948, start_date:raw=1944..48?
+E   n/9100905   [ohm] Invalid date - *_date; unfixable, please review   start_date=1985..05: abbreviated-tail range crosses a century boundary -- intended end year is ambiguous. Rewrite as start_date=YYYY/YYYY (e.g. full years).
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -732,54 +734,54 @@ E   w/202089255   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/202089256   [ohm] Invalid date - *_date; fixable, please review   start_date=C19 ? start_date=1800, start_date:edtf=18XX, start_date:raw=C19
 E   w/9000044   [ohm] Chronology - boundary chronology has non-relation members; unfixable, please review   Boundary chronology relation r/9000040 has non-relation member(s): w/9000044. Boundary chronologies should only contain relation members (typically other type=boundary relations representing the entity at different periods in time).
 W   n/1684872037   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2083309640   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083309641   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083309798   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083309799   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083309800   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083360015   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083408038   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083408164   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083408176   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083410897   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083488581   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083551264   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083570152   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083570152   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=castle: confirm the entity has actually passed into history before applying this tag.
-W   n/2083576859   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083576860   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083579133   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2083309640   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083309641   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083309798   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083309799   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083309800   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083360015   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083408038   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083408164   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083408176   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083410897   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083488581   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083551264   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083570152   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083570152   [ohm] Suspicious tag - historic; unfixable, please review   historic=castle: confirm the entity has actually passed into history before applying this tag.
+W   n/2083576859   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083576860   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083579133   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083579133   [ohm] Suspicious date - start_date = end_date; unfixable, please review   did this feature exist for just 1 day/month/year?
-W   n/2083579134   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083579135   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083579136   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083579137   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083579138   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083579139   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083589874   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083701639   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083854278   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2083579134   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083579135   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083579136   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083579137   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083579138   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083579139   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083589874   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083701639   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083854278   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083854278   [ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf   start_date:raw=early C12 implies start_date=1100, start_date:edtf=1100~/1130~.
-W   n/2083871134   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2083871134   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=city_gate: confirm the entity has actually passed into history before applying this tag.
-W   n/2087583620   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2087583901   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2087583903   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2083871134   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083871134   [ohm] Suspicious tag - historic; unfixable, please review   historic=city_gate: confirm the entity has actually passed into history before applying this tag.
+W   n/2087583620   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2087583901   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2087583903   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2087583903   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2087583904   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2087600011   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2088126233   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2088126936   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2090178444   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2087583904   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2087600011   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2088126233   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2088126936   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2090178444   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2090218146   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2090218164   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2090218165   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2090218176   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2090218177   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2090339577   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2090339578   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2090339579   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2090522710   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2090339577   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2090339578   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2090339579   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2090522710   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2090575462   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1875-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1875.
 W   n/2090575475   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1875-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1875.
 W   n/2090575490   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1875-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1875.
@@ -823,105 +825,105 @@ W   n/2090576408   [ohm] Suspicious date - 01-01 start_date; unfixable, please r
 W   n/2090576423   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1875-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1875.
 W   n/2090576440   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1875-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1875.
 W   n/2090576469   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1875-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1875.
-W   n/2090578812   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2090586932   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2092258596   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2093040334   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2090578812   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2090586932   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2092258596   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2093040334   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2093040334   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1930-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1930.
-W   n/2093731448   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2093731448   [ohm] Suspicious feature - 1 feature that should be 3; please review and consider splitting   start_date=1943;1946;1954 and end_date=1945;1953;1977: looks like 3 features merged into one. The autofix collapses to start_date=1943 and end_date=1977 (min/max), preserves the originals in start_date:raw=1943;1946;1954 and end_date:raw=1945;1953;1977, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   n/2093731448   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2093731448   [ohm] Suspicious feature - 1 feature that should be 3; autofix by collapsing to min/max bounds   start_date=1943;1946;1954 and end_date=1945;1953;1977: looks like 3 features merged into one. The autofix collapses to start_date=1943 and end_date=1977 (min/max), preserves the originals in start_date:raw=1943;1946;1954 and end_date:raw=1945;1953;1977, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
 W   n/2094044382   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2094484687   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2094588076   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2094607754   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2094607755   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2094607756   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2094801175   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2094801176   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2095255934   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2096758288   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2097190429   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2097190430   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2097190431   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2097190432   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2097190433   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2097190434   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2094484687   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2094588076   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2094607754   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2094607755   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2094607756   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2094801175   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2094801176   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2095255934   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2096758288   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2097190429   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2097190430   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2097190431   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2097190432   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2097190433   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2097190434   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2097386636   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1881-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1881.
 W   n/2097432370   [ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys   source=http://library.navoiy-uni.uz/files/kennedy%20j.%20the%20later%20kushans.pdf;https://en.wikipedia.org/wiki/History_of_Sialkot: enumerate into source, source:1, source:2, ...?
 W   n/2097432371   [ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys   source=http://library.navoiy-uni.uz/files/kennedy%20j.%20the%20later%20kushans.pdf;https://en.wikipedia.org/wiki/History_of_Sialkot: enumerate into source, source:1, source:2, ...?
-W   n/2099636151   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2100388429   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2101980511   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2101980511   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=castle: confirm the entity has actually passed into history before applying this tag.
-W   n/2110642148   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2099636151   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2100388429   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2101980511   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2101980511   [ohm] Suspicious tag - historic; unfixable, please review   historic=castle: confirm the entity has actually passed into history before applying this tag.
+W   n/2110642148   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2119506949   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2119506950   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2119506950   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2119506950   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2119507144   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2119507144   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2119507144   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2119507174   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2119507174   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2119507174   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2119507179   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2119507179   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2119507179   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2119509578   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2119509578   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2119509578   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2121572823   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2121572824   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2123029934   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2123283531   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2125545168   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2125545168   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=memorial: confirm the entity has actually passed into history before applying this tag.
-W   n/2125545577   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2125545577   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=memorial: confirm the entity has actually passed into history before applying this tag.
+W   n/2123029934   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2123283531   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2125545168   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2125545168   [ohm] Suspicious tag - historic; unfixable, please review   historic=memorial: confirm the entity has actually passed into history before applying this tag.
+W   n/2125545577   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2125545577   [ohm] Suspicious tag - historic; unfixable, please review   historic=memorial: confirm the entity has actually passed into history before applying this tag.
 W   n/2126000459   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2127746692   [ohm] Suspicious date - start_date = end_date; unfixable, please review   did this feature exist for just 1 day/month/year?
-W   n/2131270356   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131270357   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131448895   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726255   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726255   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726256   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726256   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726257   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726257   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726258   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726258   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726259   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726259   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726260   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726260   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726261   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726261   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726262   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726262   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726263   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726263   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131726264   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131726264   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   n/2131977300   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2131977300   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=crash_site: confirm the entity has actually passed into history before applying this tag.
-W   n/2136796622   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2131270356   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131270357   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131448895   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726255   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726255   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726256   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726256   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726257   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726257   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726258   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726258   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726259   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726259   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726260   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726260   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726261   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726261   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726262   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726262   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726263   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726263   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131726264   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131726264   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   n/2131977300   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2131977300   [ohm] Suspicious tag - historic; unfixable, please review   historic=crash_site: confirm the entity has actually passed into history before applying this tag.
+W   n/2136796622   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2137045661   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/2137237650   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2137285260   [ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
-W   n/2137285261   [ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
-W   n/2137285262   [ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
-W   n/2137285263   [ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
+W   n/2137237650   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2137285260   [ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
+W   n/2137285261   [ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
+W   n/2137285262   [ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
+W   n/2137285263   [ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags   All 1 tag(s) on this node are duplicated on parent way w/201218451; remove the node tags?
 W   n/2137381872   [ohm] Ambiguous date - trailing hyphen in date; unfixable, please review   start_date=1910-: could be a typo for 1910, an incomplete input, or an open-ended range 1910/. Manual review needed.
-W   n/2137381872   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2137381872   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2139812225   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2139812226   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/2141594252   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1830~ but start_date:edtf=1830/1832 implies start_date=1830. Manual review needed.
 W   n/2141928474   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=1872/07-15 but end_date:edtf=1872-07-15 implies end_date=1872-07-15. Manual review needed.
-W   n/2141928474   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/2147361393   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   n/616795433   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/2141928474   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2147361393   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/616795433   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/616795433   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/9000002   [ohm] Source mismatch - text value in source:url; autofix by moving to source / source:name / source:note   source:url=Sketch {hand-drawn}, archive folder 12 is not a URL. Move to source?
-W   n/9000003   [ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#   source=https://example.org/tile/{z}/{x}/{y} and source:url=https://example.com/raster/{z}-{x}-{y}.png are different URLs. Move source:url to the next numbered source key?
+W   n/9000003   [ohm] Source mismatch - source & source:url are different URLs; autofix by moving source:url to source:#   source=https://example.org/tile/{z}/{x}/{y} and source:url=https://example.com/raster/{z}-{x}-{y}.png are different URLs. Move source:url to the next numbered source key?
 W   n/9000004   [ohm] Source mismatch - URL value in source:name; autofix by moving to source:url   source:name=https://example.org/tile/{z}/{x}/{y}.png is a URL. Move to source:url?
-W   n/9000005   [ohm] Source mismatch - URL in source:name and source:url already set; unfixable, please review   source:1:name=https://example.org/{z}/{x}/{y}-shifted is a URL but source:1:url=https://example.org/different already holds a different URL. Manual review needed.
-W   n/9000005   [ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#   source:1=https://example.org/secondary and source:1:url=https://example.org/different are different URLs. Move source:1:url to the next numbered source key?
+W   n/9000005   [ohm] Source mismatch - URL in source:name & source:url already set; unfixable, please review   source:1:name=https://example.org/{z}/{x}/{y}-shifted is a URL but source:1:url=https://example.org/different already holds a different URL. Manual review needed.
+W   n/9000005   [ohm] Source mismatch - source & source:url are different URLs; autofix by moving source:url to source:#   source:1=https://example.org/secondary and source:1:url=https://example.org/different are different URLs. Move source:1:url to the next numbered source key?
 W   n/9000006   [ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys   source=https://example.org/a;https://example.org/b;https://example.org/c: enumerate into source, source:1, source:2, ...?
 W   n/9000007   [ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review   source=Archive folder 12; Field notes 1923: semicolons in text are ambiguous. If these are separate sources, split manually into source, source:1, source:2, ?; if the semicolons are punctuation in a single citation, leave alone.
 W   n/9000008   [ohm] Invalid date - Julian date but *_date:note already populated; unfixable, please review   start_date=j:1582-10-15: would convert to 1582-10-25 (Gregorian) and add a calendar-conversion :note, but start_date:note=Hand-authored: archival entry says ten days adjustment per Gregorian rollover already holds a value. Manual review needed: keep, merge, or replace the existing note before re-running the validator.
@@ -932,11 +934,11 @@ W   n/9000017   [ohm] Ambiguous date - cYY (year or century unclear); unfixable,
 W   n/9000024   [ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review   start_date=1800s: would normalize to start_date=1800, start_date:edtf=180X, start_date:raw=1800s, but start_date:raw=around 1800 (hand-authored) already holds a different value. Manual review needed: delete or merge the existing :raw before re-running the validator.
 W   n/9000024   [ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review   start_date=1800s: would normalize to start_date=1800, start_date:edtf=18XX, start_date:raw=1800s, but start_date:raw=around 1800 (hand-authored) already holds a different value. Manual review needed: delete or merge the existing :raw before re-running the validator.
 W   n/9000025   [ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review   end_date=present: would normalize to end_date=(absent), end_date:edtf=(absent), end_date:raw=present, but end_date:raw=2099-12-31 (machine-generated, do not lose) already holds a different value. Manual review needed: delete or merge the existing :raw before re-running the validator.
-W   n/9000031   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9000030 starts at 1500 but oldest member n/9000031 starts at 1800, leaving a 299 year(s) gap at the start of the chronology.
-W   n/9000032   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9000032 (in chronology relation r/9000030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   n/9000053   [ohm] Source optimization - repair URL missing 'http[s]://'   source:1:url=example.org/secondary looks like a URL missing the scheme. Prepend 'https://'?
-W   n/9000054   [ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#   source:2=https://example.org/two-a and source:2:url=https://example.org/two-b are different URLs. Move source:2:url to the next numbered source key?
-W   n/9000055   [ohm] Source mismatch - text value in source:url and all sibling slots full; unfixable, please review   source:url=Free-form citation, no URL is not a URL but source, source:name, and source:note all hold values. Manual review needed.
+W   n/9000031   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9000030 starts at 1500 but oldest member n/9000031 starts at 1800, leaving a 299 year(s) gap at the start of the chronology.
+W   n/9000032   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9000032 (in chronology relation r/9000030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   n/9000053   [ohm] Source optimization - URL missing 'http[s]://'; autofix by prepending https://   source:1:url=example.org/secondary looks like a URL missing the scheme. Prepend 'https://'?
+W   n/9000054   [ohm] Source mismatch - source & source:url are different URLs; autofix by moving source:url to source:#   source:2=https://example.org/two-a and source:2:url=https://example.org/two-b are different URLs. Move source:2:url to the next numbered source key?
+W   n/9000055   [ohm] Source mismatch - text value in source:url & all sibling slots full; unfixable, please review   source:url=Free-form citation, no URL is not a URL but source, source:name, and source:note all hold values. Manual review needed.
 W   n/9000056   [ohm] Source mismatch - source contains 1 URL & 1 text string but source:url already holds a different value; unfixable, please review   source=https://example.org/in-source ; Field notes 1923: cannot split into source=Field notes 1923 and source:url=https://example.org/in-source because source:url already holds https://example.org/different. Manual review needed.
 W   n/9000057   [ohm] Source mismatch - text value in source:url; autofix by moving to source / source:name / source:note   source:url=Hand-drawn sketch in archive box 12 is not a URL. Move to source:name?
 W   n/9000058   [ohm] Source mismatch - text value in source:url; autofix by moving to source / source:name / source:note   source:url=Note about provenance is not a URL. Move to source:note?
@@ -946,205 +948,211 @@ W   n/9000066   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixabl
 W   n/9000067   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=0500-1031: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000068   [ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review   start_date=1500-732: looks like a packed YYYY-MDD date (3-digit suffix, leading zero on the month omitted) with the month-day hyphen missing, but the autofix is held back (year is below the 1000 threshold for packed-date autofixes, or the implied M-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000069   [ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review   start_date=0900-731: looks like a packed YYYY-MDD date (3-digit suffix, leading zero on the month omitted) with the month-day hyphen missing, but the autofix is held back (year is below the 1000 threshold for packed-date autofixes, or the implied M-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
-W   n/9000071   [ohm] Suspicious feature - 1 feature that should be 3; please review and consider splitting   start_date=1850;1900;1950 and end_date=1899;1949;2000: looks like 3 features merged into one. The autofix collapses to start_date=1850 and end_date=2000 (min/max), preserves the originals in start_date:raw=1850;1900;1950 and end_date:raw=1899;1949;2000, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   n/9000072   [ohm] Suspicious feature - 1 feature that should be 2; please review and consider splitting   start_date=1850-03;1900-06-15 and end_date=1899-12-31;1949: looks like 2 features merged into one. The autofix collapses to start_date=1850-03 and end_date=1949 (min/max), preserves the originals in start_date:raw=1850-03;1900-06-15 and end_date:raw=1899-12-31;1949, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   n/9000073   [ohm] Suspicious feature - 1 feature that should be 2; please review and consider splitting   start_date=1850;1900 and end_date=1899;1949: looks like 2 features merged into one. The autofix collapses to start_date=1850 and end_date=1949 (min/max), preserves the originals in start_date:raw=1850;1900 and end_date:raw=1899;1949, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   n/9100011   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
-W   n/9100021   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   n/9000071   [ohm] Suspicious feature - 1 feature that should be 3; autofix by collapsing to min/max bounds   start_date=1850;1900;1950 and end_date=1899;1949;2000: looks like 3 features merged into one. The autofix collapses to start_date=1850 and end_date=2000 (min/max), preserves the originals in start_date:raw=1850;1900;1950 and end_date:raw=1899;1949;2000, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   n/9000072   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   start_date=1850-03;1900-06-15 and end_date=1899-12-31;1949: looks like 2 features merged into one. The autofix collapses to start_date=1850-03 and end_date=1949 (min/max), preserves the originals in start_date:raw=1850-03;1900-06-15 and end_date:raw=1899-12-31;1949, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   n/9000073   [ohm] Suspicious feature - 1 feature that should be 2; unfixable, please review   start_date=1850;1900 and end_date=1899;1949: looks like 2 features merged into one. Would collapse to start_date=1850 and end_date=1949 (min/max), but start_date:raw or end_date:raw already holds a different value. Manual review needed: clear or merge the conflicting :raw before re-running.
+W   n/9100011   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
+W   n/9100021   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
 W   n/9100021   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100021 (1800..1850) and n/9100022 (1840..1900) have overlapping date ranges in chronology relation r/9100030.
-W   n/9100022   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100022 (in chronology relation r/9100030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   n/9100022   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100022 (in chronology relation r/9100030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   n/9100022   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100021 (1800..1850) and n/9100022 (1840..1900) have overlapping date ranges in chronology relation r/9100030.
 W   n/9100031   [ohm] Chronology - gap between member date ranges; unfixable, please review   Member n/9100031 (ends 1850) and member n/9100032 (starts 1855) leave a 4 year(s) gap in chronology relation r/9100040.
-W   n/9100031   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100040 starts at 1700 but oldest member n/9100031 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   n/9100032   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100032 (in chronology relation r/9100040) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   n/9100031   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100040 starts at 1700 but oldest member n/9100031 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   n/9100032   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100032 (in chronology relation r/9100040) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   n/9100032   [ohm] Chronology - gap between member date ranges; unfixable, please review   Member n/9100031 (ends 1850) and member n/9100032 (starts 1855) leave a 4 year(s) gap in chronology relation r/9100040.
-W   n/9100041   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100050 starts at 1700 but oldest member n/9100041 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   n/9100042   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100042 (in chronology relation r/9100050) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   n/9100061   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100061 (in chronology relation r/9100070) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   n/9100061   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100070 starts at 1700 but oldest member n/9100061 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   n/9100041   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100050 starts at 1700 but oldest member n/9100041 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   n/9100042   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100042 (in chronology relation r/9100050) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   n/9100061   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100061 (in chronology relation r/9100070) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   n/9100061   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100070 starts at 1700 but oldest member n/9100061 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
 W   n/9100061   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100061 (1800..1900) and n/9100062 (1850..1850) have overlapping date ranges in chronology relation r/9100070.
 W   n/9100062   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100061 (1800..1900) and n/9100062 (1850..1850) have overlapping date ranges in chronology relation r/9100070.
 W   n/9100062   [ohm] Suspicious date - start_date = end_date; unfixable, please review   did this feature exist for just 1 day/month/year?
 W   n/9100091   [ohm] Chronology - member missing required date tag; unfixable, please review   Member n/9100091 of chronology relation r/9100100 is missing end_date and is not the youngest member (only the youngest may omit end_date).
-W   n/9100092   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100100 starts at 1900 but oldest member n/9100092 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   n/9100092   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   n/9100092   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100100 starts at 1900 but oldest member n/9100092 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
+W   n/9100092   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
 W   n/9100101   [ohm] Chronology - member missing required date tag; unfixable, please review   Member n/9100101 of chronology relation r/9100110 is missing start_date.
-W   n/9100102   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100110 starts at 1900 but oldest member n/9100102 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   n/9100102   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   n/9100102   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100110 starts at 1900 but oldest member n/9100102 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
+W   n/9100102   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
 W   n/9100301   [ohm] Chronology - member without dates; unfixable, please review   Member n/9100301 of chronology relation r/9100310 has neither start_date nor end_date.
-W   n/9100302   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
+W   n/9100302   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
 W   n/9100504   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/9100504   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=castle: confirm the entity has actually passed into history before applying this tag.
+W   n/9100504   [ohm] Suspicious tag - historic; unfixable, please review   historic=castle: confirm the entity has actually passed into history before applying this tag.
 W   n/9100601   [ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate   name=Historic House: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed.
 W   n/9100602   [ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate   name=Historical Society Building: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed.
 W   n/9100603   [ohm] Name warning - "historic" in name; unfixable, please review if this is date appropriate   name=Prehistoric Cave: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed.
 W   n/9100801   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date:edtf=-07XX: negative year with X digit(s). Bounds are -0799 (earlier) to -0700 (later). Replace with -0799/-0700?
-W   n/9100801   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
+W   n/9100801   [ohm] Suspicious tag - historic; unfixable, please review   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
 W   n/9100802   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-123X: negative year with X digit(s). Bounds are -1239 (earlier) to -1230 (later). Replace with -1239/-1230?
-W   n/9100802   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
+W   n/9100802   [ohm] Suspicious tag - historic; unfixable, please review   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
 W   n/9100803   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   birth_date:edtf=-05XX: negative year with X digit(s). Bounds are -0599 (earlier) to -0500 (later). Replace with -0599/-0500?
 W   n/9100811   [ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?   start_date:edtf=?/1900: ? is not a valid EDTF interval endpoint. Strip ? to get open-ended form /1900
 W   n/9100811   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/9100811   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=bridge: confirm the entity has actually passed into history before applying this tag.
+W   n/9100811   [ohm] Suspicious tag - historic; unfixable, please review   historic=bridge: confirm the entity has actually passed into history before applying this tag.
 W   n/9100812   [ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?   end_date:edtf=1850/?: ? is not a valid EDTF interval endpoint. Strip ? to get open-ended form 1850/
-W   n/9100812   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=yes: confirm the entity has actually passed into history before applying this tag.
+W   n/9100812   [ohm] Suspicious tag - historic; unfixable, please review   historic=yes: confirm the entity has actually passed into history before applying this tag.
 W   n/9100901   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   n/9100901   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
+W   n/9100901   [ohm] Suspicious tag - historic; unfixable, please review   historic=archaeological_site: confirm the entity has actually passed into history before applying this tag.
 W   n/9100902   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/9100903   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2696446   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2736516   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2742420   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2747751   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2796293   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   n/9100906   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
+W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2696446   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2736516   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2742420   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2747751   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2796293   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2796293   [ohm] Suspicious member - role=label; unfixable, please review   OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ? Download parent relations / ways). role=label members on this relation: n/2110642148.
-W   r/2849295   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2849516   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2890388   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   r/2890388   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=bunker: confirm the entity has actually passed into history before applying this tag.
+W   r/2849295   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2849516   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2890388   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/2890388   [ohm] Suspicious tag - historic; unfixable, please review   historic=bunker: confirm the entity has actually passed into history before applying this tag.
 W   r/2893864   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893864 of chronology relation r/2893869 has neither start_date nor end_date.
 W   r/2893865   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893865 of chronology relation r/2893869 has neither start_date nor end_date.
 W   r/2893866   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893866 of chronology relation r/2893868 has neither start_date nor end_date.
 W   r/2893867   [ohm] Chronology - member without dates; unfixable, please review   Member r/2893867 of chronology relation r/2893868 has neither start_date nor end_date.
-W   r/9000030   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9000032 (in chronology relation r/9000030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   r/9000030   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9000030 starts at 1500 but oldest member n/9000031 starts at 1800, leaving a 299 year(s) gap at the start of the chronology.
+W   r/9000030   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9000032 (in chronology relation r/9000030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   r/9000030   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9000030 starts at 1500 but oldest member n/9000031 starts at 1800, leaving a 299 year(s) gap at the start of the chronology.
 W   r/9000045   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000045 (1800..1850) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
 W   r/9000046   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000046 (1850..1900) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
-W   r/9100020   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
-W   r/9100030   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100022 (in chronology relation r/9100030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   r/9100030   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100040   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100032 (in chronology relation r/9100040) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   r/9100040   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100040 starts at 1700 but oldest member n/9100031 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100050   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100042 (in chronology relation r/9100050) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   r/9100050   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100050 starts at 1700 but oldest member n/9100041 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100070   [ohm] Chronology - gap between latest member end and parent end; unfixable, please review   Latest member n/9100061 (in chronology relation r/9100070) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
-W   r/9100070   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100070 starts at 1700 but oldest member n/9100061 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100090   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
-W   r/9100100   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100100 starts at 1900 but oldest member n/9100092 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100100   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
-W   r/9100110   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100110 starts at 1900 but oldest member n/9100102 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100110   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   r/9100020   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
+W   r/9100030   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100022 (in chronology relation r/9100030) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   r/9100030   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   r/9100040   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100032 (in chronology relation r/9100040) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   r/9100040   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100040 starts at 1700 but oldest member n/9100031 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   r/9100050   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100042 (in chronology relation r/9100050) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   r/9100050   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100050 starts at 1700 but oldest member n/9100041 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   r/9100070   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100061 (in chronology relation r/9100070) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   r/9100070   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100070 starts at 1700 but oldest member n/9100061 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
+W   r/9100090   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   r/9100100   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100100 starts at 1900 but oldest member n/9100092 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
+W   r/9100100   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   r/9100110   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100110 starts at 1900 but oldest member n/9100102 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
+W   r/9100110   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
 W   r/9100210   [ohm] Suspicious member - role=label; unfixable, please review   OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ? Download parent relations / ways). role=label members on this relation: n/9100201.
-W   r/9100310   [ohm] Chronology - gap between parent start and oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
+W   r/9100310   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
 W   w/114353260   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/114490699   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
-W   w/198163917   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198164162   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198179710   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198180584   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198163917   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198164162   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198179710   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198180584   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198180584   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198180597   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198180623   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198182337   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198182338   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198201097   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198201099   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198201100   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198201103   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198201104   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198201106   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198265842   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198180597   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198180623   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198182337   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198182338   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198201097   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198201099   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198201100   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198201103   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198201104   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198201106   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198265842   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198530068   [ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys   source=https://mapwarper.net/maps/34251; https://de.wikipedia.org/wiki/Augustusplatz: enumerate into source, source:1, source:2, ...?
 W   w/198556160   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/198556380   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198556397   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198556397   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198560256   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198563072   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198563072   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198563072   [ohm] Suspicious date - 01-01 start_date; unfixable, please review   start_date=1970-01-01: Jan 1 is suspicious as a start_date ? often an artifact of false precision (someone typed YYYY-01-01 when they meant YYYY) but also a legitimate date for many real events (laws taking effect, fiscal year boundaries, etc.). If the exact day is unknown, manually trim to start_date=1970.
-W   w/198563730   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198563731   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198564321   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198573573   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198579860   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198581372   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198587970   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198563730   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198563731   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198564321   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198573573   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198579860   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198581372   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198587970   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198660005   [ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review   source=GSImaps/ort;local knowledge: semicolons in text are ambiguous. If these are separate sources, split manually into source, source:1, source:2, ?; if the semicolons are punctuation in a single citation, leave alone.
-W   w/198670420   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198675380   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198670420   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198675380   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198675380   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198698021   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198698021   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198698464   [ohm] Ambiguous date - trailing hyphen in date; unfixable, please review   end_date=2021-: could be a typo for 2021, an incomplete input, or an open-ended range 2021/. Manual review needed.
-W   w/198721090   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198721090   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198735495   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/198735496   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/198735497   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/198735498   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198740059   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198740059   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198789762   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198789772   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198789772   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198789772   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198789773   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198789782   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198789773   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198789782   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198789782   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/198789783   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   w/198815637   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
+W   w/198815638   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
+W   w/198815639   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
+W   w/198815640   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
+W   w/198815641   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
 W   w/198816535   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198853224   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853224   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198853224   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853227   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853227   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198853227   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853228   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853228   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198853228   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853229   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853229   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198853229   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853230   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853230   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198853230   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198864518   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198864518   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198864518   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2014-99-99. Swap?
-W   w/198864524   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198864524   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198864524   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2000-99-99. Swap?
-W   w/198864525   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198864525   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198864525   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2014-99-99. Swap?
-W   w/198865179   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865179   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198865179   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865180   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865180   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198865180   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865184   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865184   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198865184   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865185   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865185   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198865185   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865186   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865186   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198865186   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198907134   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907134   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907134   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907135   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907135   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907135   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907140   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907140   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907140   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907141   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907141   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907141   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907142   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907142   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907142   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907143   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907143   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907143   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907193   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907193   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907193   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907194   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907194   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907194   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907195   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907195   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907195   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907224   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907224   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907224   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907238   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/198907238   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907238   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/198907238   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907238   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1958-99-99. Swap?
-W   w/198907692   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907692   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907692   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907838   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907838   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907838   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907841   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907841   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907841   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907932   [ohm] Suspicious date - >10 year into the future; autofix as removed   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907932   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907932   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907969   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198907969   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198911040   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198936154   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/198936154   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/199439171   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1963/1965 but start_date:edtf=1964 implies start_date=1964. Manual review needed.
 W   w/199620444   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/199764093   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/199900749   [ohm] Source optimization - repair URL missing 'http[s]://'   source:1=DRGW.net looks like a URL missing the scheme. Prepend 'https://'?
+W   w/199764093   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/199900749   [ohm] Source optimization - URL missing 'http[s]://'; autofix by prepending https://   source:1=DRGW.net looks like a URL missing the scheme. Prepend 'https://'?
 W   w/199925986   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=j965 but end_date:edtf=1955/1982 implies end_date=1982. Manual review needed.
 W   w/199967452   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=1924 but end_date:edtf=1912/1935 implies end_date=1935. Manual review needed.
 W   w/199967452   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1866/1912/1935 but start_date:edtf=1866 implies start_date=1866. Manual review needed.
@@ -1156,73 +1164,73 @@ W   w/200160747   [ohm] Date mismatch - *_date does not match *_date:edtf; unfix
 W   w/200160747   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1920/1929 but start_date:edtf=2019/2022 implies start_date=2019. Manual review needed.
 W   w/200160751   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=2019 but end_date:edtf=2019/2022 implies end_date=2022. Manual review needed.
 W   w/200160751   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1920/1929 but start_date:edtf=2019/2022 implies start_date=2019. Manual review needed.
-W   w/200262935   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/200262935   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/200262935   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/200493671   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fountain: confirm the entity has actually passed into history before applying this tag.
-W   w/200504957   [ohm] Suspicious feature - 1 feature that should be 2; please review and consider splitting   start_date=1901-08-01;1958-12-04 and end_date=1907-10-31;2015-02-13: looks like 2 features merged into one. The autofix collapses to start_date=1901-08-01 and end_date=2015-02-13 (min/max), preserves the originals in start_date:raw=1901-08-01;1958-12-04 and end_date:raw=1907-10-31;2015-02-13, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   w/200504958   [ohm] Suspicious feature - 1 feature that should be 2; please review and consider splitting   start_date=1901-08-01;1959-12-03 and end_date=1907-10-31;2015-02-13: looks like 2 features merged into one. The autofix collapses to start_date=1901-08-01 and end_date=2015-02-13 (min/max), preserves the originals in start_date:raw=1901-08-01;1959-12-03 and end_date:raw=1907-10-31;2015-02-13, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   w/200623105   [ohm] Source optimization - repair URL missing 'http[s]://'   source=GeoImage.at looks like a URL missing the scheme. Prepend 'https://'?
+W   w/200493671   [ohm] Suspicious tag - historic; unfixable, please review   historic=fountain: confirm the entity has actually passed into history before applying this tag.
+W   w/200504957   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   start_date=1901-08-01;1958-12-04 and end_date=1907-10-31;2015-02-13: looks like 2 features merged into one. The autofix collapses to start_date=1901-08-01 and end_date=2015-02-13 (min/max), preserves the originals in start_date:raw=1901-08-01;1958-12-04 and end_date:raw=1907-10-31;2015-02-13, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   w/200504958   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   start_date=1901-08-01;1959-12-03 and end_date=1907-10-31;2015-02-13: looks like 2 features merged into one. The autofix collapses to start_date=1901-08-01 and end_date=2015-02-13 (min/max), preserves the originals in start_date:raw=1901-08-01;1959-12-03 and end_date:raw=1907-10-31;2015-02-13, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   w/200623105   [ohm] Source optimization - URL missing 'http[s]://'; autofix by prepending https://   source=GeoImage.at looks like a URL missing the scheme. Prepend 'https://'?
 W   w/200632066   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/200632269   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=1906-05/ implies start_date=1906-05. Manual review needed.
-W   w/200632269   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/200632269   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/200657217   [ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review   source=geoimage.at; basemap.at: semicolons in text are ambiguous. If these are separate sources, split manually into source, source:1, source:2, ?; if the semicolons are punctuation in a single citation, leave alone.
-W   w/200681734   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=yes: confirm the entity has actually passed into history before applying this tag.
+W   w/200681734   [ohm] Suspicious tag - historic; unfixable, please review   historic=yes: confirm the entity has actually passed into history before applying this tag.
 W   w/200681774   [ohm] Missing tag - name=*; unfixable, please review   Feature has name-family keys (old_name, etc.) but no plain 'name' key. Please add a canonical name.
-W   w/200914312   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=house: confirm the entity has actually passed into history before applying this tag.
-W   w/200943805   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943805   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943806   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943806   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943807   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943807   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943808   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943808   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943809   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943809   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943810   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943810   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943811   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943811   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943812   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943812   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943813   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943813   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943815   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943815   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943816   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943816   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943817   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943817   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943818   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943818   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943819   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943819   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943820   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943820   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200943821   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/200943821   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=fort: confirm the entity has actually passed into history before applying this tag.
-W   w/200958987   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=ruins: confirm the entity has actually passed into history before applying this tag.
+W   w/200914312   [ohm] Suspicious tag - historic; unfixable, please review   historic=house: confirm the entity has actually passed into history before applying this tag.
+W   w/200943805   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943805   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943806   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943806   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943807   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943807   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943808   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943808   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943809   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943809   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943810   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943811   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943812   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943812   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943813   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943813   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943815   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943815   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943816   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943816   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943817   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943817   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943818   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943818   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943819   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943819   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943820   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943820   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200943821   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/200943821   [ohm] Suspicious tag - historic; unfixable, please review   historic=fort: confirm the entity has actually passed into history before applying this tag.
+W   w/200958987   [ohm] Suspicious tag - historic; unfixable, please review   historic=ruins: confirm the entity has actually passed into history before applying this tag.
 W   w/200962040   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=18XX but start_date:edtf=1900 implies start_date=1900. Manual review needed.
-W   w/201132727   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/201132727   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/201157164   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=[..1897] but start_date:edtf=[..1897] implies start_date=1897. Manual review needed.
-W   w/201157164   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/201157164   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/201157167   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=[..1897] but start_date:edtf=[..1897] implies start_date=1897. Manual review needed.
-W   w/201157167   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/201216864   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=house: confirm the entity has actually passed into history before applying this tag.
-W   w/201216866   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=house: confirm the entity has actually passed into history before applying this tag.
-W   w/201216877   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=church: confirm the entity has actually passed into history before applying this tag.
-W   w/201216895   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=house: confirm the entity has actually passed into history before applying this tag.
-W   w/201216912   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=yes: confirm the entity has actually passed into history before applying this tag.
-W   w/201216916   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=house: confirm the entity has actually passed into history before applying this tag.
-W   w/201216928   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=house: confirm the entity has actually passed into history before applying this tag.
+W   w/201157167   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/201216864   [ohm] Suspicious tag - historic; unfixable, please review   historic=house: confirm the entity has actually passed into history before applying this tag.
+W   w/201216866   [ohm] Suspicious tag - historic; unfixable, please review   historic=house: confirm the entity has actually passed into history before applying this tag.
+W   w/201216877   [ohm] Suspicious tag - historic; unfixable, please review   historic=church: confirm the entity has actually passed into history before applying this tag.
+W   w/201216895   [ohm] Suspicious tag - historic; unfixable, please review   historic=house: confirm the entity has actually passed into history before applying this tag.
+W   w/201216912   [ohm] Suspicious tag - historic; unfixable, please review   historic=yes: confirm the entity has actually passed into history before applying this tag.
+W   w/201216916   [ohm] Suspicious tag - historic; unfixable, please review   historic=house: confirm the entity has actually passed into history before applying this tag.
+W   w/201216928   [ohm] Suspicious tag - historic; unfixable, please review   historic=house: confirm the entity has actually passed into history before applying this tag.
 W   w/201223564   [ohm] Ambiguous date - trailing hyphen in date; unfixable, please review   start_date=1910-: could be a typo for 1910, an incomplete input, or an open-ended range 1910/. Manual review needed.
-W   w/201223564   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/201223564   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/201223566   [ohm] Ambiguous date - trailing hyphen in date; unfixable, please review   start_date=1910-: could be a typo for 1910, an incomplete input, or an open-ended range 1910/. Manual review needed.
-W   w/201223566   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/201231540   [ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic   historic=cathedral: confirm the entity has actually passed into history before applying this tag.
+W   w/201223566   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/201231540   [ohm] Suspicious tag - historic; unfixable, please review   historic=cathedral: confirm the entity has actually passed into history before applying this tag.
 W   w/201241850   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=/1300 but start_date:edtf=/1300 implies start_date=1300. Manual review needed.
 W   w/201316381   [ohm] Missing tag - name=*; unfixable, please review   Feature has name-family keys (alt_name, etc.) but no plain 'name' key. Please add a canonical name.
-W   w/201327661   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/201327661   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/201362983   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/201362987   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/201498147   [ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review   source=Imagery SIGPAC 1997-2003; Local knowledge: semicolons in text are ambiguous. If these are separate sources, split manually into source, source:1, source:2, ?; if the semicolons are punctuation in a single citation, leave alone.
@@ -1238,25 +1246,25 @@ W   w/201820358   [ohm] Suspicious date - man-made object w/out start_date; unfi
 W   w/201820395   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/201921583   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1847/1872 but start_date:edtf=1854 implies start_date=1854. Manual review needed.
 W   w/201921583   [ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url   source=Bing;https://historicpittsburgh.org/islandora/object/pitt%3A1872p032/viewer: move text to source and URL to source:url?
-W   w/201921824   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
-W   w/201921825   [ohm] Missing tag - source on named feature; unfixable, please review and add   other mappers are lost without it.
+W   w/201921824   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   w/201921825   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/201966134   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1953-10=15 but start_date:edtf=1953-10-15 implies start_date=1953-10-15. Manual review needed.
 W   w/201983599   [ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url   source=https://de.wikipedia.org/wiki/Stra%C3%9Fenbahn_Hagen;Rolf L?ttgers, Wolfgang R. Reimann: Rund um Hagen (Verlag Monika Reimann, 1989): move text to source and URL to source:url?
-W   w/201983599   [ohm] Suspicious feature - 1 feature that should be 2; please review and consider splitting   start_date=1900-04-12;1964-05-13 and end_date=1953-07-26;1975-05-31: looks like 2 features merged into one. The autofix collapses to start_date=1900-04-12 and end_date=1975-05-31 (min/max), preserves the originals in start_date:raw=1900-04-12;1964-05-13 and end_date:raw=1953-07-26;1975-05-31, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   w/201986468   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=9999 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089069   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089070   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089075   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089076   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089077   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089078   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089079   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089080   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089081   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089229   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089230   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089240   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089255   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089256   [ohm] Suspicious date - >10 year into the future; autofix as removed   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/201983599   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   start_date=1900-04-12;1964-05-13 and end_date=1953-07-26;1975-05-31: looks like 2 features merged into one. The autofix collapses to start_date=1900-04-12 and end_date=1975-05-31 (min/max), preserves the originals in start_date:raw=1900-04-12;1964-05-13 and end_date:raw=1953-07-26;1975-05-31, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   w/201986468   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=9999 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089069   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089070   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089075   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089076   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089077   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089078   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089079   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089080   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089081   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089229   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089230   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089240   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089255   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/202089256   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/9000044   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000045 (1800..1850) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
 W   w/9000044   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000046 (1850..1900) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.

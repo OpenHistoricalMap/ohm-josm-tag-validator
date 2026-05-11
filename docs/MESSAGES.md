@@ -200,7 +200,7 @@ After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` 
 
 | Code | Title |
 |------|-------|
-| 4216 | `[ohm] Suspicious date - >10 year into the future; autofix as removed` |
+| 4216 | `[ohm] Suspicious date - >10 year into the future; autofix by deleting the key` |
 
 **Trigger:** A 4-digit date tag value is more than 10 years beyond today.  
 **Fix:** Deletes the offending key.  
@@ -368,6 +368,13 @@ After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23
 Before: `end_date=1850/52`  
 After autofix: `end_date=1852`, `end_date:edtf=1850/1852`, `end_date:raw=1850/52`.
 
+**4202 — abbreviated-tail range (`YYYY..YY`):** Same expansion as `YYYY/YY` above but using `..` as the separator (e.g. `start_date=1944..48` for "1944/1948"). The 2-digit suffix replaces the last two digits of the 4-digit start year to form the end year. Must be intercepted before the normalizer, which would otherwise misread the 2-digit tail as a year in its own right (e.g. "48" → year 48 CE, producing "1944/0048").
+
+Before: `start_date=1944..48`  
+After autofix: `start_date=1944`, `start_date:edtf=1944/1948`, `start_date:raw=1944..48`.
+
+**4201 -- abbreviated-tail range (`YYYY..YY`) wraps a century boundary:** When the 2-digit suffix resolves to a year before the start (e.g. `start_date=1985..05` → naive end = 1905 < 1985), the intended century is ambiguous (1905? 2005?). Flagged unfixable; contributor must write the full form (`1985/2005`).
+
 **4202 — implausibly-ancient leading zeros (`0000..YYYY`):** Inputs like `start_date=0000..1850` or `end_date=00..1900` are common when a contributor wanted to express "no known start" but wrote a placeholder year zero. When the upper bound `YYYY > 400` (clearly post-classical), the validator collapses to the open-start EDTF form `/YYYY` and uses `YYYY` as the base for both `start_date` and `end_date`. Below the threshold the input could be a real ancient range; falls through.
 
 Before: `start_date=0000..1850`  
@@ -442,26 +449,24 @@ The same path runs from `checkAllEdtfKeys` for `*_date:edtf` siblings, so `end_d
 | Code | Title |
 |------|-------|
 | 4208 | `[ohm] Invalid date - *_date:edtf; unfixable, please review` |
-| 4226 | `[ohm] Invalid date - *_date:edtf; fixable, please review` _(backslash truncated — Rule D1)_ |
 | 4228 | `[ohm] Invalid date - *_date:edtf; fixable, please review` |
 | 4228 | `[ohm] Invalid date - *_date:edtf; unfixable, please review` |
 
 **4208 trigger:** `*_date:edtf` is invalid EDTF and there is no corresponding base tag to fall back on.  
-**4226 trigger (Rule D1):** `*_date:edtf` starts with `\` and the remainder, after stripping the backslash, can be normalised.  
-**4228 fixable trigger:** `*_date:edtf` is invalid EDTF but can be auto-corrected.  
+**4228 fixable trigger:** `*_date:edtf` is invalid EDTF but can be auto-corrected. Also covers the Rule D1 backslash-strip path: `*_date:edtf` starts with `\` and the remainder, after stripping the backslash, normalises (or is already valid EDTF).  
 **4228 unfixable trigger:** `*_date:edtf` is invalid EDTF and cannot be corrected automatically.
 
 **4208 example:**  
 Trigger: `start_date:edtf=garbage`, no `start_date` present.  
 Suggested manual fix: replace `:edtf` with valid EDTF, or delete the tag.
 
-**4226 example:**  
-Before: `start_date:edtf=\1900`, with `start_date=1900`  
-After autofix: `start_date:edtf=1900` (backslash prefix stripped, remainder is valid).
-
-**4228 example (fixable):**  
+**4228 example (fixable, normalization):**  
 Before: `start_date:edtf=199x` (lowercase X)  
 After autofix: `start_date:edtf=199X` (canonical form), `start_date:edtf:raw=199x` preserves the original.
+
+**4228 example (fixable, backslash-strip — Rule D1):**  
+Before: `start_date:edtf=\1900`, with `start_date=1900`  
+After autofix: `start_date:edtf=1900` (backslash prefix stripped, remainder is valid).
 
 **4228 example (unfixable):**  
 Trigger: `start_date:edtf=2020-13-99` — invalid and not normalizable.  
@@ -520,6 +525,7 @@ After autofix: `end_date=-1230`, `end_date:edtf=-1239/-1230`
 | Code | Title |
 |------|-------|
 | 4251 | `[ohm] Suspicious date - *_date:edtf with ? at interval endpoint; autofix by stripping ?` |
+| 4252 | `[ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review` |
 
 **Trigger:** `*_date:edtf` is an interval with a bare `?` as one endpoint: `?/YYYY` (intended open-ended left) or `YYYY/?` (intended open-ended right). `?` is a date-level uncertainty qualifier — it cannot stand alone as an interval endpoint. The intended meaning is an open-ended interval, which EDTF expresses with an empty slot: `/YYYY` or `YYYY/`.
 
@@ -538,12 +544,30 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 
 ---
 
+### 4252 — Long EDTF range
+
+| Code | Title |
+|------|-------|
+| 4252 | `[ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review` |
+
+**Trigger:** `start_date:edtf` or `end_date:edtf` is a closed interval whose two year bounds differ by more than 100 years. Open-ended intervals (`YYYY/` or `/YYYY`) are skipped. Year bounds are extracted by stripping qualifiers (`~`, `?`, `%`) and replacing unspecified-digit placeholders (`X`) with `0`.
+
+**Severity:** WARNING, no autofix.
+
+**Description:** _{key}={value}: interval spans {N} years._
+
+**Example:**  
+`start_date:edtf=1800/1950` → spans 150 years → WARNING fires.  
+`start_date:edtf=1850/1950` → spans 100 years → does not fire (threshold is strictly > 100).
+
+---
+
 ### Date mismatch — base vs. :edtf disagreement
 
 | Code | Title |
 |------|-------|
 | 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` |
-| 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix *_date based on *_date:edtf` |
+| 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf` |
 
 **4210 trigger:** `*_date` is present and valid, but disagrees with the bound implied by `*_date:edtf` — specifically, it falls **outside** the bounds. A `*_date` that is *more precise within bounds* is the expected OHM convention (the high-precision authoritative value lives on `*_date`, the wider/qualified context on `:edtf`) and is not flagged.  
 **4210 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}. Manual review needed._
@@ -575,7 +599,7 @@ After autofix: `start_date=1850`, `start_date:edtf` deleted.
 |------|-------|
 | 4205 | `[ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf` |
 | 4206 | `[ohm] Date mismatch - across date tags; autofix by deleting :raw` |
-| 4207 | `[ohm] Invalid date - Unparseable data preserved in *_date:raw tag, no valid *_date:edtf or *_date tags; unfixable, please review.` |
+| 4207 | `[ohm] Invalid date - Unparseable data preserved in *_date:raw tag, no valid *_date:edtf or *_date tags; unfixable, please review` |
 | 4242 | `[ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review` |
 
 **4205 trigger (Rule A):** `tagcleanupbot` wrote a `:raw` value and the derived `*_date` / `*_date:edtf` can be reconstructed from it.  
@@ -617,7 +641,7 @@ Rules B and C also relate to the `\<end_date>` pattern but live with the equalit
 
 | Code | Title |
 |------|-------|
-| 4223 | `[ohm] Suspicious date - start_date:edtf=\[end_date]; autofix to delete tags` _(Rule A, bot rollback)_ |
+| 4223 | `[ohm] Suspicious date - start_date:edtf=\[end_date]; autofix by deleting tags` _(Rule A, bot rollback)_ |
 | 4226 | `[ohm] Suspicious date - start_date:edtf range extends after end_date; unfixable, please review` _(Rule D1)_ |
 
 **4223 trigger (Rule A):** `start_date:edtf` matches the tagcleanupbot signature (`\<end_date_value>`) AND the last editor was the bot. Full rollback offered.
@@ -666,13 +690,14 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 | 4234 | `[ohm] Chronology - member date range outside parent chronology range; unfixable, please review` |
 | 4235 | `[ohm] Chronology - member date range overlap; unfixable, please review` |
 | 4236 | `[ohm] Chronology - gap between member date ranges; unfixable, please review` |
-| 4236 | `[ohm] Chronology - gap between parent start and oldest member; unfixable, please review` |
-| 4236 | `[ohm] Chronology - gap between latest member end and parent end; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between parent start & oldest member; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between latest member end & parent end; unfixable, please review` |
 | 4237 | `[ohm] Chronology - member missing required date tag; unfixable, please review` |
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
 | 4243 | `[ohm] Chronology - boundary chronology has non-relation members; unfixable, please review` |
-| 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; please review and consider splitting` |
+| 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; autofix by collapsing to min/max bounds` |
+| 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; unfixable, please review` |
 
 **4245 trigger:** Both `start_date` and `end_date` contain semicolon-delimited entries with the same count (≥ 2 each), and every entry on each side parses as a strict ISO date (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`). The pattern almost always indicates that a single OSM/OHM feature has been used to encode N temporally-distinct features (e.g. a building rebuilt twice, recorded as one feature with three start/end pairs).  
 **4245 fix:** Collapses `start_date` to the minimum of the start values and `end_date` to the maximum of the end values; preserves the original semicolon strings in `start_date:raw` and `end_date:raw`; adds `fixme=split into multiple features` so the editor remembers to do the actual split manually after accepting the fix.  
@@ -682,7 +707,7 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 Before: `start_date=1850;1900;1950`, `end_date=1899;1949;2000`.  
 After autofix: `start_date=1850`, `end_date=2000`, `start_date:raw=1850;1900;1950`, `end_date:raw=1899;1949;2000`, `fixme=split into multiple features`.
 
-**4245 unfixable variant:** When the autofix would clobber an existing `start_date:raw` or `end_date:raw` (the same shape protection used by 4242), the warning still fires but no `fix` button is offered. The editor must clear or merge the conflicting `:raw` first.
+**4245 unfixable variant:** When the autofix would clobber an existing `start_date:raw` or `end_date:raw` (the same shape protection used by 4242), the warning fires under its unfixable title (`; unfixable, please review`) and the description explains the `:raw` conflict. The editor must clear or merge the conflicting `:raw` before re-running.
 
 **Per-key suppression:** When 4245 fires (with or without autofix), the per-key date checks for `start_date` and `end_date` are skipped on this primitive — they would otherwise flag the semicolon strings as `Invalid date - *_date cannot be read`, which is true but redundant noise once 4245 has explained the situation.
 
@@ -782,7 +807,7 @@ Suggested manual fix: change to `name=Old Town Hall`; encode dates in `start_dat
 | Code | Title |
 |------|-------|
 | 4302 | `[ohm] Missing tag - wikidata; unfixable, please review` |
-| 4303 | `[ohm] Missing tag - source on named feature; unfixable, please review and add` |
+| 4303 | `[ohm] Missing tag - source on named feature; unfixable, please review & add` |
 
 **4302 trigger:** Named feature has no `wikidata` tag **and** carries a notability signal: any `wikipedia=*`, `historic=*`, `boundary=administrative`, or a notable value of `place` (city/town/village/hamlet/suburb/neighbourhood/county/state/country/region/island/archipelago/continent), `tourism` (museum/attraction/monument/artwork/gallery), `amenity` (place_of_worship/university/courthouse/townhall/library/theatre/hospital/school), `building` (castle/cathedral/church/chapel/mosque/synagogue/temple/palace), or `military` (castle/fort/barracks). Relations always count.
 
@@ -832,11 +857,11 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 
 | Code | Title |
 |------|-------|
-| 4307 | `[ohm] Source optimization - repair URL missing 'http[s]://'` |
+| 4307 | `[ohm] Source optimization - URL missing 'http[s]://'; autofix by prepending https://` |
 | 4324 | `[ohm] Source mismatch - URL value in source:name; autofix by moving to source:url` |
-| 4324 | `[ohm] Source mismatch - URL in source:name and source:url already set; unfixable, please review` |
+| 4324 | `[ohm] Source mismatch - URL in source:name & source:url already set; unfixable, please review` |
 | 4325 | `[ohm] Source mismatch - text value in source:url; autofix by moving to source / source:name / source:note` |
-| 4325 | `[ohm] Source mismatch - text value in source:url and all sibling slots full; unfixable, please review` |
+| 4325 | `[ohm] Source mismatch - text value in source:url & all sibling slots full; unfixable, please review` |
 
 **4307 trigger:** Any `source[:N]?[:url]?` value matches the URL-shape regex but is missing `http://` or `https://`. Generalized in v0.5 from `source` / `source:N` to also fire on `source:url` / `source:N:url`.  
 **4307 fix:** Prepends `https://`.  
@@ -890,7 +915,7 @@ Trigger: `source`, `source:name`, and `source:note` all hold values, and `source
 
 | Code | Title |
 |------|-------|
-| 4312 | `[ohm] Source mismatch - source and source:url are different URLs; autofix by moving source:url to source:#` |
+| 4312 | `[ohm] Source mismatch - source & source:url are different URLs; autofix by moving source:url to source:#` |
 
 The pair iteration is generalized to every `source[:N]?:url` key on a primitive (issue #27, since v0.4.0). So `source:1:url` is paired with `source:1`, `source:7:url` with `source:7`, etc.
 
@@ -962,8 +987,8 @@ Suggested manual fix: split by hand into `source`, `source:1`, `source:url`, `so
 
 | Code | Title |
 |------|-------|
-| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review and add tag` |
-| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review and add tag` |
+| 4308 | `[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag` |
+| 4309 | `[ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag` |
 
 **4308 trigger:** A `*:source` tag references Wikipedia but no `wikipedia` tag exists on the feature.  
 **4308 description:** _{key}={value}: please add an appropriate 'wikipedia' tag._
@@ -985,7 +1010,7 @@ Suggested manual fix: add `wikidata=Q12345`.
 
 | Code | Title |
 |------|-------|
-| 4319 | `[ohm] Suspicious tag - historic; unfixable, should only be used once an object actually is historic` |
+| 4319 | `[ohm] Suspicious tag - historic; unfixable, please review` |
 
 **4319 trigger:** Any feature carrying a `historic=*` tag (any value). OHM convention is that `historic=*` applies to entities that have actually passed into history; using it on a still-current feature is premature.
 
@@ -1016,7 +1041,7 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 
 | Code | Title |
 |------|-------|
-| 4326 | `[ohm] Suspicious tags - node with no unique tags from parent way; fixable, remove all node tags` |
+| 4326 | `[ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags` |
 
 **Trigger:** A node carries one or more tags, and every one of those tags is duplicated (same key, same value) on at least one of the node's parent ways. Typically arises when an editor tags both the way and one of its constituent nodes for the same feature — only the way needs the tags. Multiple parent ways are tolerated; the rule fires when *any* parent way fully covers the node's tag set.  
 **Fix:** Removes every tag from the node.  
