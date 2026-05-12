@@ -39288,4 +39288,24 @@
     <tag k='end_date:edtf' v='[1900-05-15.1950-08-20]' />
     <tag k='source' v='https://example.com/x99' />
   </node>
+  <node id='9101130' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test unpadded positive X-form 9XX edtf' />
+    <tag k='end_date:edtf' v='9XX' />
+    <tag k='source' v='https://example.com/x100' />
+  </node>
+  <node id='9101131' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test unpadded positive X-form 99X edtf' />
+    <tag k='end_date:edtf' v='99X' />
+    <tag k='source' v='https://example.com/x101' />
+  </node>
+  <node id='9101132' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test unpadded positive X-form 9X edtf' />
+    <tag k='end_date:edtf' v='9X' />
+    <tag k='source' v='https://example.com/x102' />
+  </node>
+  <node id='9101133' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test unpadded positive X-form 9XX base' />
+    <tag k='start_date' v='9XX' />
+    <tag k='source' v='https://example.com/x103' />
+  </node>
 </osm>

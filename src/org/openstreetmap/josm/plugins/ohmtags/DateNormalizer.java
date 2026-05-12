@@ -930,6 +930,26 @@ public final class DateNormalizer {
             s = s.replace('x', 'X');
         }
 
+        // 9a. Pad short positive X-form years to 4 chars (uppercasing 'x'
+        //     to 'X' along the way). "9XX" → "09XX", "99X" → "099X",
+        //     "9X" → "009X", "9xx" → "09XX". EDTF year bodies are 4 chars;
+        //     the parser rejects shorter forms outright. Mirrors the
+        //     v0.7.3 negative-side fix that broadened rule 4250 to accept
+        //     "-7XX" (the same shape on the negative side).
+        //
+        //     All-X bodies ("XX", "XXXX") deliberately not matched — they
+        //     have no digit anchor and could mean any year; legitimately
+        //     unfixable. Pattern requires at least one digit.
+        java.util.regex.Matcher xPositive =
+            java.util.regex.Pattern.compile("^(\\d{1,3})([Xx]{1,3})$").matcher(s);
+        if (xPositive.matches()) {
+            String digits = xPositive.group(1);
+            int xCount = xPositive.group(2).length();
+            int total = digits.length() + xCount;
+            String pad = total < 4 ? "0".repeat(4 - total) : "";
+            s = pad + digits + "X".repeat(xCount);
+        }
+
         return s;
     }
 

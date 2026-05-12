@@ -1,3 +1,30 @@
+# v0.7.6 — Positive unpadded X-form padding (parallel to v0.7.3 negative fix)
+
+`9XX`, `99X`, `9X` (positive unpadded X-form years) were unfixable because the EDTF parser requires year bodies to be exactly 4 chars. v0.7.3 fixed the negative-side equivalent (`-7XX`); this release does the same on the positive side via preprocess left-zero-padding.
+
+| Input | Output |
+|---|---|
+| `9XX` | `09XX` |
+| `99X` | `099X` |
+| `9X` | `009X` |
+| `9xx` | `09XX` (lowercase 'x' uppercased) |
+| `09XX`, `19XX` (already canonical) | unchanged |
+
+All-X bodies (e.g. `XX`, `XXXX`) deliberately not matched — no digit anchor, legitimately unfixable.
+
+Surfaces as 4228 fixable on `*_date:edtf` keys; 4202 fixable on base `*_date` keys.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — new preprocess step 9a, parallel to existing step 9 (which uppercased x for 2-3 digit bodies but didn't pad shorter ones).
+- `docs/MESSAGES.md` — new bullet under the 4202 preprocess pattern list.
+- `test/test_data.osm` — four new probes (9XX edtf/base + 99X + 9X edtf).
+- `test/expected.txt` — four new golden rows.
+
+`MessageApiAuditor` count: 99 (unchanged — uses existing 4228 / 4202 fixable emissions). Regression suite green.
+
+---
+
 # v0.7.5 — Single-bracket single-dot range rewrite
 
 New `DateNormalizer` preprocess step (6d) catches `[<ISO date>.<ISO date>]` — a single-bracket-wrapped value with a single dot separating two clean ISO dates. The single dot is almost certainly a typo for `..` or `/`. Strips the brackets, rewrites the dot to `..`, lets the standard RANGE branch produce the slash form.

@@ -507,6 +507,8 @@ Anchored on the whole value — only fires when the dot is the sole leading/trai
 
 **4202 — X-form with stray qualifier:** EDTF rejects qualifiers attached to X-forms (`196X?`, `18XX~`). Preprocess strips the qualifier, leaving the unspecified-digit form unchanged: `/196X?` → `/196X`. (The semantically distinct option of expanding the X-form to a specific year — e.g. `/196X?` → `/1960` — is not done because it changes the bound's meaning.)
 
+**4202 / 4228 — short positive X-form padding:** Unpadded positive X-form years (`9XX`, `99X`, `9X`) are left-zero-padded to the canonical 4-char form (`09XX`, `099X`, `009X`). EDTF year bodies are 4 chars; the parser rejects shorter forms outright, so without padding these slip through as 4228 unfixable. Lowercase 'x' is uppercased as part of the rewrite. Mirrors the v0.7.3 negative-side fix that broadened rule 4250 to accept `-7XX`. All-X bodies (no digit anchor) are not matched — those remain unfixable. Surfaces as 4228 fixable on `*_date:edtf` keys (autofix preserves original in `:edtf:raw`); 4202 fixable on base `*_date` keys (autofix writes the full triple).
+
 **4202 — qualified hyphen range:** Hyphen ranges with a leading qualifier (`~1848-1854`, `?47-50`) propagate the qualifier to the start side and rewrite as a slash interval: `~1848-1854` → `1848~/1854`, `?47-50` → `47?/50`. Year padding still happens (`~47-50` → `0047~/0050`).
 
 **4202 — "end of YYYY":** `end of 1955` → `1955-12` (collapses the year-level "end-of" qualifier to the last calendar month). Symmetric handlers for `beginning of` and `mid of` aren't implemented yet.

@@ -289,6 +289,10 @@ E   n/9101111   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   n/9101120   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=[1900.1950] is not valid EDTF. Normalize to 1900/1950 and preserve original in end_date:edtf:raw?
 E   n/9101121   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=[1900-05.1950-08] is not valid EDTF. Normalize to 1900-05/1950-08 and preserve original in end_date:edtf:raw?
 E   n/9101122   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=[1900-05-15.1950-08-20] is not valid EDTF. Normalize to 1900-05-15/1950-08-20 and preserve original in end_date:edtf:raw?
+E   n/9101130   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=9XX is not valid EDTF. Normalize to 09XX and preserve original in end_date:edtf:raw?
+E   n/9101131   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=99X is not valid EDTF. Normalize to 099X and preserve original in end_date:edtf:raw?
+E   n/9101132   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=9X is not valid EDTF. Normalize to 009X and preserve original in end_date:edtf:raw?
+E   n/9101133   [ohm] Invalid date - *_date; fixable, please review   start_date=9XX ? start_date=0900, start_date:edtf=09XX, start_date:raw=9XX
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
