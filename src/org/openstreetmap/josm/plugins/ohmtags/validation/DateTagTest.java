@@ -1369,6 +1369,58 @@ public class DateTagTest extends Test {
     }
 
     /**
+     * Base-tag negative X-form parallel to rule 4250. Fires when the
+     * raw base value matches {@link #NEGATIVE_EDTF_X_FORM} (e.g.
+     * {@code start_date=-6xx}, {@code end_date=-07XX}). Constructs the
+     * same slash interval as 4250 and writes the full triple
+     * (base + {@code :edtf} + {@code :raw}). Only fires for
+     * {@code start_date} / {@code end_date} keys — those are the only
+     * date keys with a defined bound-selection semantic (start = earlier,
+     * end = later).
+     *
+     * <p>Without this, {@code start_date=-6xx} fell through to 4201
+     * unfixable because edtf-java rejects unpadded negative X-form years
+     * and the base pipeline doesn't otherwise recognize the shape.
+     *
+     * @return {@code true} if the rule fired; caller should skip further checks
+     */
+    private boolean checkBaseNegativeEdtfXForm(OsmPrimitive p, String baseKey, String base) {
+        if (!"start_date".equals(baseKey) && !"end_date".equals(baseKey)) return false;
+        Matcher m = NEGATIVE_EDTF_X_FORM.matcher(base);
+        if (!m.matches()) return false;
+
+        // Same construction as checkNegativeEdtfXForm — kept inline (rather
+        // than extracted to a shared helper) because the call shape and
+        // autofix-target keys differ slightly.
+        int prefixVal = Integer.parseInt(m.group(1));
+        int xCount = m.group(2).length();
+        int placeValue = (int) Math.pow(10, xCount);
+        int moreNegativeVal = -(prefixVal * placeValue + (placeValue - 1));
+        int lessNegativeVal = -(prefixVal * placeValue);
+        String moreNegative = String.format("%05d", moreNegativeVal);
+        String lessNegative = String.format("%05d", lessNegativeVal);
+        String rangeEdtf    = moreNegative + "/" + lessNegative;
+        String newBase = "start_date".equals(baseKey) ? moreNegative : lessNegative;
+
+        // Don't overwrite an existing :raw with a different value.
+        String existingRaw = rawConflictValue(p, baseKey, base);
+        if (existingRaw != null) {
+            addRawConflictFinding(p, baseKey, base, newBase, rangeEdtf, base, existingRaw);
+            return true;
+        }
+        Command fix = buildTripleFix(p, baseKey, newBase, rangeEdtf, base);
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_NEGATIVE_EDTF_X_FORM)
+            .message(tr("[ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range"),
+                     marktr("{0}={1}: negative year with X digit(s). "
+                       + "Bounds are {2} (earlier) to {3} (later). Replace with {4}?"),
+                        baseKey, base, moreNegative, lessNegative, rangeEdtf)
+            .primitives(p)
+            .fix(() -> fix)
+            .build());
+        return true;
+    }
+
+    /**
      * Rule 4251: {@code *_date:edtf} value is an interval with a bare {@code ?} at
      * one endpoint: {@code ?/YYYY} or {@code YYYY/?}. {@code ?} is a date-level
      * uncertainty qualifier, not a valid standalone interval endpoint. The intended
@@ -2150,6 +2202,18 @@ public class DateTagTest extends Test {
         //   (could be a month sharing the year prefix or a 2-digit year
         //   sharing the century prefix). No autofix; fires 4253 unfixable.
         if (checkAmbiguousMonthYearTail(p, baseKey, base)) {
+            return;
+        }
+
+        // Path 0a'': base-tag negative X-form like "start_date=-6xx" or
+        //   "end_date=-07XX". Parallel to rule 4250 (which only fires on
+        //   *:edtf). edtf-java rejects unpadded negative X-form years
+        //   outright, and the base pipeline doesn't otherwise know to
+        //   construct the slash interval. So we detect the shape here and
+        //   apply the same 4250 logic — write :edtf=slash interval, base
+        //   =appropriate bound (more-negative for start_date, less-negative
+        //   for end_date), :raw=original.
+        if (checkBaseNegativeEdtfXForm(p, baseKey, base)) {
             return;
         }
 

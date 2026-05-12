@@ -297,6 +297,10 @@ E   n/9101140   [ohm] Date normalization - *_date:edtf not canonical; autofix to
 E   n/9101141   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=19xX is valid EDTF but not canonical. Normalize to 19XX and preserve original in end_date:edtf:raw?
 E   n/9101144   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=19xx/1950 is valid EDTF but not canonical. Normalize to 19XX/1950 and preserve original in end_date:edtf:raw?
 E   n/9101145   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=/196x is valid EDTF but not canonical. Normalize to /196X and preserve original in end_date:edtf:raw?
+E   n/9101150   [ohm] Invalid date - *_date; fixable, please review   start_date=before -0799 ? start_date=-0799, start_date:edtf=/-0799, start_date:raw=before -0799
+E   n/9101151   [ohm] Invalid date - *_date; fixable, please review   start_date=after -0799 ? start_date=-0799, start_date:edtf=-0799/, start_date:raw=after -0799
+E   n/9101152   [ohm] Invalid date - *_date; fixable, please review   start_date=by -0799 ? start_date=-0799, start_date:edtf=/-0799, start_date:raw=by -0799
+E   n/9101153   [ohm] Invalid date - *_date; fixable, please review   start_date=after -799 ? start_date=-0799, start_date:edtf=-0799/, start_date:raw=after -799
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -1090,6 +1094,9 @@ W   n/9101142   [ohm] Suspicious date - negative *_date:edtf with X digit(s); au
 W   n/9101143   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-06xx: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
 W   n/9101144   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=19xx/1950 implies end_date=1950.
 W   n/9101145   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=/196x implies end_date=1969.
+W   n/9101154   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date=-6xx: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
+W   n/9101155   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date=-06XX: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
+W   n/9101156   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date=-6XX: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.

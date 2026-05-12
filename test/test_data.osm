@@ -39338,4 +39338,39 @@
     <tag k='end_date:edtf' v='/196x' />
     <tag k='source' v='https://example.com/x115' />
   </node>
+  <node id='9101150' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Before BCE 4-digit base' />
+    <tag k='start_date' v='before -0799' />
+    <tag k='source' v='https://example.com/x120' />
+  </node>
+  <node id='9101151' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='After BCE 4-digit base' />
+    <tag k='start_date' v='after -0799' />
+    <tag k='source' v='https://example.com/x121' />
+  </node>
+  <node id='9101152' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='By BCE 4-digit base' />
+    <tag k='start_date' v='by -0799' />
+    <tag k='source' v='https://example.com/x122' />
+  </node>
+  <node id='9101153' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='After BCE 3-digit unpadded base' />
+    <tag k='start_date' v='after -799' />
+    <tag k='source' v='https://example.com/x123' />
+  </node>
+  <node id='9101154' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Base negative X-form unpadded start_date' />
+    <tag k='start_date' v='-6xx' />
+    <tag k='source' v='https://example.com/x124' />
+  </node>
+  <node id='9101155' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Base negative X-form padded start_date' />
+    <tag k='start_date' v='-06XX' />
+    <tag k='source' v='https://example.com/x125' />
+  </node>
+  <node id='9101156' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Base negative X-form end_date' />
+    <tag k='end_date' v='-6XX' />
+    <tag k='source' v='https://example.com/x126' />
+  </node>
 </osm>

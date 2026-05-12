@@ -161,11 +161,13 @@ public final class DateNormalizer {
 
     /**
      * Strict ISO date or year inside a before/after expression: {@code YYYY},
-     * {@code YYYY-MM}, or {@code YYYY-MM-DD}. Preserved at full precision
-     * because the format is unambiguous.
+     * {@code YYYY-MM}, or {@code YYYY-MM-DD}, with an optional leading
+     * minus sign for BCE astronomical years (e.g. {@code -0799},
+     * {@code -0799-03-15}). Preserved at full precision because the format
+     * is unambiguous.
      */
     private static final Pattern STRICT_ISO_FOR_BEFORE_AFTER =
-        Pattern.compile("^\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?$");
+        Pattern.compile("^-?\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?$");
 
     /**
      * Day-month-year or month-day-year with dash separators inside a
@@ -622,6 +624,14 @@ public final class DateNormalizer {
         if (spacedBce.matches()) {
             s = spacedBce.group(1) + ".." + spacedBce.group(2) + " BCE";
         }
+
+        // Protect "before/after/by/as of -N" patterns from the hyphen-whitespace
+        // strip below: without this, "after -0799" would collapse to
+        // "after-0799" and the BEFORE/AFTER patterns (which require
+        // whitespace, colon, or "..") wouldn't match. Swap the space for
+        // a colon — also an accepted BEFORE/AFTER separator — so the
+        // strip leaves the colon intact and AFTER matches cleanly.
+        s = s.replaceAll("(?i)^(after|before|by|as of) -(\\d)", "$1:-$2");
 
         // Strip whitespace adjacent to hyphens, dots (EDTF range ..), slashes.
         s = s.replaceAll("\\s*-\\s*", "-");

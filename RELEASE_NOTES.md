@@ -39,7 +39,13 @@ All checks for the EDTF unspecified-digit marker `X` now accept lowercase `x` eq
 - `test/test_data.osm` — six new fixtures covering positive, negative, in-range, and open-ended X-form lowercase variants.
 - `test/expected.txt` — golden rows.
 
-`MessageApiAuditor` count: 99 (unchanged). Regression suite green.
+`MessageApiAuditor` count: 99 → 100 (new emission site for `checkBaseNegativeEdtfXForm`). Regression suite green.
+
+## Two additional fixes bundled in this release
+
+**`before/after/by/as of` followed by a negative year now normalizes correctly.** Pre-fix: `start_date=after -0799` fell through to 4201 unfixable. The whitespace-around-hyphen normalization (preprocess line 629) was collapsing "after -0799" → "after-0799", which then didn't match the AFTER pattern (which requires a separator between "after" and the inner). Fix: added a protective rewrite that swaps `after -N` / `before -N` / `by -N` / `as of -N` to use `:` as separator (also accepted by BEFORE/AFTER) before the whitespace-strip runs. After fix: `after -0799` → fixable, autofix writes `start_date=-0799, :edtf=-0799/, :raw=after -0799`. Same for `before`, `by`, `as of`; works at all year-magnitudes (4-digit padded, 3-digit unpadded both handled).
+
+**Base-tag negative X-form now fixable.** Pre-fix: `start_date=-6xx`, `start_date=-06XX`, `end_date=-6XX` all fell through to 4201 unfixable. Rule 4250 was `:edtf`-only; the base pipeline relied on `edtf-java` parsing the value, which rejects negative X-form years. Fix: new `checkBaseNegativeEdtfXForm` helper (parallel to `checkNegativeEdtfXForm`) detects the shape at the base path and emits the same 4250 finding with autofix triple — `:edtf=slash interval`, base=appropriate bound (earlier for start, later for end), `:raw=original`. Same rule code (4250), same title, just broader scope.
 
 ---
 
