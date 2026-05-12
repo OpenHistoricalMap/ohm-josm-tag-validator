@@ -470,6 +470,14 @@ The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an opt
 
 **4202 — junk-tail strip:** Open-ended slash forms with garbage tails — `1959/..~`, `1959/..`, `1959/.~`, `1959/~` — all collapse to `1959/`. Typically arise from incomplete edits.
 
+**4202 / 4228 — single-bracket single-dot range:** Values matching `[<ISO date>.<ISO date>]` (single brackets, single-dot separator, each side a clean ISO shape `YYYY` / `YYYY-MM` / `YYYY-MM-DD`) are rewritten to `<inner>..<inner>` so the standard RANGE branch can normalize to a slash interval. The single dot is almost always a typo for `..` or `/`. Strict on each side being a 4-digit-year ISO date to avoid splitting non-range values that contain a `.`. Double-dot bracket forms (`[1900..1950]`, EDTF set notation) are EDTF that the parser accepts and are NOT matched. Examples:
+
+- `[1900.1950]` → `1900/1950`
+- `[1900-05.1950-08]` → `1900-05/1950-08`
+- `[1900-05-15.1950-08-20]` → `1900-05-15/1950-08-20`
+
+Surfaces as 4228 fixable on `*_date:edtf` keys; 4202 fixable on base `*_date` keys (autofix writes the full triple).
+
 **4202 / 4228 — double-bracket dotdot range:** Values wrapped in `[[...]]` with a `..` separator inside are unwrapped so the standard RANGE branch can normalize the inner. Optional whitespace between the brackets and the inner is tolerated. Each side of the `..` is validated as a date by the recursive normalizer; if either side fails, the whole value falls through to the unfixable path. Examples:
 
 - `[[1900..1950]]` → `1900/1950`

@@ -39273,4 +39273,19 @@
     <tag k='start_date' v='1900' />
     <tag k='source' v='https://example.com/x96' />
   </node>
+  <node id='9101120' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test single-bracket single-dot year range edtf' />
+    <tag k='end_date:edtf' v='[1900.1950]' />
+    <tag k='source' v='https://example.com/x97' />
+  </node>
+  <node id='9101121' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test single-bracket single-dot year-month range edtf' />
+    <tag k='end_date:edtf' v='[1900-05.1950-08]' />
+    <tag k='source' v='https://example.com/x98' />
+  </node>
+  <node id='9101122' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test single-bracket single-dot full-date range edtf' />
+    <tag k='end_date:edtf' v='[1900-05-15.1950-08-20]' />
+    <tag k='source' v='https://example.com/x99' />
+  </node>
 </osm>

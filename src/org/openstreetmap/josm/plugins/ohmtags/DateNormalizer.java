@@ -820,6 +820,25 @@ public final class DateNormalizer {
         //       "[[1900-05..1950-08]]"  → "1900-05/1950-08"
         s = s.replaceAll("^\\[\\[\\s*(.+\\.\\..+?)\\s*\\]\\]$", "$1");
 
+        // 6d. Single-bracket single-dot range: "[date1.date2]" where each
+        //     side is a clean ISO shape (YYYY, YYYY-MM, or YYYY-MM-DD).
+        //     The single dot is almost certainly a typo for "..", so rewrite
+        //     and let the standard RANGE branch handle the result.
+        //     Strict on each side being a 4-digit-year ISO date to avoid
+        //     accidentally splitting non-range values containing a dot.
+        //     Double-dot bracket forms ("[1900..1950]") are EDTF set
+        //     notation that the parser already accepts; this rule does NOT
+        //     match them (the pattern requires a single dot between the
+        //     two date sides).
+        //     Examples:
+        //       "[1900.1950]"             → "1900/1950"
+        //       "[1900-05.1950-08]"       → "1900-05/1950-08"
+        //       "[1900-05-15.1950-08-20]" → "1900-05-15/1950-08-20"
+        s = s.replaceAll(
+            "^\\[(\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?)\\.(\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?)\\]$",
+            "$1..$2"
+        );
+
         // 7. Hyphen-as-range-separator between two 4-digit years (e.g.
         //    "1850-1900"). Safe to interpret as a range because no valid
         //    ISO year-month has a 4-digit month. We require both parts to

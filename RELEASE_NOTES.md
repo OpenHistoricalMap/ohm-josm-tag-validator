@@ -1,3 +1,32 @@
+# v0.7.5 — Single-bracket single-dot range rewrite
+
+New `DateNormalizer` preprocess step (6d) catches `[<ISO date>.<ISO date>]` — a single-bracket-wrapped value with a single dot separating two clean ISO dates. The single dot is almost certainly a typo for `..` or `/`. Strips the brackets, rewrites the dot to `..`, lets the standard RANGE branch produce the slash form.
+
+Strict on each side being a 4-digit-year ISO shape (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`) to avoid accidentally splitting other dot-containing values. Double-dot bracket forms (`[1900..1950]`, which the EDTF parser already accepts as set notation) are *not* matched — different shape.
+
+## Examples (post-v0.7.5)
+
+| Input | Output |
+|---|---|
+| `[1900.1950]` | `1900/1950` |
+| `[1900-05.1950-08]` | `1900-05/1950-08` |
+| `[1900-05-15.1950-08-20]` | `1900-05-15/1950-08-20` |
+| `[1900..1950]` | (unchanged — EDTF set notation, parser already accepts) |
+| `[..1950]` | (unchanged — EDTF open-ended set notation) |
+
+Surfaces as 4228 fixable on `*_date:edtf` keys (autofix writes the slash form, original preserved in `:edtf:raw`). Surfaces as 4202 fixable on base `*_date` keys.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — new preprocess step 6d, parallel to existing 6c (double-bracket double-dot strip).
+- `docs/MESSAGES.md` — new bullet under the 4202 preprocess pattern list.
+- `test/test_data.osm` — three new probes (9101120 year, 9101121 year-month, 9101122 full date).
+- `test/expected.txt` — three new golden rows.
+
+`MessageApiAuditor` count: 99 (unchanged — uses the existing 4228 fixable emission). Regression suite green.
+
+---
+
 # v0.7.4 — Two false-negative fixes (NG-1 wikipedia URL, NG-2 empty wikidata)
 
 Two gaps surfaced by the fresh post-v0.7.3 rule review.
