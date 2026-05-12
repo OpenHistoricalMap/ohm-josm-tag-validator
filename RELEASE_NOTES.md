@@ -1,3 +1,48 @@
+# v0.7.7 — Case-insensitive X handling for unspecified-digit forms
+
+All checks for the EDTF unspecified-digit marker `X` now accept lowercase `x` equivalently. Before this release, several places were case-sensitive and let lowercase forms slip through:
+
+- `19xx` (`:edtf`) → was canonicalized via the existing step 9 narrow path; broader cases like `19xX` (mixed) weren't.
+- `19xx/2050` (lowercase inside a slash range) → bound-extraction couldn't recognize the X, so 4252 mis-computed the span.
+- `-6xx` (lowercase negative X-form) → 4250's pattern was case-sensitive, slipped through to 4228 unfixable.
+- `/196x` (lowercase X in open-ended interval) → wasn't canonicalized.
+
+## Changes
+
+**`DateNormalizer.preprocess` step 1a (new):** Global `x` → `X` uppercase, guarded by a strict character-class check. The guard requires the value to contain only date-shape characters (digits, sign, `X`/`x`, `Y`/`y`, `/`, `.`, `-`, `~?%`, spaces, brackets, comma). Words like `circa`, `BC`, `early`, `j:1582-10-04` (Julian) contain letters outside the class and are left untouched.
+
+**`DateTagTest.NEGATIVE_EDTF_X_FORM` pattern:** `^-(\d{1,3})(X{1,2})$` → `^-(\d{1,3})([Xx]{1,2})$`. Case-insensitive on the X character so `-6xx` fires 4250.
+
+**`DateTagTest.extractEdtfBoundYear`:** broadened the digit-or-X class from `[\dX]` to `[\dXx]` and added a `replace('x', '0')` after the existing `replace('X', '0')`. Fixes 4252's span calculation for lowercase-X bounds.
+
+**`DateNormalizer` step 9a:** broadened from positive-only to also handle negative forms (`^(-?)(\d{1,3})([Xx]{1,3})$`). Pads short negative X-form years to 4-char body (`-7XX` → `-07XX`).
+
+## Verified behavior
+
+| Input | Output |
+|---|---|
+| `19xx` | canonicalized to `19XX` |
+| `19xX` (mixed) | `19XX` |
+| `19xx/1950` | `19XX/1950` (also: bound 19xx now read as 1900, not literal 19) |
+| `/196x` | `/196X` |
+| `-6xx` | 4250 fixable to `-0699/-0600` |
+| `-06xx` | same, `-0699/-0600` |
+
+## Known gap (not addressed)
+
+`start_date=-6xx` and `start_date=-06XX` (base, negative X-form) are still unfixable. This is **not a case-sensitivity issue** — the uppercase version was already unfixable before this release. The base-tag pipeline doesn't have a path equivalent to rule 4250 (which is `:edtf`-only) for negative short X-forms. Separate gap; tracked for future work.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — new step 1a (case-insensitive 'x' uppercase); step 9a broadened to also pad negative forms.
+- `src/.../validation/DateTagTest.java` — `NEGATIVE_EDTF_X_FORM` accepts `[Xx]`; `extractEdtfBoundYear` accepts both cases.
+- `test/test_data.osm` — six new fixtures covering positive, negative, in-range, and open-ended X-form lowercase variants.
+- `test/expected.txt` — golden rows.
+
+`MessageApiAuditor` count: 99 (unchanged). Regression suite green.
+
+---
+
 # v0.7.6 — Positive unpadded X-form padding (parallel to v0.7.3 negative fix)
 
 `9XX`, `99X`, `9X` (positive unpadded X-form years) were unfixable because the EDTF parser requires year bodies to be exactly 4 chars. v0.7.3 fixed the negative-side equivalent (`-7XX`); this release does the same on the positive side via preprocess left-zero-padding.

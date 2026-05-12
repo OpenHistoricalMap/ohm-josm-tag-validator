@@ -293,6 +293,10 @@ E   n/9101130   [ohm] Invalid date - *_date:edtf; fixable, please review   end_d
 E   n/9101131   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=99X is not valid EDTF. Normalize to 099X and preserve original in end_date:edtf:raw?
 E   n/9101132   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=9X is not valid EDTF. Normalize to 009X and preserve original in end_date:edtf:raw?
 E   n/9101133   [ohm] Invalid date - *_date; fixable, please review   start_date=9XX ? start_date=0900, start_date:edtf=09XX, start_date:raw=9XX
+E   n/9101140   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=19xx is valid EDTF but not canonical. Normalize to 19XX and preserve original in end_date:edtf:raw?
+E   n/9101141   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=19xX is valid EDTF but not canonical. Normalize to 19XX and preserve original in end_date:edtf:raw?
+E   n/9101144   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=19xx/1950 is valid EDTF but not canonical. Normalize to 19XX/1950 and preserve original in end_date:edtf:raw?
+E   n/9101145   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=/196x is valid EDTF but not canonical. Normalize to /196X and preserve original in end_date:edtf:raw?
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -1080,6 +1084,12 @@ W   n/9101100   [ohm] Suspicious date - negative *_date:edtf with X digit(s); au
 W   n/9101101   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date:edtf=-7XX: negative year with X digit(s). Bounds are -0799 (earlier) to -0700 (later). Replace with -0799/-0700?
 W   n/9101102   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-7X: negative year with X digit(s). Bounds are -0079 (earlier) to -0070 (later). Replace with -0079/-0070?
 W   n/9101110   [ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review   wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower is not in the expected '<lang>:<title>' format (e.g. 'en:Eiffel Tower'). Downstream lookups will fail.
+W   n/9101140   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=19xx implies end_date=1999.
+W   n/9101141   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=19xX implies end_date=1999.
+W   n/9101142   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-6xx: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
+W   n/9101143   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-06xx: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
+W   n/9101144   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=19xx/1950 implies end_date=1950.
+W   n/9101145   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=/196x implies end_date=1969.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.

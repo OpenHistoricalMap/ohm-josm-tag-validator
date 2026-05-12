@@ -39308,4 +39308,34 @@
     <tag k='start_date' v='9XX' />
     <tag k='source' v='https://example.com/x103' />
   </node>
+  <node id='9101140' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Lowercase X positive decade' />
+    <tag k='end_date:edtf' v='19xx' />
+    <tag k='source' v='https://example.com/x110' />
+  </node>
+  <node id='9101141' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Mixed-case X positive decade' />
+    <tag k='end_date:edtf' v='19xX' />
+    <tag k='source' v='https://example.com/x111' />
+  </node>
+  <node id='9101142' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Lowercase negative X-form unpadded' />
+    <tag k='end_date:edtf' v='-6xx' />
+    <tag k='source' v='https://example.com/x112' />
+  </node>
+  <node id='9101143' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Lowercase negative X-form padded' />
+    <tag k='end_date:edtf' v='-06xx' />
+    <tag k='source' v='https://example.com/x113' />
+  </node>
+  <node id='9101144' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Lowercase X in slash range' />
+    <tag k='end_date:edtf' v='19xx/1950' />
+    <tag k='source' v='https://example.com/x114' />
+  </node>
+  <node id='9101145' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Lowercase X in open-ended range' />
+    <tag k='end_date:edtf' v='/196x' />
+    <tag k='source' v='https://example.com/x115' />
+  </node>
 </osm>

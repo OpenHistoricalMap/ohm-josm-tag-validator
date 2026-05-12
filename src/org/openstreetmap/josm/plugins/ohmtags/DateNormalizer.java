@@ -591,6 +591,24 @@ public final class DateNormalizer {
              .replace('—', '-')
              .replace('−', '-');
 
+        // 1a. Case-insensitive 'x' uppercasing for EDTF unspecified-digit
+        //     markers. Only fires when the value contains 'x' AND the value's
+        //     character set is restricted to date-shape chars (digits, sign,
+        //     X/x, Y/y, /, ., -, ~?%, spaces, brackets, comma). The character-
+        //     class guard prevents accidental uppercasing inside words like
+        //     "circa", "before", "early", "BC", "j:1582-10-04" (Julian), etc.
+        //     — those all contain letters outside the allowed class so the
+        //     match fails and the 'x' is left alone.
+        //
+        //     Without this, "19xx/2050" (lowercase x inside an interval) and
+        //     "-6xx" (lowercase negative X-form) slip past the existing
+        //     narrow X-form handlers and produce 4228 unfixable instead of
+        //     the targeted 4248 / 4250 fixable autofixes.
+        if (s.indexOf('x') >= 0
+            && s.matches("^[-+0-9XxYy~?%/.\\s\\[\\],]+$")) {
+            s = s.replace('x', 'X');
+        }
+
         // Collapse runs of 3+ dots to two dots — three or more is always
         // junk (typo, ellipsis, or copy-paste artifact). Catches things
         // like "1839...1859" and "[1907...]".
@@ -930,24 +948,37 @@ public final class DateNormalizer {
             s = s.replace('x', 'X');
         }
 
-        // 9a. Pad short positive X-form years to 4 chars (uppercasing 'x'
-        //     to 'X' along the way). "9XX" → "09XX", "99X" → "099X",
-        //     "9X" → "009X", "9xx" → "09XX". EDTF year bodies are 4 chars;
-        //     the parser rejects shorter forms outright. Mirrors the
-        //     v0.7.3 negative-side fix that broadened rule 4250 to accept
-        //     "-7XX" (the same shape on the negative side).
+        // 9a. Pad short X-form years (positive or negative) to a 4-char body,
+        //     uppercasing 'x' to 'X' along the way. EDTF requires year
+        //     bodies to be exactly 4 chars; the parser rejects shorter
+        //     forms outright. Examples:
+        //       "9XX"   → "09XX"
+        //       "99X"   → "099X"
+        //       "9X"    → "009X"
+        //       "9xx"   → "09XX"   (lowercase 'x' also uppercased)
+        //       "-7XX"  → "-07XX"
+        //       "-6xx"  → "-06XX"
+        //       "-99X"  → "-099X"
+        //       "-7X"   → "-007X"
         //
         //     All-X bodies ("XX", "XXXX") deliberately not matched — they
         //     have no digit anchor and could mean any year; legitimately
         //     unfixable. Pattern requires at least one digit.
-        java.util.regex.Matcher xPositive =
-            java.util.regex.Pattern.compile("^(\\d{1,3})([Xx]{1,3})$").matcher(s);
-        if (xPositive.matches()) {
-            String digits = xPositive.group(1);
-            int xCount = xPositive.group(2).length();
+        //
+        //     For positive forms this makes base autofix work via the
+        //     4202 EDTF-in-base path; for negative forms it makes the
+        //     same base autofix work AND makes rule 4250's pattern-match
+        //     consistent (rule 4250 also accepts lowercase x via its own
+        //     case-insensitive pattern).
+        java.util.regex.Matcher xForm =
+            java.util.regex.Pattern.compile("^(-?)(\\d{1,3})([Xx]{1,3})$").matcher(s);
+        if (xForm.matches()) {
+            String sign = xForm.group(1);
+            String digits = xForm.group(2);
+            int xCount = xForm.group(3).length();
             int total = digits.length() + xCount;
             String pad = total < 4 ? "0".repeat(4 - total) : "";
-            s = pad + digits + "X".repeat(xCount);
+            s = sign + pad + digits + "X".repeat(xCount);
         }
 
         return s;

@@ -363,7 +363,7 @@ public class DateTagTest extends Test {
      * group 2 captures the X run (e.g. {@code XX}).
      */
     private static final Pattern NEGATIVE_EDTF_X_FORM =
-        Pattern.compile("^-(\\d{1,3})(X{1,2})$");
+        Pattern.compile("^-(\\d{1,3})([Xx]{1,2})$");
 
     /** The bot username trusted to have authored correct {@code :raw} values. */
     private static final String TRUSTED_BOT_USER = "tagcleanupbot";
@@ -1550,10 +1550,12 @@ public class DateTagTest extends Test {
      */
     private static Integer extractEdtfBoundYear(String bound) {
         String s = bound.replaceAll("[~?%]", "");
-        Matcher m = Pattern.compile("^(-?[\\dX]{1,4})").matcher(s);
+        // Accept both uppercase X and lowercase x (EDTF spec is X but
+        // editors sometimes type lowercase, see v0.7.7 case-insensitive pass).
+        Matcher m = Pattern.compile("^(-?[\\dXx]{1,4})").matcher(s);
         if (!m.find()) return null;
         try {
-            return Integer.parseInt(m.group(1).replace('X', '0'));
+            return Integer.parseInt(m.group(1).replace('X', '0').replace('x', '0'));
         } catch (NumberFormatException e) {
             return null;
         }
