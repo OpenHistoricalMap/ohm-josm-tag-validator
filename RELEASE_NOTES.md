@@ -1,3 +1,65 @@
+# v0.7.1 — Bundled fixes from the post-v0.7.0 rule review
+
+Several gaps from the post-v0.7.0 rule review, bundled together.
+
+## Prefix-tilde year-month bug fix
+
+Pre-fix: `start_date=~1900-05` (prefix tilde on year-month) produced garbage autofix `start_date=1900, start_date:edtf=1900~/0005` — the normalizer's `QUALIFIED_HYPHEN_RANGE` preprocess pattern was greedy and parsed `~1900-05` as a `~`-prefixed range from year 1900-approximate to year 5 CE.
+
+Post-fix: same input correctly normalizes to `start_date=1900-05, start_date:edtf=1900-05~, start_date:raw=~1900-05` via the existing 4202 "EDTF in base tag" pipeline. The fix is a small guard added to `QUALIFIED_HYPHEN_RANGE` that requires the right side to be unambiguously a year (>12 or 4-digit) before treating the input as a range — mirroring the guard already on the sibling `QUALIFIED_SHORT_YEAR_RANGE`. No new code, no behavior change for legitimate ranges (`~1848-1854` and `~47-50` continue to normalize correctly).
+
+## G1 — rule 4220 (trailing single hyphen) extended to `:edtf`
+
+Before: `end_date:edtf=2021-` fired the generic 4228 "Invalid date - *_date:edtf; unfixable" with the catch-all "cannot be normalized" description. After: same input fires the targeted 4220 "Ambiguous date - trailing hyphen" with the three-way "typo / incomplete / open-ended range" description. Same code, same disposition (unfixable, three interpretations), just a broader trigger surface — base and any top-level `:edtf` key.
+
+## G6 — rule 4245 (packed features) extended to more `*_date` pairs
+
+Curated list of start/end date-key pairs eligible for the packed-features check (semicolon-merged values that should be split):
+
+- `(start_date, end_date)` — primary lifespan (existing)
+- `(birth_date, death_date)` — persons (new)
+- `(opening_date, closing_date)` — businesses (new)
+- `(construction_date, demolition_date)` — buildings (new)
+
+Same autofix shape applies to all four pairs: collapse to min/max bounds, preserve originals in matching `:raw` slots, add `fixme=split into multiple features`. Auto-discovery of arbitrary `*_date` pairs was rejected — too many false positives.
+
+## G5 — new rule 4327: name leading/trailing whitespace
+
+`[ohm] Name warning - leading or trailing whitespace; autofix by trimming` (fixable)
+`[ohm] Name warning - whitespace-only name; unfixable, please review` (unfixable, when stripping would empty the value)
+
+Fires on any name-family value (`name`, `name:lang`, `alt_name`, …). Fixable autofix calls `String.strip()`.
+
+## G4 — new rule 4255: backwards EDTF interval
+
+`[ohm] Suspicious date - EDTF interval is backwards (start > end); unfixable, please review`
+
+Fires WARNING when `start_date:edtf` or `end_date:edtf` is a closed slash interval whose lower-bound year is greater than its upper-bound year — e.g. `2000/1900`. The interval is syntactically valid EDTF but semantically inverted; downstream consumers will silently pick one bound and ignore the other. Without 4255, rule 4211 was silently deriving `end_date=1900` from `:edtf=2000/1900` (extracting the upper bound = 1900), freezing the bad state in place. 4255 fires *before* 4211 masks the problem.
+
+Unfixable — the validator can't tell which side the user meant.
+
+## G2 / G3 — new rules 4328 / 4329: malformed wikidata / wikipedia values
+
+`[ohm] Malformed tag - wikidata value is not a QID; unfixable, please review` (4328)
+`[ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review` (4329)
+
+Catches values like `wikidata=notaqid` and `wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower` that pass the presence-only checks in 4302 but would silently fail downstream lookups (the 4302 autofix queries the Wikidata API using the `<lang>:<title>` split — malformed values would silent-no-op).
+
+Both unfixable WARNING. The validator can't guess intent (typo? truncated URL? wrong tag entirely?).
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — `QUALIFIED_HYPHEN_RANGE` preprocess gains a right-side disambiguation guard.
+- `src/.../validation/DateTagTest.java` — new `CODE_EDTF_INTERVAL_BACKWARDS = 4255`, `checkBackwardsEdtfInterval` method; refactored `checkPackedFeatureSet` into iteration over `PACKED_FEATURE_PAIRS` with per-pair `checkPackedFeatureSetForPair`; extracted `emitTrailingHyphenWarning` shared between base and `:edtf` paths, hooked into `checkAllEdtfKeys`.
+- `src/.../validation/TagConsistencyTest.java` — new `CODE_NAME_HAS_WHITESPACE = 4327`, `CODE_WIKIDATA_MALFORMED = 4328`, `CODE_WIKIPEDIA_MALFORMED = 4329`; new `WIKIDATA_QID` and `WIKIPEDIA_VALUE` patterns; new `checkNameWhitespace` helper; wiki-format checks inline alongside the 4302 missing-wikidata block.
+- `docs/MESSAGES.md` — rewritten 4220 trigger, rewritten 4245 trigger with curated pair list, new 4255 / 4327 / 4328 / 4329 sections.
+- `test/test_data.osm` — 11 new probe fixtures (9101010–9101060).
+- `test/expected.txt` — corresponding golden rows.
+
+`MessageApiAuditor` count: 93 → 100. Regression suite green.
+
+---
+
 # v0.7.0 — Attribute-source rule extension + empty-chronology rule
 
 This release expands the source-rule coverage to **attribute-scoped source slots** (e.g. `start_date:source`, `name:source`, `wikidata:source`) and adds a new chronology rule (4254) for empty chronology relations. Minor version bump because the rule-coverage surface grows substantially.

@@ -242,6 +242,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_LONG_EDTF_RANGE = 4252;
     protected static final int CODE_AMBIGUOUS_MONTH_YEAR_TAIL = 4253;
     protected static final int CODE_CHRONOLOGY_EMPTY = 4254;
+    protected static final int CODE_EDTF_INTERVAL_BACKWARDS = 4255;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -436,6 +437,7 @@ public class DateTagTest extends Test {
         }
         checkAllEdtfKeys(p);
         checkLongEdtfRange(p);
+        checkBackwardsEdtfInterval(p);
     }
 
     /**
@@ -458,9 +460,55 @@ public class DateTagTest extends Test {
      * so the caller can suppress redundant per-key date checks for this
      * primitive.
      */
+    /**
+     * Date-key pairs eligible for the rule 4245 packed-features check.
+     * Each entry is {startKey, endKey}. The primary {@code (start_date,
+     * end_date)} pair is always checked; the others are extension pairs
+     * (G6 cheap fix) — semantically-matched start/end date keys that
+     * appear on some OHM/OSM features.
+     *
+     * <p>Auto-discovery (any {@code *_date} pair) was considered and
+     * rejected: it would produce false positives on coincidentally-named
+     * key pairs that aren't actually start/end matched. A curated list
+     * stays predictable.
+     */
+    private static final List<String[]> PACKED_FEATURE_PAIRS = List.of(
+        new String[] {"start_date", "end_date"},
+        new String[] {"birth_date", "death_date"},
+        new String[] {"opening_date", "closing_date"},
+        new String[] {"construction_date", "demolition_date"}
+    );
+
+    /**
+     * Iterate the curated date-key pairs and run the packed-features check
+     * on each. Returns {@code true} if the primary {@code (start_date,
+     * end_date)} pair fired — used by the caller to suppress noisy per-key
+     * date checks that would otherwise complain about the semicolon string.
+     * Per-key checks only ever fire against {@code start_date} /
+     * {@code end_date}, so suppression for the extension pairs is a no-op
+     * and we don't bother returning anything for them.
+     */
     private boolean checkPackedFeatureSet(OsmPrimitive p) {
-        String startVal = p.get("start_date");
-        String endVal = p.get("end_date");
+        boolean primaryFired = false;
+        for (String[] pair : PACKED_FEATURE_PAIRS) {
+            boolean fired = checkPackedFeatureSetForPair(p, pair[0], pair[1]);
+            if (fired && "start_date".equals(pair[0])) {
+                primaryFired = true;
+            }
+        }
+        return primaryFired;
+    }
+
+    /**
+     * Per-pair logic for rule 4245. Fires when both {@code startKey} and
+     * {@code endKey} contain matching counts (≥ 2) of semicolon-delimited
+     * strict-ISO date values. Same autofix shape as the primary pair —
+     * collapses to min/max bounds, preserves originals in {@code :raw},
+     * adds {@code fixme=split into multiple features}.
+     */
+    private boolean checkPackedFeatureSetForPair(OsmPrimitive p, String startKey, String endKey) {
+        String startVal = p.get(startKey);
+        String endVal = p.get(endKey);
         if (startVal == null || endVal == null) return false;
         if (!startVal.contains(";") || !endVal.contains(";")) return false;
 
@@ -493,41 +541,39 @@ public class DateTagTest extends Test {
         String newStart = minStart.raw;
         String newEnd = maxEnd.raw;
         int n = startParts.length;
+        String startRawKey = startKey + ":raw";
+        String endRawKey = endKey + ":raw";
 
-        // :raw clobber check on both sides; if either would clobber, emit
-        // the warning unfixable so the editor reconciles :raw first.
-        String existingStartRaw = rawConflictValue(p, "start_date", startVal);
-        String existingEndRaw = rawConflictValue(p, "end_date", endVal);
+        String existingStartRaw = rawConflictValue(p, startKey, startVal);
+        String existingEndRaw = rawConflictValue(p, endKey, endVal);
 
         TestError.Builder builder = TestError.builder(this, Severity.WARNING, CODE_PACKED_FEATURE_SET)
             .primitives(p);
 
         if (existingStartRaw == null && existingEndRaw == null) {
-            // Safe to autofix.
             builder.message(tr("[ohm] Suspicious feature - 1 feature that should be {0}; autofix by collapsing to min/max bounds", n),
-                     marktr("start_date={0} and end_date={1}: looks like {2} features merged into "
-                        + "one. The autofix collapses to start_date={3} and end_date={4} (min/max), "
+                     marktr("{7}={0} and {8}={1}: looks like {2} features merged into "
+                        + "one. The autofix collapses to {7}={3} and {8}={4} (min/max), "
                         + "preserves the originals in {5}={0} and {6}={1}, and adds "
                         + "fixme=split into multiple features so the editor remembers the manual "
                         + "follow-up."),
-                        startVal, endVal, n, newStart, newEnd, "start_date:raw", "end_date:raw");
+                        startVal, endVal, n, newStart, newEnd, startRawKey, endRawKey, startKey, endKey);
             List<Command> cmds = new ArrayList<>();
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "start_date", newStart));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "end_date", newEnd));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "start_date:raw", startVal));
-            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "end_date:raw", endVal));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), startKey, newStart));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), endKey, newEnd));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), startRawKey, startVal));
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), endRawKey, endVal));
             cmds.add(new ChangePropertyCommand(Arrays.asList(p), "fixme",
                 "split into multiple features"));
             Command fix = new SequenceCommand(tr("Collapse merged-features dates"), cmds);
             builder.fix(() -> fix);
         } else {
-            // start_date:raw or end_date:raw would be clobbered — no autofix.
             builder.message(tr("[ohm] Suspicious feature - 1 feature that should be {0}; unfixable, please review", n),
-                     marktr("start_date={0} and end_date={1}: looks like {2} features merged into "
-                        + "one. Would collapse to start_date={3} and end_date={4} (min/max), "
+                     marktr("{7}={0} and {8}={1}: looks like {2} features merged into "
+                        + "one. Would collapse to {7}={3} and {8}={4} (min/max), "
                         + "but {5} or {6} already holds a different value. Manual review needed: "
                         + "clear or merge the conflicting :raw before re-running."),
-                        startVal, endVal, n, newStart, newEnd, "start_date:raw", "end_date:raw");
+                        startVal, endVal, n, newStart, newEnd, startRawKey, endRawKey, startKey, endKey);
         }
         errors.add(builder.build());
         return true;
@@ -620,12 +666,22 @@ public class DateTagTest extends Test {
         if (p.get(baseKey + ":raw") != null) return;
         if (p.get(baseKey + ":edtf") != null) return;
 
+        emitTrailingHyphenWarning(p, baseKey, value);
+    }
+
+    /**
+     * Shared emission for rule 4220 (trailing hyphen ambiguous), used from
+     * both the base-key path ({@link #checkAmbiguousTrailingHyphen}) and the
+     * {@code :edtf}-key path in {@link #checkAllEdtfKeys}. Three interpretations
+     * named in the description: typo, incomplete input, open-ended range.
+     */
+    private void emitTrailingHyphenWarning(OsmPrimitive p, String key, String value) {
         String trimmed = value.substring(0, value.length() - 1);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_AMBIGUOUS_TRAILING_HYPHEN)
             .message(tr("[ohm] Ambiguous date - trailing hyphen in date; unfixable, please review"),
                      marktr("{0}={1}: could be a typo for {2}, an incomplete input, "
                         + "or an open-ended range {2}/. Manual review needed."),
-                        baseKey, value, trimmed)
+                        key, value, trimmed)
             .primitives(p)
             .build());
     }
@@ -1429,6 +1485,51 @@ public class DateTagTest extends Test {
     }
 
     /**
+     * Rule 4255: fires a WARNING when {@code start_date:edtf} or
+     * {@code end_date:edtf} is a closed slash interval whose lower-bound
+     * year exceeds its upper-bound year — a backwards interval, e.g.
+     * {@code 2000/1900}. The interval is syntactically valid EDTF but
+     * semantically inverted; downstream consumers will silently pick one
+     * bound and ignore the other, producing wrong renders. Unfixable —
+     * the validator can't tell which side the user meant.
+     *
+     * <p>Same scope as {@link #checkLongEdtfRange} ({@code start_date:edtf}
+     * / {@code end_date:edtf}); open-ended intervals are skipped.
+     */
+    private void checkBackwardsEdtfInterval(OsmPrimitive p) {
+        for (String baseKey : BASE_KEYS) {
+            String edtfKey = baseKey + ":edtf";
+            String value = p.get(edtfKey);
+            if (value == null || !value.contains("/")) continue;
+
+            int slash = value.indexOf('/');
+            String startBound = value.substring(0, slash);
+            String endBound   = value.substring(slash + 1);
+
+            if (startBound.isEmpty() || startBound.equals("..")
+                    || endBound.isEmpty() || endBound.equals("..")) continue;
+
+            Integer startYear = extractEdtfBoundYear(startBound);
+            Integer endYear   = extractEdtfBoundYear(endBound);
+            if (startYear == null || endYear == null) continue;
+
+            if (startYear > endYear) {
+                // Pass years as Strings so MessageFormat doesn't grouping-
+                // format them (e.g. 2000 → 2,000), which would garble the
+                // year in the message.
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_INTERVAL_BACKWARDS)
+                    .message(tr("[ohm] Suspicious date - EDTF interval is backwards (start > end); unfixable, please review"),
+                             marktr("{0}={1}: interval start year ({2}) is later than end "
+                                + "year ({3}). The validator can''t tell which side you meant; "
+                                + "fix by swapping the bounds or correcting whichever is wrong."),
+                                edtfKey, value, startYear.toString(), endYear.toString())
+                    .primitives(p)
+                    .build());
+            }
+        }
+    }
+
+    /**
      * Extracts the year from one bound of an EDTF interval string.
      * Strips leading/trailing qualifiers ({@code ~}, {@code ?}, {@code %})
      * and replaces unspecified-digit placeholders ({@code X}) with {@code 0}
@@ -1466,6 +1567,14 @@ public class DateTagTest extends Test {
 
             // YYYY-MM..MM with month-valid tail → ambiguous month-vs-year tail.
             if (checkAmbiguousMonthYearTail(p, key, value)) continue;
+
+            // Trailing single hyphen (e.g. "2021-", "2021-03-") → ambiguous
+            // (typo / incomplete / open-ended range). Mirrors the base-side
+            // rule 4220.
+            if (TRAILING_HYPHEN.matcher(value).matches()) {
+                emitTrailingHyphenWarning(p, key, value);
+                continue;
+            }
 
             boolean isValid = DateNormalizer.looksLikeValidEdtf(value);
             Optional<String> normalized = DateNormalizer.toEdtf(value);

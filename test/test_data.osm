@@ -39120,4 +39120,77 @@
     <tag k='start_date' v='1800' />
     <tag k='end_date' v='2000' />
   </relation>
+  <node id='9101000' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test prefix-tilde year-month (base)' />
+    <tag k='start_date' v='~1900-05' />
+    <tag k='source' v='https://example.com/x60' />
+  </node>
+  <node id='9101001' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test prefix-tilde year-month (edtf)' />
+    <tag k='end_date:edtf' v='~1900-05' />
+    <tag k='source' v='https://example.com/x61' />
+  </node>
+  <node id='9101002' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test prefix-tilde range preserved (regression)' />
+    <tag k='end_date:edtf' v='~1848-1854' />
+    <tag k='source' v='https://example.com/x62' />
+  </node>
+  <node id='9101003' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test suffix-tilde year-month in base (start_date)' />
+    <tag k='start_date' v='2019-07~' />
+    <tag k='source' v='https://example.com/x63' />
+  </node>
+  <node id='9101004' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test prefix-tilde year-month in base (end_date)' />
+    <tag k='end_date' v='~2020-03' />
+    <tag k='source' v='https://example.com/x64' />
+  </node>
+  <node id='9101010' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4220 trailing hyphen on edtf (G1)' />
+    <tag k='end_date:edtf' v='2021-' />
+    <tag k='source' v='https://example.com/x65' />
+  </node>
+  <node id='9101011' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4220 trailing hyphen on edtf year-month (G1)' />
+    <tag k='end_date:edtf' v='2021-03-' />
+    <tag k='source' v='https://example.com/x66' />
+  </node>
+  <node id='9101020' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4245 G6 birth_death pair' />
+    <tag k='birth_date' v='1850;1870' />
+    <tag k='death_date' v='1899;1920' />
+    <tag k='source' v='https://example.com/x70' />
+  </node>
+  <node id='9101021' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4245 G6 construction_demolition pair' />
+    <tag k='construction_date' v='1850;1900' />
+    <tag k='demolition_date' v='1899;1949' />
+    <tag k='source' v='https://example.com/x71' />
+  </node>
+  <node id='9101030' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v=' leading whitespace ' />
+    <tag k='source' v='https://example.com/x72' />
+  </node>
+  <node id='9101031' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='	' />
+    <tag k='source' v='https://example.com/x73' />
+  </node>
+  <node id='9101040' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test G4 backwards interval' />
+    <tag k='start_date' v='2000' />
+    <tag k='start_date:edtf' v='2000/1900' />
+    <tag k='source' v='https://example.com/x74' />
+  </node>
+  <node id='9101050' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test G2 wikidata malformed' />
+    <tag k='wikidata' v='notaqid' />
+    <tag k='tourism' v='attraction' />
+    <tag k='source' v='https://example.com/x75' />
+  </node>
+  <node id='9101060' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test G3 wikipedia malformed' />
+    <tag k='wikipedia' v='not_a_real_format' />
+    <tag k='wikidata' v='Q243' />
+    <tag k='source' v='https://example.com/x76' />
+  </node>
 </osm>

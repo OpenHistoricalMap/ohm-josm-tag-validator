@@ -834,9 +834,24 @@ public final class DateNormalizer {
         //     so the qualifier moves to the end of the left bound and the
         //     hyphen becomes ".." — the standard RANGE branch then picks
         //     each side up and propagates the qualifier to the start.
+        //
+        //     Guard: only fire when the right side is unambiguously a year.
+        //     A 4-digit right side is always a year (no valid year-month
+        //     has a 4-digit month); a right side > 12 cannot be a month.
+        //     Without this guard, "~1900-05" would be misread as a range
+        //     from year 1900~ to year 5 CE (producing "1900~/0005") rather
+        //     than as a qualified year-month (which falls through to
+        //     SIMPLE_YEAR and produces canonical "1900-05~"). Mirrors the
+        //     guard already on QUALIFIED_SHORT_YEAR_RANGE in toEdtf.
         Matcher hrq = QUALIFIED_HYPHEN_RANGE.matcher(s);
         if (hrq.matches()) {
-            s = hrq.group(2) + hrq.group(1) + ".." + hrq.group(3);
+            String rightStr = hrq.group(3);
+            String rightDigits = rightStr.startsWith("-") ? rightStr.substring(1) : rightStr;
+            boolean unambiguouslyYear =
+                rightDigits.length() == 4 || Integer.parseInt(rightDigits) > 12;
+            if (unambiguouslyYear) {
+                s = hrq.group(2) + hrq.group(1) + ".." + hrq.group(3);
+            }
         }
 
         // 8. Open-ended range indicators expressed with "..". Normalize

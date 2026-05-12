@@ -273,6 +273,11 @@ E   n/9100934   [ohm] Invalid date - *_date:edtf; fixable, please review   end_d
 E   n/9100935   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid 197X is not valid EDTF. Normalize to 1973~/1976~ and preserve original in end_date:edtf:raw?
 E   n/9100936   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=MID 197x is not valid EDTF. Normalize to 1973~/1976~ and preserve original in end_date:edtf:raw?
 E   n/9100954   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   n/9101000   [ohm] Invalid date - *_date; fixable, please review   start_date=~1900-05 ? start_date=1900-05, start_date:edtf=1900-05~, start_date:raw=~1900-05
+E   n/9101001   [ohm] Date normalization - *_date:edtf not canonical; autofix to canonical form   end_date:edtf=~1900-05 is valid EDTF but not canonical. Normalize to 1900-05~ and preserve original in end_date:edtf:raw?
+E   n/9101002   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=~1848-1854 is not valid EDTF. Normalize to 1848~/1854 and preserve original in end_date:edtf:raw?
+E   n/9101003   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=2019-07~ ? start_date=2019-07, start_date:edtf=2019-07~
+E   n/9101004   [ohm] Invalid date - *_date; fixable, please review   end_date=~2020-03 ? end_date=2020-03, end_date:edtf=2020-03~, end_date:raw=~2020-03
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -1037,6 +1042,17 @@ W   n/9100952   [ohm] Source mismatch - source contains multiple text strings se
 W   n/9100953   [ohm] Source mismatch - source contains multiple values of different types; unfixable, please review   start_date:source=https://example.com/a; USGS topo; https://example.com/b: 3 or more items mixing URLs and text. Manual review needed ? split into start_date:source, start_date:source:N, start_date:source:url, start_date:source:N:url as appropriate.
 W   n/9100954   [ohm] Missing tag - wikidata, referenced in source keys; fixable, please review   start_date:source=wikidata: derive 'wikidata=Q?' by looking up the wikipedia article on the Wikidata API.
 W   n/9100955   [ohm] Missing tag - wikidata, referenced in source keys; unfixable, please review & add tag   start_date:source=wikidata: please add an appropriate 'wikidata' tag.
+W   n/9101001   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=~1900-05 implies end_date=1900-05.
+W   n/9101010   [ohm] Ambiguous date - trailing hyphen in date; unfixable, please review   end_date:edtf=2021-: could be a typo for 2021, an incomplete input, or an open-ended range 2021/. Manual review needed.
+W   n/9101011   [ohm] Ambiguous date - trailing hyphen in date; unfixable, please review   end_date:edtf=2021-03-: could be a typo for 2021-03, an incomplete input, or an open-ended range 2021-03/. Manual review needed.
+W   n/9101020   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   birth_date=1850;1870 and death_date=1899;1920: looks like 2 features merged into one. The autofix collapses to birth_date=1850 and death_date=1920 (min/max), preserves the originals in birth_date:raw=1850;1870 and death_date:raw=1899;1920, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   n/9101021   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   construction_date=1850;1900 and demolition_date=1899;1949: looks like 2 features merged into one. The autofix collapses to construction_date=1850 and demolition_date=1949 (min/max), preserves the originals in construction_date:raw=1850;1900 and demolition_date:raw=1899;1949, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
+W   n/9101030   [ohm] Name warning - leading or trailing whitespace; autofix by trimming   name=" leading whitespace " has leading or trailing whitespace. Trim to "leading whitespace"?
+W   n/9101031   [ohm] Name warning - whitespace-only name; unfixable, please review   name=" ": value is only whitespace. Restore content or remove the tag.
+W   n/9101040   [ohm] Suspicious date - EDTF interval is backwards (start > end); unfixable, please review   start_date:edtf=2000/1900: interval start year (2000) is later than end year (1900). The validator can't tell which side you meant; fix by swapping the bounds or correcting whichever is wrong.
+W   n/9101050   [ohm] Malformed tag - wikidata value is not a QID; unfixable, please review   wikidata=notaqid is not a valid Wikidata QID. Expected shape: 'Q' followed by digits, e.g. Q243.
+W   n/9101050   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   n/9101060   [ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review   wikipedia=not_a_real_format is not in the expected '<lang>:<title>' format (e.g. 'en:Eiffel Tower'). Downstream lookups will fail.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.

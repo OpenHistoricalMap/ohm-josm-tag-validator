@@ -151,6 +151,9 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_SOURCE_NAME_HAS_URL = 4324;
     protected static final int CODE_SOURCE_URL_HAS_TEXT = 4325;
     protected static final int CODE_NODE_TAGS_REDUNDANT_WITH_PARENT_WAY = 4326;
+    protected static final int CODE_NAME_HAS_WHITESPACE = 4327;
+    protected static final int CODE_WIKIDATA_MALFORMED = 4328;
+    protected static final int CODE_WIKIPEDIA_MALFORMED = 4329;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -190,6 +193,21 @@ public class TagConsistencyTest extends Test {
 
     /** Validates the language-prefix portion of a wikipedia=lang:Title value. */
     private static final Pattern WIKIPEDIA_LANG = Pattern.compile("[a-z]{2,10}");
+
+    /**
+     * Strict QID shape for {@code wikidata=*}: one capital Q followed by
+     * 1+ digits. Anything else is malformed.
+     */
+    private static final Pattern WIKIDATA_QID = Pattern.compile("^Q\\d+$");
+
+    /**
+     * Strict {@code <lang>:<title>} shape for {@code wikipedia=*}: a
+     * lowercase language code (2-10 chars, matching {@link #WIKIPEDIA_LANG}),
+     * a colon, then a non-empty title. The title can contain spaces and
+     * most printable characters; we just require it to be non-empty.
+     */
+    private static final Pattern WIKIPEDIA_VALUE =
+        Pattern.compile("^[a-z]{2,10}:.+");
 
     /**
      * Matches the substring "historic" anywhere in a name-family value
@@ -385,6 +403,7 @@ public class TagConsistencyTest extends Test {
                 String value = p.get(key);
                 if (value != null) {
                     checkNameForDateContent(p, key, value);
+                    checkNameWhitespace(p, key, value);
                 }
                 if (value != null && HISTORIC_IN_NAME.matcher(value).find()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_HISTORIC)
@@ -455,6 +474,34 @@ public class TagConsistencyTest extends Test {
                 });
             }
             errors.add(builder.build());
+        }
+
+        // Rules 4328 / 4329: format checks for wikidata and wikipedia tag
+        // values. Catch garbage values like wikidata=notaqid or
+        // wikipedia=not_a_real_format that pass the presence-only checks
+        // but won't work in downstream consumers (the 4302 autofix would
+        // silently fail on a malformed wikipedia value too).
+        String wikidataValue = p.get("wikidata");
+        if (wikidataValue != null && !wikidataValue.isEmpty()
+            && !WIKIDATA_QID.matcher(wikidataValue).matches()) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_WIKIDATA_MALFORMED)
+                .message(tr("[ohm] Malformed tag - wikidata value is not a QID; unfixable, please review"),
+                         marktr("wikidata={0} is not a valid Wikidata QID. Expected shape: "
+                            + "''Q'' followed by digits, e.g. Q243."),
+                            wikidataValue)
+                .primitives(p)
+                .build());
+        }
+        String wikipediaValueCheck = p.get("wikipedia");
+        if (wikipediaValueCheck != null && !wikipediaValueCheck.isEmpty()
+            && !WIKIPEDIA_VALUE.matcher(wikipediaValueCheck).matches()) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_WIKIPEDIA_MALFORMED)
+                .message(tr("[ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review"),
+                         marktr("wikipedia={0} is not in the expected ''<lang>:<title>'' "
+                            + "format (e.g. ''en:Eiffel Tower''). Downstream lookups will fail."),
+                            wikipediaValueCheck)
+                .primitives(p)
+                .build());
         }
 
         // Rule: named feature without any source*. Skips type=chronology
@@ -677,6 +724,43 @@ public class TagConsistencyTest extends Test {
     private static String removeSpanCollapseWhitespace(String value, int start, int end) {
         String joined = value.substring(0, start) + value.substring(end);
         return joined.replaceAll("\\s+", " ").trim();
+    }
+
+    /**
+     * Rule 4327: name-family value has leading or trailing whitespace
+     * (spaces, tabs, etc.). Autofix trims; the result must be non-empty
+     * after trimming for the autofix to fire. (An all-whitespace name
+     * would trim to empty, which is its own data-loss concern — fall
+     * through unfixable in that case.)
+     */
+    private void checkNameWhitespace(OsmPrimitive p, String key, String value) {
+        // Cheap rejection: no boundary whitespace → nothing to do.
+        if (!Character.isWhitespace(value.charAt(0))
+            && !Character.isWhitespace(value.charAt(value.length() - 1))) {
+            return;
+        }
+        String trimmed = value.strip();
+        if (trimmed.isEmpty()) {
+            // All-whitespace name: autofix would clear the name. Fire
+            // unfixable instead — the editor needs to decide whether to
+            // restore content or remove the tag entirely.
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_WHITESPACE)
+                .message(tr("[ohm] Name warning - whitespace-only name; unfixable, please review"),
+                         marktr("{0}=\"{1}\": value is only whitespace. Restore content or "
+                            + "remove the tag."),
+                            key, value)
+                .primitives(p)
+                .build());
+            return;
+        }
+        Command fix = new ChangePropertyCommand(Arrays.asList(p), key, trimmed);
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_WHITESPACE)
+            .message(tr("[ohm] Name warning - leading or trailing whitespace; autofix by trimming"),
+                     marktr("{0}=\"{1}\" has leading or trailing whitespace. Trim to \"{2}\"?"),
+                        key, value, trimmed)
+            .primitives(p)
+            .fix(() -> fix)
+            .build());
     }
 
     /**

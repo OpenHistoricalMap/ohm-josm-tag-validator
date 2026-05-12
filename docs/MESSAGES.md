@@ -57,7 +57,7 @@ A way tagged `boundary=administrative` with no other keys. The line segment's da
 |------|-------|
 | 4220 | `[ohm] Ambiguous date - trailing hyphen in date; unfixable, please review` |
 
-**4220 trigger:** Value ends with a trailing hyphen (e.g., `2021-`), which is ambiguous between a typo and an open-ended range.  
+**4220 trigger:** Value ends with a trailing hyphen (e.g., `2021-`, `2021-03-`), which is ambiguous between a typo, an incomplete input, and an open-ended range. Fires on `*_date` base values AND on any top-level `*_date:edtf` value matching the same shape. Suppressed on base when `*_date:edtf` or `*_date:raw` is already set (the editor has been there already).  
 **4220 description:** _{key}={value}: could be a typo: {suggestion}; an incomplete input; or an open-ended range {suggestion}/. Manual review needed._
 
 **Example:**  
@@ -618,6 +618,25 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 
 ---
 
+### Backwards EDTF interval (4255)
+
+| Code | Title |
+|------|-------|
+| 4255 | `[ohm] Suspicious date - EDTF interval is backwards (start > end); unfixable, please review` |
+
+**Trigger:** `start_date:edtf` or `end_date:edtf` is a closed slash interval (`start/end`) whose lower-bound year is greater than its upper-bound year — e.g. `start_date:edtf=2000/1900`. The interval is syntactically valid EDTF but semantically inverted; downstream consumers will silently pick one bound and ignore the other, producing wrong renders. Open-ended intervals (`YYYY/` or `/YYYY`) are skipped. Year bounds extracted by stripping qualifiers (`~`, `?`, `%`) and replacing `X` with `0`, matching the helper used by 4252.
+
+**Fix:** None. The validator can't tell which side the user meant. The fix is either to swap the bounds (if the user meant the natural ordering) or correct whichever bound is wrong.
+
+**Description:** _{key}={value}: interval start year ({start}) is later than end year ({end}). The validator can't tell which side you meant; fix by swapping the bounds or correcting whichever is wrong._
+
+**Example:**
+`start_date:edtf=2000/1900` → fires unfixable.
+
+**Why this matters:** Without 4255, rule 4211 (the only rule that previously fired on a backwards interval) would silently derive `start_date=1900` from `:edtf=2000/1900` by extracting the upper bound — freezing the bad state in place. 4255 fires *before* that autofix would otherwise mask the problem.
+
+---
+
 ### Date mismatch — base vs. :edtf disagreement
 
 | Code | Title |
@@ -756,7 +775,17 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 | 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; autofix by collapsing to min/max bounds` |
 | 4245 | `[ohm] Suspicious feature - 1 feature that should be {N}; unfixable, please review` |
 
-**4245 trigger:** Both `start_date` and `end_date` contain semicolon-delimited entries with the same count (≥ 2 each), and every entry on each side parses as a strict ISO date (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`). The pattern almost always indicates that a single OSM/OHM feature has been used to encode N temporally-distinct features (e.g. a building rebuilt twice, recorded as one feature with three start/end pairs).  
+**4245 trigger:** Any **curated start/end date-key pair** has both sides containing semicolon-delimited entries with the same count (≥ 2 each), where every entry on each side parses as a strict ISO date (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`). The pattern almost always indicates that a single OSM/OHM feature has been used to encode N temporally-distinct features (e.g. a building rebuilt twice, recorded as one feature with three start/end pairs).
+
+**Curated date-key pairs (v0.7.1):**
+- `(start_date, end_date)` — primary lifespan
+- `(birth_date, death_date)` — persons
+- `(opening_date, closing_date)` — businesses / operational period
+- `(construction_date, demolition_date)` — buildings
+
+The same autofix shape applies to all pairs: collapse to min/max bounds, preserve originals in the matching `:raw` slots, add `fixme=split into multiple features`. Auto-discovery of arbitrary `*_date` pairs is deliberately NOT used — it would produce false positives on coincidentally-named pairs that aren't actually semantically matched start/end keys. A curated list stays predictable.
+
+
 **4245 fix:** Collapses `start_date` to the minimum of the start values and `end_date` to the maximum of the end values; preserves the original semicolon strings in `start_date:raw` and `end_date:raw`; adds `fixme=split into multiple features` so the editor remembers to do the actual split manually after accepting the fix.  
 **4245 description:** _start_date={starts} and end_date={ends}: looks like {N} features merged into one. The autofix collapses to start_date={min} and end_date={max} (min/max), preserves the originals in start_date:raw={starts} and end_date:raw={ends}, and adds fixme=split into multiple features so the editor remembers the manual follow-up._
 
@@ -1153,6 +1182,10 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 | Code | Title |
 |------|-------|
 | 4326 | `[ohm] Suspicious tags - node with no unique tags from parent way; autofix by removing all node tags` |
+| 4327 | `[ohm] Name warning - leading or trailing whitespace; autofix by trimming` |
+| 4327 | `[ohm] Name warning - whitespace-only name; unfixable, please review` |
+| 4328 | `[ohm] Malformed tag - wikidata value is not a QID; unfixable, please review` |
+| 4329 | `[ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review` |
 
 **Trigger:** A node carries one or more tags, and every one of those tags is duplicated (same key, same value) on at least one of the node's parent ways. Typically arises when an editor tags both the way and one of its constituent nodes for the same feature — only the way needs the tags. Multiple parent ways are tolerated; the rule fires when *any* parent way fully covers the node's tag set.  
 **Fix:** Removes every tag from the node.  
@@ -1161,6 +1194,44 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 **Example:**  
 Trigger: a building way (`building=yes`, `start_date=1924`) with corner nodes each carrying `start_date=1924`.  
 After autofix: corner nodes have no tags. The building way is unchanged.
+
+---
+
+### Name leading or trailing whitespace (4327)
+
+| Code | Title |
+|------|-------|
+| 4327 | `[ohm] Name warning - leading or trailing whitespace; autofix by trimming` |
+| 4327 | `[ohm] Name warning - whitespace-only name; unfixable, please review` |
+
+**Fixable trigger:** Any name-family value (`name`, `name:lang`, `alt_name`, etc.) has a leading or trailing whitespace character. Autofix calls `String.strip()` and writes the result back.
+
+**Unfixable trigger:** Value is *only* whitespace — stripping would leave an empty string. The editor must decide whether to restore content or remove the tag entirely.
+
+**Fixable description:** _{key}="{value}" has leading or trailing whitespace. Trim to "{trimmed}"?_
+
+**Unfixable description:** _{key}="{value}": value is only whitespace. Restore content or remove the tag._
+
+**Example:** `name=" Old Town Hall "` → autofix to `name="Old Town Hall"`.
+
+---
+
+### Malformed external-reference tag values (4328 / 4329)
+
+| Code | Title |
+|------|-------|
+| 4328 | `[ohm] Malformed tag - wikidata value is not a QID; unfixable, please review` |
+| 4329 | `[ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review` |
+
+**4328 trigger:** `wikidata=*` is set but the value doesn't match `^Q\d+$` (a capital Q followed by 1+ digits). Catches typos like `wikidata=notaqid` and pasted full URLs like `wikidata=https://www.wikidata.org/wiki/Q243`. Without this rule, the presence-only check in 4302 passes a malformed QID through silently.
+
+**4328 description:** _wikidata={value} is not a valid Wikidata QID. Expected shape: 'Q' followed by digits, e.g. Q243._
+
+**4329 trigger:** `wikipedia=*` is set but the value doesn't match `^<lang>:<title>$` (a 2-10 character lowercase language code, then a colon, then a non-empty title). Catches typos and pasted URLs like `wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower`. Without this rule, a malformed value would silently fail the 4302 autofix (which queries the Wikidata API using the `<lang>:<title>` split).
+
+**4329 description:** _wikipedia={value} is not in the expected '<lang>:<title>' format (e.g. 'en:Eiffel Tower'). Downstream lookups will fail._
+
+Neither rule is autofixable — the validator can't guess the user's intent (typo? truncated URL? wrong tag?). Both fire WARNING severity.
 
 ---
 
