@@ -1243,7 +1243,7 @@ Three sub-paths, checked in priority order:
 
 **4328 description:** _wikidata={value} is not a valid Wikidata QID. Expected shape: 'Q' followed by digits, e.g. Q243._
 
-**4329 trigger:** `wikipedia=*` is set but the value doesn't match `^<lang>:<title>$` (a 2-10 character lowercase language code, then a colon, then a non-empty title). Catches typos and pasted URLs like `wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower`. Without this rule, a malformed value would silently fail the 4302 autofix (which queries the Wikidata API using the `<lang>:<title>` split).
+**4329 trigger:** `wikipedia=*` is set but the value doesn't match `^(?!https?:)[a-z]{2,10}:.+` (a 2-10 character lowercase language code that is *not* `http`/`https`, then a colon, then a non-empty title). Catches typos and pasted URLs like `wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower`. Without this rule, a malformed value would silently fail the 4302 autofix (which queries the Wikidata API using the `<lang>:<title>` split). The negative-lookahead exclusion of `http`/`https` was added in v0.7.4 — without it, `https://...` URL values would match (since `https` is 5 lowercase chars followed by `:`) and slip past 4329 entirely.
 
 **4329 description:** _wikipedia={value} is not in the expected '<lang>:<title>' format (e.g. 'en:Eiffel Tower'). Downstream lookups will fail._
 

@@ -205,9 +205,15 @@ public class TagConsistencyTest extends Test {
      * lowercase language code (2-10 chars, matching {@link #WIKIPEDIA_LANG}),
      * a colon, then a non-empty title. The title can contain spaces and
      * most printable characters; we just require it to be non-empty.
+     *
+     * <p>Negative lookahead rules out the obvious URL false-positive:
+     * {@code https://en.wikipedia.org/wiki/Eiffel_Tower} would otherwise
+     * match because {@code https} is a 5-char lowercase string followed by
+     * {@code :}. {@code http:} and {@code https:} prefixes are excluded so
+     * URL-shaped values fall through to fire 4329 unfixable.
      */
     private static final Pattern WIKIPEDIA_VALUE =
-        Pattern.compile("^[a-z]{2,10}:.+");
+        Pattern.compile("^(?!https?:)[a-z]{2,10}:.+");
 
     /**
      * Matches the substring "historic" anywhere in a name-family value
@@ -460,12 +466,12 @@ public class TagConsistencyTest extends Test {
         // not fire the rule. If wikipedia=* is present, an autofix is
         // offered that performs a runtime Wikidata API lookup to derive
         // the QID (lazy — runs only when the user clicks Fix).
-        if (p.get("wikidata") == null && hasNotabilitySignal(p)) {
+        if (getNonEmpty(p, "wikidata") == null && hasNotabilitySignal(p)) {
             TestError.Builder builder = TestError.builder(this, Severity.ERROR, CODE_MISSING_WIKIDATA)
                 .message(tr("[ohm] Missing tag - wikidata; unfixable, please review"),
                          marktr("Wikidata QIDs help link OHM data to other databases."))
                 .primitives(p);
-            String wikipediaValue = p.get("wikipedia");
+            String wikipediaValue = getNonEmpty(p, "wikipedia");
             if (wikipediaValue != null) {
                 builder.fix(() -> {
                     Optional<String> qidOpt = lookupWikidataQid(wikipediaValue);
@@ -556,7 +562,7 @@ public class TagConsistencyTest extends Test {
         }
 
         if (p instanceof Relation) return true;
-        if (p.get("wikipedia") != null) return true;
+        if (getNonEmpty(p, "wikipedia") != null) return true;
         if (p.get("historic") != null) return true;
         if ("administrative".equals(p.get("boundary"))) return true;
 
@@ -1387,7 +1393,8 @@ public class TagConsistencyTest extends Test {
 
         if ("wikipedia".equalsIgnoreCase(value)) {
             // Suppression: any wikipedia* or wikidata=* tag is enough.
-            if (p.get("wikidata") != null) return;
+            // Empty values don't count as "set" — use getNonEmpty.
+            if (getNonEmpty(p, "wikidata") != null) return;
             if (hasAnyKeyStartingWith(p, "wikipedia")) return;
             errors.add(TestError.builder(this, Severity.WARNING, CODE_ATTR_SOURCE_WIKIPEDIA)
                 .message(tr("[ohm] Missing tag - wikipedia, referenced in source keys; unfixable, please review & add tag"),
@@ -1400,7 +1407,8 @@ public class TagConsistencyTest extends Test {
         }
         if ("wikidata".equalsIgnoreCase(value)) {
             // Suppression: wikidata=* is the canonical attribution; silent.
-            if (p.get("wikidata") != null) return;
+            // Empty values don't count — use getNonEmpty.
+            if (getNonEmpty(p, "wikidata") != null) return;
 
             // Try to autofix from wikipedia. Single canonical wikipedia=*
             // is fixable (lookup-via-API); multiple wikipedia* tags are
@@ -1449,16 +1457,35 @@ public class TagConsistencyTest extends Test {
      * out of that value.
      */
     private static String canonicalWikipediaForLookup(OsmPrimitive p) {
-        return p.get("wikipedia");
+        return getNonEmpty(p, "wikipedia");
     }
 
-    /** Count of distinct {@code wikipedia*} keys on the primitive. */
+    /**
+     * Count of distinct {@code wikipedia*} keys on the primitive with
+     * non-empty values. Empty-valued wikipedia* keys don't count toward
+     * the "multiple wikipedia tags" ambiguity check in 4309.
+     */
     private static int countWikipediaKeys(OsmPrimitive p) {
         int n = 0;
         for (String key : p.keySet()) {
-            if (key.equals("wikipedia") || key.startsWith("wikipedia:")) n++;
+            if (key.equals("wikipedia") || key.startsWith("wikipedia:")) {
+                String v = p.get(key);
+                if (v != null && !v.isEmpty()) n++;
+            }
         }
         return n;
+    }
+
+    /**
+     * Get a tag value, treating an explicitly-empty value the same as
+     * absent. Used by the wikidata/wikipedia presence checks so that
+     * {@code wikidata=""} doesn't accidentally suppress the missing-tag
+     * rules (the JOSM tag editor lets users leave an empty value behind
+     * when clearing without removing the row entirely).
+     */
+    private static String getNonEmpty(OsmPrimitive p, String key) {
+        String v = p.get(key);
+        return (v == null || v.isEmpty()) ? null : v;
     }
 
     /** True if any key on the primitive equals or starts with {@code prefix + ":"}. */

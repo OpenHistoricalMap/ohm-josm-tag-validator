@@ -1,3 +1,35 @@
+# v0.7.4 — Two false-negative fixes (NG-1 wikipedia URL, NG-2 empty wikidata)
+
+Two gaps surfaced by the fresh post-v0.7.3 rule review.
+
+## NG-1 — `wikipedia=https://...` slipped past 4329
+
+The `WIKIPEDIA_VALUE` regex was `^[a-z]{2,10}:.+`. A pasted URL like `https://en.wikipedia.org/wiki/Eiffel_Tower` matched because `https` is 5 lowercase chars and the colon is there — the validator treated `https` as a language code and stayed silent.
+
+**Fix:** added a negative lookahead so the pattern is now `^(?!https?:)[a-z]{2,10}:.+`. URL-shaped values now fall through and fire 4329 unfixable.
+
+## NG-2 — Empty `wikidata=""` (and `wikipedia=""`) bypassed presence checks
+
+Several rules checked `p.get("wikidata") == null` etc. but `p.get()` returns the empty string `""` (not `null`) when JOSM has the tag present with no value — which happens routinely when an editor clears the value field without removing the row entirely. So an explicit `wikidata=` slipped past:
+
+- **4302** (Missing tag - wikidata) didn't fire on otherwise-notable features
+- **4308 / 4309** suppression treated empty `wikidata=` as "attribution present"
+- **4302 autofix** would have queried the Wikidata API with an empty `wikipedia=` value
+- **`countWikipediaKeys`** for the 4309 multi-wikipedia ambiguity check counted empty-valued wikipedia keys
+
+**Fix:** introduced a `getNonEmpty(OsmPrimitive p, String key)` helper that returns `null` for empty strings. Routed all wiki-presence checks through it: 4302, the notability signal in `hasNotabilitySignal`, the suppressions in `checkAttrSourceTag`, and the wikipedia-counting helpers.
+
+## Files touched
+
+- `src/.../validation/TagConsistencyTest.java` — added `getNonEmpty` helper, updated four call sites to use it, broadened the WIKIPEDIA_VALUE pattern with negative lookahead, refined `countWikipediaKeys` to skip empty-valued keys.
+- `docs/MESSAGES.md` — 4329 trigger description updated to mention the negative lookahead.
+- `test/test_data.osm` — two new probe fixtures (9101110 for NG-1, 9101111 for NG-2).
+- `test/expected.txt` — two new golden rows.
+
+`MessageApiAuditor` count: 99 (unchanged). Regression suite green.
+
+---
+
 # v0.7.3 — Rule 4250 broadened to accept unpadded negative X-form
 
 Pre-fix: `end_date:edtf=-7XX` (and other forms with a 1-digit body before the X digits) fell through to rule 4228 "Invalid date - *_date:edtf; unfixable" because the 4250 trigger pattern required a 2-3 digit body. After fix: `-7XX` fires 4250 fixable with the same autofix output as `-07XX` — `-0799/-0700` for the interval and `-0799` / `-0700` for the appropriate base tag.

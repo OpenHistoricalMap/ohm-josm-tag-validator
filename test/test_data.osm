@@ -39260,4 +39260,17 @@
     <tag k='end_date:edtf' v='-7X' />
     <tag k='source' v='https://example.com/x92' />
   </node>
+  <node id='9101110' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test NG-1 wikipedia URL flagged' />
+    <tag k='wikipedia' v='https://en.wikipedia.org/wiki/Eiffel_Tower' />
+    <tag k='wikidata' v='Q243' />
+    <tag k='source' v='https://example.com/x95' />
+  </node>
+  <node id='9101111' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test NG-2 empty wikidata still triggers 4302' />
+    <tag k='wikidata' v='' />
+    <tag k='tourism' v='attraction' />
+    <tag k='start_date' v='1900' />
+    <tag k='source' v='https://example.com/x96' />
+  </node>
 </osm>

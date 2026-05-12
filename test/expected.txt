@@ -285,6 +285,7 @@ E   n/9101073   [ohm] Invalid date - *_date:edtf; fixable, please review   end_d
 E   n/9101074   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid C6 BC is not valid EDTF. Normalize to -0569~/-0530~ and preserve original in end_date:edtf:raw?
 E   n/9101090   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101090 outside parent range [1800..2000]: start_date=1700 before parent start 1800.
 E   n/9101091   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101091 outside parent range [1800..2000]: start_date=1720 before parent start 1800.
+E   n/9101111   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -1071,6 +1072,7 @@ W   n/9101092   [ohm] Chronology - gap between member date ranges; unfixable, pl
 W   n/9101100   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-7XX: negative year with X digit(s). Bounds are -0799 (earlier) to -0700 (later). Replace with -0799/-0700?
 W   n/9101101   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date:edtf=-7XX: negative year with X digit(s). Bounds are -0799 (earlier) to -0700 (later). Replace with -0799/-0700?
 W   n/9101102   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date:edtf=-7X: negative year with X digit(s). Bounds are -0079 (earlier) to -0070 (later). Replace with -0079/-0070?
+W   n/9101110   [ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review   wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower is not in the expected '<lang>:<title>' format (e.g. 'en:Eiffel Tower'). Downstream lookups will fail.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
