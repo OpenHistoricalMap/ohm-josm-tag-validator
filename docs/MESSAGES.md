@@ -441,6 +441,15 @@ After autofix: `end_date=1975` (no `:edtf`, no `:raw` — `during X` collapses t
 
 **Case-insensitive on the modifier.** `Early 1900`, `MID 1850s`, `EARLY C19` all match. The existing `early/mid/late YYYY0s` (decade) and `early/mid/late CN` (century) rules also became case-insensitive in this pass.
 
+**BCE for THIRD_DECADE / THIRD_CENTURY (fixed in v0.7.2).** The BCE branch of the existing decade and century handlers previously had a `+1` shift on the rendered year that produced output one year too negative under the project's "round-hundreds" convention. Removed in v0.7.2. Examples after the fix:
+
+- `early 850s BC` → `-0852~/-0850~` (BC 850-852)
+- `mid 850s BC` → `-0856~/-0853~` (BC 853-856)
+- `late 850s BC` → `-0859~/-0857~` (BC 857-859)
+- `early C6 BC` → `-0529~/-0500~` (BC 500-529, matching the plain `C6 BC` → `-0599~/-0500~` round-hundreds convention)
+
+The output magnitudes correspond to BC year numbers directly (the project's loose convention, where `-0500` is "read" as BC 500 by a human eyeballing the tag). EDTF Level 1 strict astronomical convention would put these one year more negative; the project deliberately diverges for human readability (see the comment block on the plain CN BC handler in `DateNormalizer`).
+
 **BCE support.** Trailing `BC` / `BCE` is accepted on both the year and year-month forms. The year is converted to astronomical form via `astro = -(BC - 1)` so `1 BC` → `0000`, `100 BC` → `-0099`. The month/day buckets are the same regardless of sign — they describe the position within the named year/month, not direction in time. Examples: `early 100 BC` → `-0099-01/-0099-04`; `late 100 BC` → `-0099-09/-0099-12`; `early 100-05 BC` → `-0099-05-01/-0099-05-10`; `early 1 BC` → `0000-01/0000-04`.
 
 **X-form decade with modifier.** `early|mid|late YYY[Y]X` is rewritten in preprocess to the equivalent `YYY[Y]0s` form and then normalized by the existing `THIRD_DECADE` path: `mid 197X` → `mid 1970s` → `1973~/1976~`. The X is accepted in either case (`MID 197x` works the same as `mid 197X`).
@@ -1197,22 +1206,28 @@ After autofix: corner nodes have no tags. The building way is unchanged.
 
 ---
 
-### Name leading or trailing whitespace (4327)
+### Name whitespace or control characters (4327)
 
 | Code | Title |
 |------|-------|
 | 4327 | `[ohm] Name warning - leading or trailing whitespace; autofix by trimming` |
 | 4327 | `[ohm] Name warning - whitespace-only name; unfixable, please review` |
+| 4327 | `[ohm] Name warning - embedded control character; unfixable, please review` |
 
-**Fixable trigger:** Any name-family value (`name`, `name:lang`, `alt_name`, etc.) has a leading or trailing whitespace character. Autofix calls `String.strip()` and writes the result back.
+Three sub-paths, checked in priority order:
 
-**Unfixable trigger:** Value is *only* whitespace — stripping would leave an empty string. The editor must decide whether to restore content or remove the tag entirely.
+1. **Embedded control character** (unfixable). Fires when the value contains an `Character.isISOControl(c)` character that is not also one of the standard whitespace controls (tab `U+0009`, LF `U+000A`, CR `U+000D` — those are handled by the whitespace path). Catches paste artifacts: NUL, vertical tab, form feed, DEL, etc. The autofix would have to decide whether each control char is a typo, a missing separator, or intentional — too risky to automate, so it stays unfixable. Description names the codepoint in `U+XXXX` form.
+2. **All-whitespace name** (unfixable). The value is non-empty but stripping it would leave an empty string. The editor must decide whether to restore content or remove the tag entirely.
+3. **Leading or trailing whitespace** (fixable). Autofix calls `String.strip()` on the value and writes the result back.
 
-**Fixable description:** _{key}="{value}" has leading or trailing whitespace. Trim to "{trimmed}"?_
-
-**Unfixable description:** _{key}="{value}": value is only whitespace. Restore content or remove the tag._
+**Descriptions:**
+- _{key}={value}: contains a non-printable control character (U+XXXX). Likely a paste artifact; remove it manually._
+- _{key}="{value}": value is only whitespace. Restore content or remove the tag._
+- _{key}="{value}" has leading or trailing whitespace. Trim to "{trimmed}"?_
 
 **Example:** `name=" Old Town Hall "` → autofix to `name="Old Town Hall"`.
+
+**Fixture-coverage limitation:** Control characters like NUL (`U+0000`) and vertical tab (`U+000B`) are invalid in XML 1.0 and can't be embedded in `test_data.osm`. The control-char detection has no regression fixture but is exercised whenever a user pastes a control character through JOSM's tag editor.
 
 ---
 

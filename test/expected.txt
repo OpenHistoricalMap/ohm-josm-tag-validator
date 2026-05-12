@@ -278,6 +278,14 @@ E   n/9101001   [ohm] Date normalization - *_date:edtf not canonical; autofix to
 E   n/9101002   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=~1848-1854 is not valid EDTF. Normalize to 1848~/1854 and preserve original in end_date:edtf:raw?
 E   n/9101003   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=2019-07~ ? start_date=2019-07, start_date:edtf=2019-07~
 E   n/9101004   [ohm] Invalid date - *_date; fixable, please review   end_date=~2020-03 ? end_date=2020-03, end_date:edtf=2020-03~, end_date:raw=~2020-03
+E   n/9101070   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early 850s BC is not valid EDTF. Normalize to -0852~/-0850~ and preserve original in end_date:edtf:raw?
+E   n/9101071   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid 850s BC is not valid EDTF. Normalize to -0856~/-0853~ and preserve original in end_date:edtf:raw?
+E   n/9101072   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=late 850s BC is not valid EDTF. Normalize to -0859~/-0857~ and preserve original in end_date:edtf:raw?
+E   n/9101073   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=early C6 BC is not valid EDTF. Normalize to -0529~/-0500~ and preserve original in end_date:edtf:raw?
+E   n/9101074   [ohm] Invalid date - *_date:edtf; fixable, please review   end_date:edtf=mid C6 BC is not valid EDTF. Normalize to -0569~/-0530~ and preserve original in end_date:edtf:raw?
+E   n/9101090   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101090 outside parent range [1800..2000]: start_date=1700 before parent start 1800.
+E   n/9101091   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101091 outside parent range [1800..2000]: start_date=1720 before parent start 1800.
+E   n/9101100   [ohm] Invalid date - *_date:edtf; unfixable, please review   end_date:edtf=-7XX is not valid EDTF and cannot be normalized. Manual review needed.
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -328,6 +336,9 @@ E   r/9000046   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   r/9100020   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   r/9100720   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/9100990   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9101095   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101090 outside parent range [1800..2000]: start_date=1700 before parent start 1800.
+E   r/9101095   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101091 outside parent range [1800..2000]: start_date=1720 before parent start 1800.
+E   r/9101095   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=2200-05-32: day 32 is out of range. Trim to 2200-05?
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   end_date=4C ? end_date=0399, end_date:edtf=03XX, end_date:raw=4C
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   start_date=1C ? start_date=0000, start_date:edtf=00XX, start_date:raw=1C
@@ -1053,6 +1064,11 @@ W   n/9101040   [ohm] Suspicious date - EDTF interval is backwards (start > end)
 W   n/9101050   [ohm] Malformed tag - wikidata value is not a QID; unfixable, please review   wikidata=notaqid is not a valid Wikidata QID. Expected shape: 'Q' followed by digits, e.g. Q243.
 W   n/9101050   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   n/9101060   [ohm] Malformed tag - wikipedia value is not <lang>:<title>; unfixable, please review   wikipedia=not_a_real_format is not in the expected '<lang>:<title>' format (e.g. 'en:Eiffel Tower'). Downstream lookups will fail.
+W   n/9101090   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9101090 (1700..1750) and n/9101091 (1720..1740) have overlapping date ranges in chronology relation r/9101095.
+W   n/9101091   [ohm] Chronology - gap between member date ranges; unfixable, please review   Member n/9101091 (ends 1740) and member n/9101092 (starts 1800) leave a 59 year(s) gap in chronology relation r/9101095.
+W   n/9101091   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9101090 (1700..1750) and n/9101091 (1720..1740) have overlapping date ranges in chronology relation r/9101095.
+W   n/9101092   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9101092 (in chronology relation r/9101095) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   n/9101092   [ohm] Chronology - gap between member date ranges; unfixable, please review   Member n/9101091 (ends 1740) and member n/9101092 (starts 1800) leave a 59 year(s) gap in chronology relation r/9101095.
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1093,6 +1109,7 @@ W   r/9100110   [ohm] Suspicious date - >10 year into the future; autofix by del
 W   r/9100210   [ohm] Suspicious member - role=label; unfixable, please review   OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ? Download parent relations / ways). role=label members on this relation: n/9100201.
 W   r/9100310   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
 W   r/9100990   [ohm] Chronology - relation has no members; unfixable, please review   Chronology relation has no members. Add the constituent features as members, or delete this relation if it's no longer needed.
+W   r/9101095   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9101092 (in chronology relation r/9101095) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   w/114353260   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/114490699   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/198163917   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.

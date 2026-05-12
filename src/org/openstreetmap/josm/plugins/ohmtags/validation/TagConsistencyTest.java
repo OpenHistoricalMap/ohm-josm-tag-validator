@@ -727,23 +727,53 @@ public class TagConsistencyTest extends Test {
     }
 
     /**
-     * Rule 4327: name-family value has leading or trailing whitespace
-     * (spaces, tabs, etc.). Autofix trims; the result must be non-empty
-     * after trimming for the autofix to fire. (An all-whitespace name
-     * would trim to empty, which is its own data-loss concern — fall
-     * through unfixable in that case.)
+     * Rule 4327: name-family value has leading/trailing whitespace OR
+     * contains an embedded control character (vertical tab, form feed,
+     * NUL, etc.).
+     *
+     * <p>Three sub-paths under the same code, in priority order:
+     *
+     * <ol>
+     *   <li><b>Embedded control character</b> (anywhere in the value,
+     *       excluding the standard whitespace characters tab/LF/CR/space
+     *       which are addressed by the whitespace path). Fires unfixable
+     *       — auto-replacing control chars is too risky; the editor must
+     *       decide whether each one is a typo, accidental paste artifact,
+     *       or intentional separator.</li>
+     *   <li><b>All-whitespace value</b>: stripping would clear the name.
+     *       Fires unfixable; the editor decides whether to restore content
+     *       or remove the tag.</li>
+     *   <li><b>Leading or trailing whitespace</b>: fires fixable, autofix
+     *       calls {@link String#strip()} on the value.</li>
+     * </ol>
      */
     private void checkNameWhitespace(OsmPrimitive p, String key, String value) {
-        // Cheap rejection: no boundary whitespace → nothing to do.
+        // Path 1: embedded non-whitespace control character. ISO controls
+        // include U+0000-U+001F and U+007F-U+009F. We exclude the standard
+        // whitespace controls (tab U+0009, LF U+000A, CR U+000D) since the
+        // whitespace path below handles them via String.strip().
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (Character.isISOControl(c) && c != '\t' && c != '\n' && c != '\r') {
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_WHITESPACE)
+                    .message(tr("[ohm] Name warning - embedded control character; unfixable, please review"),
+                             marktr("{0}={1}: contains a non-printable control character "
+                                + "(U+{2}). Likely a paste artifact; remove it manually."),
+                                key, value, String.format("%04X", (int) c))
+                    .primitives(p)
+                    .build());
+                return;
+            }
+        }
+
+        // Cheap rejection: no boundary whitespace → nothing left to do.
         if (!Character.isWhitespace(value.charAt(0))
             && !Character.isWhitespace(value.charAt(value.length() - 1))) {
             return;
         }
         String trimmed = value.strip();
         if (trimmed.isEmpty()) {
-            // All-whitespace name: autofix would clear the name. Fire
-            // unfixable instead — the editor needs to decide whether to
-            // restore content or remove the tag entirely.
+            // Path 2: all-whitespace name. Unfixable — editor must decide.
             errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_WHITESPACE)
                 .message(tr("[ohm] Name warning - whitespace-only name; unfixable, please review"),
                          marktr("{0}=\"{1}\": value is only whitespace. Restore content or "
@@ -753,6 +783,7 @@ public class TagConsistencyTest extends Test {
                 .build());
             return;
         }
+        // Path 3: leading/trailing whitespace. Fixable.
         Command fix = new ChangePropertyCommand(Arrays.asList(p), key, trimmed);
         errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_WHITESPACE)
             .message(tr("[ohm] Name warning - leading or trailing whitespace; autofix by trimming"),

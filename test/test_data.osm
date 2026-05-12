@@ -39193,4 +39193,61 @@
     <tag k='wikidata' v='Q243' />
     <tag k='source' v='https://example.com/x76' />
   </node>
+  <node id='9101070' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-1 early decade BC' />
+    <tag k='end_date:edtf' v='early 850s BC' />
+    <tag k='source' v='https://example.com/x80' />
+  </node>
+  <node id='9101071' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-1 mid decade BC' />
+    <tag k='end_date:edtf' v='mid 850s BC' />
+    <tag k='source' v='https://example.com/x81' />
+  </node>
+  <node id='9101072' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-1 late decade BC' />
+    <tag k='end_date:edtf' v='late 850s BC' />
+    <tag k='source' v='https://example.com/x82' />
+  </node>
+  <node id='9101073' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-1 early century BC' />
+    <tag k='end_date:edtf' v='early C6 BC' />
+    <tag k='source' v='https://example.com/x83' />
+  </node>
+  <node id='9101074' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-1 mid century BC' />
+    <tag k='end_date:edtf' v='mid C6 BC' />
+    <tag k='source' v='https://example.com/x84' />
+  </node>
+  <node id='9101090' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-2 multi-rule chronology member' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='1750' />
+    <tag k='source' v='https://example.com/x87' />
+  </node>
+  <node id='9101091' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-2 sibling member' />
+    <tag k='start_date' v='1720' />
+    <tag k='end_date' v='1740' />
+    <tag k='source' v='https://example.com/x88' />
+  </node>
+  <node id='9101092' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-2 chronologically later member' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.com/x89' />
+  </node>
+  <relation id='9101095' visible='true' version='1'>
+    <tag k='type' v='chronology' />
+    <tag k='name' v='Test OS-2 chronology with stacked-rule member' />
+    <tag k='start_date' v='1800' />
+    <tag k='end_date' v='2000' />
+    <member type='node' ref='9101090' role='' />
+    <member type='node' ref='9101091' role='' />
+    <member type='node' ref='9101092' role='' />
+  </relation>
+  <node id='9101100' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test OS-2 unpadded negative X-form' />
+    <tag k='end_date:edtf' v='-7XX' />
+    <tag k='source' v='https://example.com/x90' />
+  </node>
 </osm>

@@ -1281,8 +1281,12 @@ public final class DateNormalizer {
             int startYear = decade * 10 + offsets[bc ? 1 : 0];
             int endYear = decade * 10 + offsets[bc ? 0 : 1];
             if (bc) {
-                startYear++;
-                endYear++;
+                // Match the plain CN BC convention used elsewhere in the
+                // file: the variable holds the BC year number directly and
+                // we render it as `-padYear(N)`. The previous `++` here was
+                // a long-standing bug (would output BC+1 magnitude). No
+                // modifier needed — startYear and endYear already hold the
+                // BC year numbers we want to render.
                 return Optional.of("-" + padYear(startYear) + "~/-" + padYear(endYear) + "~");
             }
             return Optional.of(padYear(startYear) + "~/" + padYear(endYear) + "~");
@@ -1301,8 +1305,7 @@ public final class DateNormalizer {
             int startYear = century * 100 + offsets[bc ? 1 : 0];
             int endYear = century * 100 + offsets[bc ? 0 : 1];
             if (bc) {
-                startYear++;
-                endYear++;
+                // See BCE-conversion comment in THIRD_DECADE above.
                 return Optional.of("-" + padYear(startYear) + "~/-" + padYear(endYear) + "~");
             }
             return Optional.of(padYear(startYear) + "~/" + padYear(endYear) + "~");

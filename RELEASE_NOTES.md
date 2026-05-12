@@ -1,3 +1,65 @@
+# v0.7.2 — BCE third-decade/century fix + OS-4 control chars + O1/O2 verification
+
+Closing out the remaining outstanding items from the post-v0.7.0 rule review.
+
+## OS-1 — BCE off-by-one fix in THIRD_DECADE / THIRD_CENTURY
+
+The BCE branch of `early/mid/late YYYY0s` and `early/mid/late CN` was adding 1 to the rendered year, producing output one year too negative compared to the project's "round-hundreds" convention used by the plain `CN BC` handler.
+
+Before:
+- `early 850s BC` → `-0853~/-0851~` (corresponded to BC 853-851, off by 1 from the intended BC 852-850)
+- `early C6 BC` → `-0530~/-0501~` (BC 530-501, off by 1 from BC 529-500)
+
+After:
+- `early 850s BC` → `-0852~/-0850~` (BC 852-850, matching the early-third of the 850s BC decade)
+- `early C6 BC` → `-0529~/-0500~` (BC 529-500, matching the early-third of `C6 BC`'s `-0599~/-0500~` range)
+
+Plain CN BC output (`C6 BC → -0599~/-0500~`) is unchanged — that handler already used the right convention. The fix aligns THIRD_DECADE / THIRD_CENTURY with it.
+
+No fixture existed for the BCE forms previously, so no rows updated; new fixtures added in this release (9101070–9101074).
+
+## OS-4 — control characters in name
+
+Rule 4327 extended to detect embedded `Character.isISOControl(c)` characters that aren't standard whitespace (tab/LF/CR). Three sub-paths under one code now:
+
+1. **Embedded control character** (unfixable) — new in this release
+2. **Whitespace-only value** (unfixable) — existing
+3. **Leading/trailing whitespace** (fixable, trim) — existing
+
+Description names the codepoint in `U+XXXX` form so the editor can locate the offender.
+
+No regression fixture: NUL and vertical tab are invalid XML 1.0 characters and can't be embedded in `test_data.osm`. The path is exercised through JOSM's tag editor when a user pastes a control character. Documented limitation in MESSAGES.md.
+
+## OS-2 verification — chronology rules can stack on a single member
+
+Probe added (n/9101090–9101092 in chronology r/9101095): member n/9101091 fires **three** chronology rules simultaneously — 4234 (outside parent), 4235 (overlap with sibling), 4236 (gap with next member). Each is an independently true observation; no suppression between them. **Confirmed acceptable** — the user gets the full diagnostic picture, which is more useful than a single "something is wrong here" warning. Fixtures freeze this behavior so any future change to suppression logic is caught.
+
+## OS-3 verification — 4250 vs 4248 do not overlap
+
+Probe added (n/9101100): `end_date:edtf=-7XX` (unpadded negative X-form) fires 4228 unfixable — the catch-all "not valid EDTF and cannot be normalized." It does *not* fire 4250 (which requires the strict `-NXX` / `-NNXX` form with the negative sign and padded year body) and does *not* fire 4248 (which requires the input to be already valid EDTF). **Confirmed no overlap** — the rules partition the space cleanly.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — removed the spurious `++` from both BCE branches of `THIRD_DECADE` and `THIRD_CENTURY`.
+- `src/.../validation/TagConsistencyTest.java` — extended `checkNameWhitespace` with a control-character pre-check that emits 4327 unfixable with codepoint annotation.
+- `docs/MESSAGES.md` — BCE handling section updated for THIRD_DECADE/CENTURY; 4327 section rewritten to describe the three sub-paths.
+- `test/test_data.osm` — 9 new probe fixtures (5 BCE + 3 chronology stacking + 1 unpadded X-form).
+- `test/expected.txt` — corresponding golden rows.
+
+`MessageApiAuditor` count: 100 → 100 (no new emission sites — the control-char path emits under the existing 4327 code).
+
+Regression suite green.
+
+## Other outstanding items (deliberately not in scope)
+
+The post-v0.7.0 review listed three more items intentionally left unaddressed:
+
+- **OS-5** (`:edtf:raw` not validated): the slot's job is to preserve user input verbatim. Validating it would defeat the purpose.
+- **OS-6** (`:note` not validated): same — free-text annotation slot, nothing to validate against.
+- **OS-7** (cross-key date conflicts like `start_date` vs `birth_date`): different keys mean different things on the same primitive; cross-validation would produce constant false positives.
+
+---
+
 # v0.7.1 — Bundled fixes from the post-v0.7.0 rule review
 
 Several gaps from the post-v0.7.0 rule review, bundled together.
