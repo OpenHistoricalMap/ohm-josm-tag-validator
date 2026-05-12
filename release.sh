@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 #
 # release.sh — create a GitHub release for the most recent v* tag, using
-# its section from RELEASE_NOTES.md as the body.
+# its section from RELEASE_NOTES.md as the body. Builds the plugin JAR
+# via Ant and attaches it to the release as a versioned asset.
 #
 # Usage:  ./release.sh   (no args)
 #
 # Requires:
 #   - gh CLI installed and authenticated on this host
+#   - ant installed (for the JAR build)
 #   - the tag already created (and pushed to origin) for the version you're releasing
 #   - RELEASE_NOTES.md with sections shaped like:  "# vX.Y.Z — Title text"
 #
 # Exit codes:
-#   0 success, 1 usage / parsing / cancel, 2 gh failure
+#   0 success, 1 usage / parsing / cancel, 2 gh failure, 3 build failure
 
 set -euo pipefail
 
 REPO="OpenHistoricalMap/ohm-josm-tag-validator"
 NOTES_FILE="RELEASE_NOTES.md"
+JAR_PATH="dist/OHM_Tag_Validator.jar"
 
 VERSION=$(git tag --list 'v*' --sort=-v:refname | head -1)
 if [[ -z "$VERSION" ]]; then
@@ -58,25 +61,44 @@ awk 'BEGIN { in_content=0 } NF { in_content=1 } in_content { print }' \
 awk 'NF { for (i=0;i<held;i++) print ""; held=0; print; next } { held++ }' \
     "$NOTES_TMP" > "${NOTES_TMP}.s" && mv "${NOTES_TMP}.s" "$NOTES_TMP"
 
-echo "Will run this command:"
+# Versioned JAR asset name. The build always writes to the same
+# unversioned path; we rename the upload to a versioned filename so each
+# release's downloads page makes the version obvious.
+JAR_ASSET="ohm-tags-${VERSION}.jar"
+
+echo "Will:"
+echo "  1. Build JAR via 'ant clean dist' (writes $JAR_PATH)."
+echo "  2. Run: gh release create $VERSION -R $REPO -t \"$TITLE\" -F <notes-file>"
+echo "  3. Upload $JAR_PATH as $JAR_ASSET to the new release."
 echo
-echo "  gh release create $VERSION -R $REPO -t \"$TITLE\" -F $NOTES_TMP"
-echo
-echo "(-F target is a temp file holding the section for $VERSION extracted from $NOTES_FILE.)"
+echo "(Notes body extracted from $NOTES_FILE's section for $VERSION.)"
 echo
 echo "----- notes body preview -----"
 cat "$NOTES_TMP"
 echo "----- end preview -----"
 echo
-read -r -p "Run this command? [y/N] " confirm
+read -r -p "Proceed? [y/N] " confirm
 case "$confirm" in
     y|Y|yes|YES) ;;
     *) echo "Aborted."; exit 1 ;;
 esac
 
-if ! gh release create "$VERSION" -R "$REPO" -t "$TITLE" -F "$NOTES_TMP"; then
+echo
+echo "Building JAR..."
+if ! ant clean dist >/dev/null; then
+    echo "ant build failed." >&2
+    exit 3
+fi
+if [[ ! -f "$JAR_PATH" ]]; then
+    echo "Expected JAR not found at $JAR_PATH after build." >&2
+    exit 3
+fi
+echo "Built: $JAR_PATH ($(du -h "$JAR_PATH" | cut -f1))"
+
+if ! gh release create "$VERSION" -R "$REPO" -t "$TITLE" -F "$NOTES_TMP" \
+        "$JAR_PATH#$JAR_ASSET"; then
     echo "gh release create failed." >&2
     exit 2
 fi
 
-echo "Release $VERSION created."
+echo "Release $VERSION created with JAR attached as $JAR_ASSET."

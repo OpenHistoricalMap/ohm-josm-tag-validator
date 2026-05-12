@@ -1,3 +1,25 @@
+# v0.7.9 — Attach built JAR to GitHub releases
+
+`release.sh` was missing the actual plugin JAR — previous releases (v0.5.x through v0.7.8) only had the release notes attached on GitHub. JOSM users couldn't download the plugin from the GitHub releases page.
+
+Updated `release.sh` to:
+1. Build the JAR via `ant clean dist` before creating the release.
+2. Upload `dist/OHM_Tag_Validator.jar` to the release as `ohm-tags-vX.Y.Z.jar` (versioned filename).
+
+The preview screen now lists all three steps and the JAR asset name before prompting for confirmation. Backfilling existing releases (v0.7.0 onward at least) with their JARs is a manual `gh release upload` step the user can run.
+
+## Manual backfill for v0.7.8 (and earlier missing JARs)
+
+To attach the JAR to an existing release after the fact, on your host:
+
+```
+gh release upload v0.7.8 dist/OHM_Tag_Validator.jar#ohm-tags-v0.7.8.jar -R OpenHistoricalMap/ohm-josm-tag-validator
+```
+
+(replace `v0.7.8` with the version you want). The release.sh built-in flow handles new releases automatically.
+
+---
+
 # v0.7.8 — `before/after` BCE + base-tag negative X-form
 
 Two follow-on fixes bundled together — both gaps surfaced while completing the v0.7.7 case-insensitive work.
