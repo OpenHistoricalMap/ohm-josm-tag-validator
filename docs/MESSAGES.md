@@ -568,20 +568,21 @@ Suggested manual fix: replace with a valid EDTF expression.
 |------|-------|
 | 4250 | `[ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range` |
 
-**Trigger:** `*_date:edtf` is a negative (BCE) year with one or two trailing X unspecified-digit characters: e.g. `-07XX`, `-123X`. This form is misleading because the X-digit bounds are reversed relative to positive years. For positive `07XX` the range is `0700–0799`; for negative `-07XX` the range is `−0799–−0700` (799 BCE to 700 BCE), with the more-negative (more ancient) year at the lower/start end. Writing the X form directly risks incorrect base-tag derivation and confuses consumers that don't account for the sign inversion.
+**Trigger:** `*_date:edtf` is a negative (BCE) year body of **1-3 digits** (padded or unpadded) followed by one or two trailing X unspecified-digit characters: e.g. `-07XX`, `-7XX`, `-123X`, `-7X`. This form is misleading because the X-digit bounds are reversed relative to positive years — for positive `07XX` the range is `0700-0799`; for negative `-07XX` (or the equivalent unpadded `-7XX`) the range is `-0799` to `-0700` (799 BCE to 700 BCE, with the more-negative year at the lower/start end). Writing the X form directly risks incorrect base-tag derivation and confuses consumers that don't account for the sign inversion.
 
 **Severity:** WARNING with autofix.
 
-**Fix:** Replaces the X form with an explicit EDTF slash interval — X digits replaced by `9` for the earlier bound, `0` for the later — and updates the base `start_date` / `end_date` tag to the correct bound (earlier for start, later for end). Only `start_date:edtf` and `end_date:edtf` receive the base-tag update; other `:edtf` keys get the `:edtf` fix only.
+**Fix:** Replaces the X form with an explicit EDTF slash interval. Bounds are computed via integer math: `moreNegative = -(prefix * 10^xCount + (10^xCount - 1))`, `lessNegative = -(prefix * 10^xCount)`. Both bounds are rendered with 4-digit zero-padded magnitude (`%05d` accounting for the leading minus), so unpadded inputs like `-7XX` produce the same padded output `-0799/-0700` as the padded input `-07XX`. Updates the base `start_date` / `end_date` tag to the correct bound (earlier for start, later for end). Only `start_date:edtf` and `end_date:edtf` receive the base-tag update; other `:edtf` keys get the `:edtf` fix only.
 
 **Description:** _{key}={value}: negative year with X digit(s). Bounds are {earlier} (earlier) to {later} (later). Replace with {range}?_
 
-**Examples:**  
-Before: `start_date=-0700`, `start_date:edtf=-07XX`  
-After autofix: `start_date=-0799`, `start_date:edtf=-0799/-0700`
+**Examples:**
+- `start_date:edtf=-07XX` (4-digit padded, no base) → `start_date=-0799`, `start_date:edtf=-0799/-0700`
+- `start_date:edtf=-7XX` (3-digit unpadded, no base) → same: `start_date=-0799`, `start_date:edtf=-0799/-0700`
+- `end_date:edtf=-123X` → `end_date=-1230`, `end_date:edtf=-1239/-1230`
+- `end_date:edtf=-7X` (single-digit body, single X) → `end_date=-0070`, `end_date:edtf=-0079/-0070`
 
-Before: `end_date:edtf=-123X` (no base)  
-After autofix: `end_date=-1230`, `end_date:edtf=-1239/-1230`
+**Why both padded and unpadded fire the same autofix (v0.7.3):** The leading zero on `-07XX` is just formatting, not semantic — the EDTF parser would accept `-0700/-0799` either way, and an editor typing `-7XX` almost certainly means the same as `-07XX`. The 4250 trigger pattern was originally limited to 2-3 digit body (`-NNX`, `-NNNX`, `-NNXX`, `-NNNXX`) which left short unpadded forms falling through to the generic 4228 unfixable. Broadened in v0.7.3 to also accept 1-digit body (`-NX`, `-NXX`).
 
 ---
 

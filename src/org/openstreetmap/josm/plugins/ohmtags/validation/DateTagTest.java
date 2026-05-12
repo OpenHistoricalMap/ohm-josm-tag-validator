@@ -363,7 +363,7 @@ public class DateTagTest extends Test {
      * group 2 captures the X run (e.g. {@code XX}).
      */
     private static final Pattern NEGATIVE_EDTF_X_FORM =
-        Pattern.compile("^(-\\d{2,3})(X{1,2})$");
+        Pattern.compile("^-(\\d{1,3})(X{1,2})$");
 
     /** The bot username trusted to have authored correct {@code :raw} values. */
     private static final String TRUSTED_BOT_USER = "tagcleanupbot";
@@ -1325,11 +1325,24 @@ public class DateTagTest extends Test {
         Matcher m = NEGATIVE_EDTF_X_FORM.matcher(value);
         if (!m.matches()) return false;
 
-        String prefix = m.group(1);   // e.g. "-07", "-123"
-        String xs     = m.group(2);   // e.g. "XX", "X"
-        int xCount = xs.length();
-        String moreNegative = prefix + "9".repeat(xCount);  // earlier bound, e.g. "-0799"
-        String lessNegative = prefix + "0".repeat(xCount);  // later bound,  e.g. "-0700"
+        // Group 1: 1-3 digits of year prefix (post leading-minus stripped by
+        // the pattern). Group 2: 1-2 X digits.
+        // For "-07XX": prefix=7, xs=XX → moreNeg=-799, lessNeg=-700.
+        // For "-7XX":  prefix=7, xs=XX → same magnitudes (the leading zero
+        //             on the input is just formatting, not semantic).
+        // For "-123X": prefix=123, xs=X → moreNeg=-1239, lessNeg=-1230.
+        int prefixVal = Integer.parseInt(m.group(1));
+        int xCount = m.group(2).length();
+        int placeValue = (int) Math.pow(10, xCount);
+        // moreNegative is the earlier (further-back-in-time) bound — the
+        // largest magnitude given the X-digit uncertainty.
+        int moreNegativeVal = -(prefixVal * placeValue + (placeValue - 1));
+        int lessNegativeVal = -(prefixVal * placeValue);
+        // Format with 5-wide zero-pad so a 4-digit magnitude renders padded
+        // ("-0799" not "-799"). Java's %05d treats the sign as one of the
+        // 5 chars, so width 5 = sign + 4 magnitude digits.
+        String moreNegative = String.format("%05d", moreNegativeVal);
+        String lessNegative = String.format("%05d", lessNegativeVal);
         String rangeEdtf    = moreNegative + "/" + lessNegative;
 
         String baseKey = edtfKey.substring(0, edtfKey.length() - ":edtf".length());

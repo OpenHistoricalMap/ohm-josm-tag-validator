@@ -1,3 +1,36 @@
+# v0.7.3 — Rule 4250 broadened to accept unpadded negative X-form
+
+Pre-fix: `end_date:edtf=-7XX` (and other forms with a 1-digit body before the X digits) fell through to rule 4228 "Invalid date - *_date:edtf; unfixable" because the 4250 trigger pattern required a 2-3 digit body. After fix: `-7XX` fires 4250 fixable with the same autofix output as `-07XX` — `-0799/-0700` for the interval and `-0799` / `-0700` for the appropriate base tag.
+
+## Pattern broadening
+
+The 4250 trigger pattern moved from `^(-\d{2,3})(X{1,2})$` to `^-(\d{1,3})(X{1,2})$` — now accepts 1-3 digit body. So both `-7XX` and `-07XX` match and produce the same fix.
+
+## Bound construction now uses integer math + zero-padding
+
+The old implementation built bounds by string concatenation (`prefix + "9".repeat(xCount)`), which produced unpadded output (`-799` instead of `-0799`) for short-body inputs. v0.7.3 switches to integer math and `%05d` formatting (5 chars = sign + 4-digit magnitude), so the output is always 4-digit zero-padded regardless of input formatting.
+
+## Examples
+
+| Input | v0.7.2 (pre-fix) | v0.7.3 (post-fix) |
+|---|---|---|
+| `-07XX` | `-0799/-0700` (correct) | `-0799/-0700` (unchanged) |
+| `-7XX` | falls through to 4228 unfixable | `-0799/-0700` (now fixable, padded) |
+| `-7X` | falls through to 4228 unfixable | `-0079/-0070` |
+| `-123X` | `-1239/-1230` (correct, was 4-digit already) | `-1239/-1230` (unchanged) |
+| `-05XX` | `-0599/-0500` (correct) | `-0599/-0500` (unchanged) |
+
+## Files touched
+
+- `src/.../validation/DateTagTest.java` — `NEGATIVE_EDTF_X_FORM` pattern broadened; `checkNegativeEdtfXForm` body switched from string-concat to integer math with `%05d` zero-padded output.
+- `docs/MESSAGES.md` — rule 4250 trigger and fix sections rewritten to reflect the broadened input shape; example table extended.
+- `test/test_data.osm` — three new probes (9101100 reused, 9101101 added for start-date side, 9101102 added for single-X body).
+- `test/expected.txt` — n/9101100 moved from E section (4228) to W section (4250); two new W rows.
+
+`MessageApiAuditor` count: 100 → 99 (the broadening of 4250 absorbed one input class that previously hit 4228; no new emission sites added). Regression suite green.
+
+---
+
 # v0.7.2 — BCE third-decade/century fix + OS-4 control chars + O1/O2 verification
 
 Closing out the remaining outstanding items from the post-v0.7.0 rule review.

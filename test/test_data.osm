@@ -39246,8 +39246,18 @@
     <member type='node' ref='9101092' role='' />
   </relation>
   <node id='9101100' visible='true' version='1' lat='0.0' lon='0.0'>
-    <tag k='name' v='Test OS-2 unpadded negative X-form' />
+    <tag k='name' v='Test 4250 unpadded -NXX end_date' />
     <tag k='end_date:edtf' v='-7XX' />
     <tag k='source' v='https://example.com/x90' />
+  </node>
+  <node id='9101101' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4250 unpadded -NXX start_date' />
+    <tag k='start_date:edtf' v='-7XX' />
+    <tag k='source' v='https://example.com/x91' />
+  </node>
+  <node id='9101102' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Test 4250 unpadded -NX (single X)' />
+    <tag k='end_date:edtf' v='-7X' />
+    <tag k='source' v='https://example.com/x92' />
   </node>
 </osm>
