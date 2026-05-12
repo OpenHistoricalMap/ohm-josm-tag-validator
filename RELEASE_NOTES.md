@@ -1,3 +1,41 @@
+# v0.7.8 — `before/after` BCE + base-tag negative X-form
+
+Two follow-on fixes bundled together — both gaps surfaced while completing the v0.7.7 case-insensitive work.
+
+## `before/after/by/as of -N` now normalizes
+
+Pre-fix: `start_date=after -0799` fell through to 4201 unfixable. Root cause: the whitespace-around-hyphen normalization (preprocess line 629, `\s*-\s*` → `-`) collapsed `after -0799` to `after-0799`, which then didn't match the AFTER pattern (which requires a separator between `after` and the inner value).
+
+Fix: added a protective pre-rewrite that swaps `after -N` / `before -N` / `by -N` / `as of -N` to use a colon as separator (also accepted by BEFORE/AFTER per the pattern) *before* the strip runs. After fix:
+
+- `start_date=after -0799` → `start_date=-0799, :edtf=-0799/, :raw=after -0799`
+- `start_date=before -0799` → `start_date=-0799, :edtf=/-0799, :raw=before -0799`
+- `start_date=by -0799` → same as `before`
+- `start_date=after -799` (3-digit unpadded) → `start_date=-0799, :edtf=-0799/, :raw=after -799`
+- Positive cases (`after 1900`, `before 1900`) unchanged
+
+## Base-tag negative X-form now fixable
+
+Pre-fix: `start_date=-6xx`, `start_date=-06XX`, `end_date=-6XX` all fell to 4201 unfixable. Rule 4250 was `:edtf`-only, and the base pipeline relied on `edtf-java` parsing the value — which rejects negative X-form years outright.
+
+Fix: new `checkBaseNegativeEdtfXForm` helper, parallel to `checkNegativeEdtfXForm`, called as Path 0a'' early in `checkDateFamily`. Emits the same 4250 warning with autofix triple — `:edtf=<slash interval>`, base=appropriate bound (more-negative for `start_date`, less-negative for `end_date`), `:raw=<original>`. Reuses the same code (4250) so the user sees a consistent message regardless of whether the value sits in the base slot or the `:edtf` slot.
+
+After fix:
+- `start_date=-6xx` → `start_date=-0699, start_date:edtf=-0699/-0600, start_date:raw=-6xx`
+- `start_date=-06XX` (uppercase, padded) → same triple
+- `end_date=-6XX` → `end_date=-0600, end_date:edtf=-0699/-0600, end_date:raw=-6XX`
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — new pre-strip protection for `after -N` / `before -N` etc. (~3 lines).
+- `src/.../validation/DateTagTest.java` — new `checkBaseNegativeEdtfXForm` method, wired into `checkDateFamily` as Path 0a''.
+- `test/test_data.osm` — seven new permanent fixtures (4 for before/after BCE, 3 for base negative X-form).
+- `test/expected.txt` — golden rows.
+
+`MessageApiAuditor` count: 99 → 100. Regression suite green.
+
+---
+
 # v0.7.7 — Case-insensitive X handling for unspecified-digit forms
 
 All checks for the EDTF unspecified-digit marker `X` now accept lowercase `x` equivalently. Before this release, several places were case-sensitive and let lowercase forms slip through:
