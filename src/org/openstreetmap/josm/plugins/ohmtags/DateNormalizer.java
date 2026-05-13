@@ -109,6 +109,22 @@ public final class DateNormalizer {
             "\\s+century(\\s+BC)?$"
         );
 
+    /**
+     * Century-shorthand range: {@code Cn-Cm}, {@code C5 - C8}, {@code C19-C20 BC},
+     * with optional {@code early|mid|late} modifiers on each side. Captures the
+     * two modifier+number pairs and the optional BCE suffix so preprocess can
+     * rewrite to the equivalent {@code Nth - Mth Century} form that
+     * {@link #ORDINAL_CENTURY_RANGE} accepts downstream.
+     */
+    private static final Pattern CN_RANGE =
+        Pattern.compile(
+            "^(?i)" +
+            "(?:(early|mid|late)\\s+)?C(\\d+)" +
+            "\\s*-\\s*" +
+            "(?:(early|mid|late)\\s+)?C(\\d+)" +
+            "(\\s+BCE?)?$"
+        );
+
     private static final Pattern DECADE =
         Pattern.compile("^([~?%])?(\\d+)0s([~?%])?( BCE?)?$");
 
@@ -240,6 +256,45 @@ public final class DateNormalizer {
     /** Potentially-ambiguous NN/NN/YYYY (year-last). */
     private static final Pattern SLASH_DATE_MDY =
         Pattern.compile("^(\\d{1,2})/(\\d{1,2})/(\\d{4})$");
+
+    /**
+     * Potentially-ambiguous NN-NN-YYYY (year-last, dash-separated). Mirror
+     * of {@link #SLASH_DATE_MDY} for input that uses dashes instead of
+     * slashes. Disambiguation is the same: only fires when one side is
+     * {@code > 12} (forcing it to be the day) or when the two sides are
+     * equal (both interpretations collapse to the same date).
+     *
+     * <p>Distinct from {@link #DAY_MONTH_YEAR_DASHED}, which is used only
+     * inside {@code before X} / {@code after X} bounds and coarsens to
+     * year-only (since the surrounding qualifier is itself fuzzy).
+     */
+    private static final Pattern DASH_DATE_MDY =
+        Pattern.compile("^(\\d{1,2})-(\\d{1,2})-(\\d{4})$");
+
+    /**
+     * Month-year dash form: {@code MM-YYYY}. The year is always last;
+     * the first component must be {@code <= 12} to qualify as a month.
+     * No collision with year-range {@code YYYY-YYYY} (first comp 4 digits)
+     * or astronomical-negative {@code -YYYY} (starts with hyphen).
+     */
+    private static final Pattern DASH_MONTH_YEAR =
+        Pattern.compile("^(\\d{1,2})-(\\d{4})$");
+
+    /**
+     * European dot-separated date form: {@code DD.MM.YYYY} / {@code MM.DD.YYYY}.
+     * Conservative disambiguation matching {@link #SLASH_DATE_MDY}: only fires
+     * when one side is {@code > 12} or both sides are equal. Genuinely
+     * ambiguous cases (both {@code <= 12} and unequal) fall through.
+     */
+    private static final Pattern DOT_DATE_MDY =
+        Pattern.compile("^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})$");
+
+    /**
+     * European dot month-year form: {@code MM.YYYY}. Year is always last;
+     * first component must be {@code <= 12} to qualify as a month.
+     */
+    private static final Pattern DOT_MONTH_YEAR =
+        Pattern.compile("^(\\d{1,2})\\.(\\d{4})$");
 
     /** Two-component slash like "1850/1900" (potential range). */
     private static final Pattern SLASH_RANGE_2 =
@@ -757,6 +812,26 @@ public final class DateNormalizer {
         // 3. Normalize BCE suffix variants (BC, B.C., bce, B.C.E., etc.) to " BC".
         s = BCE_SUFFIX.matcher(s).replaceAll(" BC");
 
+        // 3-bis. CN-CM century-shorthand range → "Nth - Mth Century" form so
+        //   the ORDINAL_CENTURY_RANGE handler in toEdtf picks it up.
+        //   "Cn-Cm" / "C5 - C8" / "early C5 - mid C8" / "C19-C20 BC" all match.
+        //   The "th" suffix is fine for any number — ORDINAL_CENTURY_RANGE
+        //   accepts (?:st|nd|rd|th) regardless of grammatical correctness.
+        Matcher cnr = CN_RANGE.matcher(s);
+        if (cnr.matches()) {
+            String leftMod = cnr.group(1);
+            String leftN = cnr.group(2);
+            String rightMod = cnr.group(3);
+            String rightN = cnr.group(4);
+            String bcSuffix = cnr.group(5) == null ? "" : cnr.group(5);
+            StringBuilder rewritten = new StringBuilder();
+            if (leftMod != null) rewritten.append(leftMod).append(' ');
+            rewritten.append(leftN).append("th - ");
+            if (rightMod != null) rewritten.append(rightMod).append(' ');
+            rewritten.append(rightN).append("th century").append(bcSuffix);
+            s = rewritten.toString();
+        }
+
         // 3a. Normalize "circa" / "ca" / "ca." / "around" prefixes to "~".
         Matcher mc = CIRCA_PREFIX.matcher(s);
         if (mc.matches()) {
@@ -896,6 +971,63 @@ public final class DateNormalizer {
                 }
                 // Else genuinely ambiguous — leave as-is and let parsing fail;
                 // the validator will report it as unparseable.
+            }
+        }
+
+        // 5a. Dash MDY/DMY form. Same disambiguation as SLASH_DATE_MDY but
+        //     applied to dash-separated inputs (NN-NN-YYYY). Doesn't conflict
+        //     with ISO YYYY-MM-DD because that has 4 digits in the first
+        //     component, not 1–2.
+        Matcher dmdy = DASH_DATE_MDY.matcher(s);
+        if (dmdy.matches()) {
+            int a = Integer.parseInt(dmdy.group(1));
+            int b = Integer.parseInt(dmdy.group(2));
+            String year = dmdy.group(3);
+            if (a == b && a <= 12) {
+                s = year + "-" + pad2(String.valueOf(a)) + "-" + pad2(String.valueOf(b));
+            } else if (a > 12 && b <= 12) {
+                s = year + "-" + pad2(String.valueOf(b)) + "-" + pad2(String.valueOf(a));
+            } else if (b > 12 && a <= 12) {
+                s = year + "-" + pad2(String.valueOf(a)) + "-" + pad2(String.valueOf(b));
+            }
+            // Else genuinely ambiguous; leave as-is.
+        }
+
+        // 5b. Month-year dash form: MM-YYYY → YYYY-MM. Year-range YYYY-YYYY
+        //     doesn't match (first component would be 4 digits). Negative-year
+        //     -YYYY doesn't match (starts with hyphen). Only fires if month
+        //     value is <= 12.
+        Matcher dmy = DASH_MONTH_YEAR.matcher(s);
+        if (dmy.matches()) {
+            int month = Integer.parseInt(dmy.group(1));
+            if (month >= 1 && month <= 12) {
+                s = dmy.group(2) + "-" + pad2(dmy.group(1));
+            }
+        }
+
+        // 5c. European dot-separated date: DD.MM.YYYY / MM.DD.YYYY.
+        //     Same disambiguation as the slash and dash forms — only fires
+        //     when one side is > 12 (forcing day position) or both are equal.
+        Matcher dotmdy = DOT_DATE_MDY.matcher(s);
+        if (dotmdy.matches()) {
+            int a = Integer.parseInt(dotmdy.group(1));
+            int b = Integer.parseInt(dotmdy.group(2));
+            String year = dotmdy.group(3);
+            if (a == b && a <= 12) {
+                s = year + "-" + pad2(String.valueOf(a)) + "-" + pad2(String.valueOf(b));
+            } else if (a > 12 && b <= 12) {
+                s = year + "-" + pad2(String.valueOf(b)) + "-" + pad2(String.valueOf(a));
+            } else if (b > 12 && a <= 12) {
+                s = year + "-" + pad2(String.valueOf(a)) + "-" + pad2(String.valueOf(b));
+            }
+        }
+
+        // 5d. European dot month-year form: MM.YYYY → YYYY-MM.
+        Matcher dotmy = DOT_MONTH_YEAR.matcher(s);
+        if (dotmy.matches()) {
+            int month = Integer.parseInt(dotmy.group(1));
+            if (month >= 1 && month <= 12) {
+                s = dotmy.group(2) + "-" + pad2(dotmy.group(1));
             }
         }
 

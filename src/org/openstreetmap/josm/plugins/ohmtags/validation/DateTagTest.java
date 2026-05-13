@@ -2992,13 +2992,77 @@ public class DateTagTest extends Test {
 
         MemberInfo youngest = identifyYoungest(infos);
 
-        checkChronologyParentRange(r, infos);
+        // Pre-build the per-relation "recompute parent dates from member
+        // envelope" fix once; both parent-range (4234) and boundary-gap (4236)
+        // emissions share it, so applying the fix from any one finding
+        // resolves the others on the next validation pass.
+        Command parentDatesFix = buildChronologyParentDatesFix(r, infos, youngest);
+
+        checkChronologyParentRange(r, infos, parentDatesFix);
         checkChronologyMissingTags(r, infos, youngest);
         checkChronologyOverlap(r, infos, youngest);
         checkChronologyGap(r, infos, youngest);
-        checkChronologyBoundaryGap(r, infos, youngest);
+        checkChronologyBoundaryGap(r, infos, youngest, parentDatesFix);
         checkChronologyDuplicatePredecessor(r, infos);
         checkBoundaryChronologyMemberTypes(r);
+    }
+
+    /**
+     * Build a command that resets the parent relation's {@code start_date}
+     * and {@code end_date} to the member envelope (min start, max end, or
+     * remove end if the youngest member has no end_date). Returns null if
+     * no fix is applicable (no members with parseable dates).
+     */
+    private Command buildChronologyParentDatesFix(Relation r,
+                                                  List<MemberInfo> infos,
+                                                  MemberInfo youngest) {
+        // Find oldest member by start lower bound; latest by end upper bound.
+        MemberInfo oldest = null;
+        MemberInfo latest = null;
+        boolean youngestHasNoEnd = youngest != null && youngest.end == null;
+        for (MemberInfo mi : infos) {
+            if (mi.start != null) {
+                if (oldest == null
+                    || mi.start.lowerBound().isBefore(oldest.start.lowerBound())) {
+                    oldest = mi;
+                }
+            }
+            if (mi.end != null) {
+                if (latest == null
+                    || mi.end.upperBound().isAfter(latest.end.upperBound())) {
+                    latest = mi;
+                }
+            }
+        }
+        if (oldest == null && latest == null && !youngestHasNoEnd) return null;
+
+        List<Command> cmds = new ArrayList<>();
+        if (oldest != null) {
+            String desiredStart = oldest.start.raw;
+            String currentStart = r.get("start_date");
+            if (!Objects.equals(desiredStart, currentStart)) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(r),
+                                                   "start_date", desiredStart));
+            }
+        }
+        if (youngestHasNoEnd) {
+            // Youngest member is still-extant → parent should also be open-ended.
+            if (r.get("end_date") != null) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(r),
+                                                   "end_date", null));
+            }
+        } else if (latest != null) {
+            String desiredEnd = latest.end.raw;
+            String currentEnd = r.get("end_date");
+            if (!Objects.equals(desiredEnd, currentEnd)) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(r),
+                                                   "end_date", desiredEnd));
+            }
+        }
+        if (cmds.isEmpty()) return null;
+        return new SequenceCommand(
+            tr("Recompute chronology parent dates from member envelope"),
+            cmds);
     }
 
     /**
@@ -3079,7 +3143,8 @@ public class DateTagTest extends Test {
         return best;
     }
 
-    private void checkChronologyParentRange(Relation r, List<MemberInfo> infos) {
+    private void checkChronologyParentRange(Relation r, List<MemberInfo> infos,
+                                            Command parentDatesFix) {
         ParsedDate parentStart = parseStrictBaseDate(r.get("start_date"));
         ParsedDate parentEnd = parseStrictBaseDate(r.get("end_date"));
         if (parentStart == null && parentEnd == null) return;
@@ -3102,12 +3167,15 @@ public class DateTagTest extends Test {
             }
             if (sb.length() == 0) continue;
 
-            errors.add(TestError.builder(this, Severity.ERROR, CODE_CHRONOLOGY_OUTSIDE_PARENT)
-                .message(tr("[ohm] Chronology - member date range outside parent chronology range; unfixable, please review"),
+            TestError.Builder b = TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_OUTSIDE_PARENT)
+                .message(tr("[ohm] Chronology - member date range outside parent chronology range; autofix by recomputing parent dates from member envelope"),
                          marktr("Member {0} outside parent range {1}: {2}."),
                             formatPrim(mi.prim), parentRange, sb.toString())
-                .primitives(Arrays.asList(r, mi.prim))
-                .build());
+                .primitives(Arrays.asList(r, mi.prim));
+            if (parentDatesFix != null) {
+                b = b.fix(() -> parentDatesFix);
+            }
+            errors.add(b.build());
         }
     }
 
@@ -3258,7 +3326,8 @@ public class DateTagTest extends Test {
      * to infinity and no trailing gap is possible.
      */
     private void checkChronologyBoundaryGap(Relation r, List<MemberInfo> infos,
-                                            MemberInfo youngest) {
+                                            MemberInfo youngest,
+                                            Command parentDatesFix) {
         ParsedDate parentStart = parseStrictBaseDate(r.get("start_date"));
         ParsedDate parentEnd = parseStrictBaseDate(r.get("end_date"));
         if (parentStart == null && parentEnd == null) return;
@@ -3288,16 +3357,19 @@ public class DateTagTest extends Test {
                 && oldest.start.lowerBound().isAfter(parentStart.upperBound())) {
                 int missing = missingUnitsAtCoarserPrecision(parentStart, oldest.start);
                 if (missing > 1) {
-                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
-                        .message(tr("[ohm] Chronology - gap between parent start & oldest member; unfixable, please review"),
+                    TestError.Builder b = TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
+                        .message(tr("[ohm] Chronology - gap between parent start & oldest member; autofix by recomputing parent dates from member envelope"),
                                  marktr("Chronology relation {0} starts at {1} but oldest member {2} "
                                     + "starts at {3}, leaving a {4} {5} gap at the start of the chronology."),
                                     formatPrim(r), parentStart.raw,
                                     formatPrim(oldest.prim), oldest.start.raw,
                                     missing,
                                     coarserPrecisionName(parentStart.precision, oldest.start.precision))
-                        .primitives(Arrays.asList(r, oldest.prim))
-                        .build());
+                        .primitives(Arrays.asList(r, oldest.prim));
+                    if (parentDatesFix != null) {
+                        b = b.fix(() -> parentDatesFix);
+                    }
+                    errors.add(b.build());
                 }
             }
         }
@@ -3323,15 +3395,19 @@ public class DateTagTest extends Test {
                 && latest.end.upperBound().isBefore(parentEnd.lowerBound())) {
                 int missing = missingUnitsAtCoarserPrecision(latest.end, parentEnd);
                 if (missing > 1) {
-                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
-                        .message(tr("[ohm] Chronology - gap between latest member end & parent end; unfixable, please review"),
+                    TestError.Builder bb = TestError.builder(this, Severity.WARNING, CODE_CHRONOLOGY_GAP)
+                        .message(tr("[ohm] Chronology - gap between latest member end & parent end; autofix by recomputing parent dates from member envelope"),
                                  marktr("Latest member {0} (in chronology relation {1}) ends at {2} but "
                                     + "the chronology''s end_date is {3}, leaving a {4} {5} gap at the end of the chronology."),
                                     formatPrim(latest.prim), formatPrim(r), latest.end.raw,
                                     parentEnd.raw,
                                     missing,
                                     coarserPrecisionName(latest.end.precision, parentEnd.precision))
-                        .primitives(Arrays.asList(r, latest.prim))
+                        .primitives(Arrays.asList(r, latest.prim));
+                    if (parentDatesFix != null) {
+                        bb = bb.fix(() -> parentDatesFix);
+                    }
+                    errors.add(bb
                         .build());
                 }
             }

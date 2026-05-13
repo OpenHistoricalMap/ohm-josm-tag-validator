@@ -166,6 +166,7 @@ public class TagConsistencyTest extends Test {
     protected static final int CODE_BOUNDARY_NODE_TAGS = 4330;
     protected static final int CODE_BOUNDARY_WATERWAY = 4331;
     protected static final int CODE_BOUNDARY_NOT_SORTED = 4332;
+    protected static final int CODE_MAPWARPER_SOURCE = 4333;
 
     // --- Notability heuristics for the missing-wikidata rule (4302) ----------
     // A named feature only triggers 4302 when it carries one of these signals
@@ -205,6 +206,26 @@ public class TagConsistencyTest extends Test {
 
     /** Validates the language-prefix portion of a wikipedia=lang:Title value. */
     private static final Pattern WIKIPEDIA_LANG = Pattern.compile("[a-z]{2,10}");
+
+    /** Mapwarper tile-endpoint URL, capturing the numeric map id. */
+    private static final Pattern MAPWARPER_TILE = Pattern.compile(
+        "^https://(?:www\\.)?mapwarper\\.net/maps/tile/(\\d{1,6})/\\{z\\}/\\{x\\}/\\{y\\}\\.png$");
+
+    /** Mapwarper canonical map-page URL, capturing the numeric map id. */
+    private static final Pattern MAPWARPER_CANONICAL = Pattern.compile(
+        "^https://(?:www\\.)?mapwarper\\.net/maps/(\\d{1,6})$");
+
+    /** Matches a {@code source:url} or {@code source:N:url} key. */
+    private static final Pattern MAPWARPER_URL_KEY = Pattern.compile(
+        "^source(:.+)?:url$");
+
+    /** Matches a bare {@code source} or {@code source:N} key. */
+    private static final Pattern MAPWARPER_BARE_KEY = Pattern.compile(
+        "^source(:.+)?$");
+
+    /** Mapwarper /maps/&lt;id&gt;.json title extraction (handles both {@code "title":"..."} top-level and the {@code "map":{"title":"..."}} variant). */
+    private static final Pattern MAPWARPER_TITLE_PATTERN =
+        Pattern.compile("\"title\"\\s*:\\s*\"([^\"]*)\"");
 
     /**
      * Strict QID shape for {@code wikidata=*}: one capital Q followed by
@@ -796,6 +817,7 @@ public class TagConsistencyTest extends Test {
         // that if it fires, it does so against the un-processed state.
         checkSourceUrlConsolidation(p);
         checkSourceNameContents(p);
+        checkMapwarperSource(p);
 
         // Suspicious historic=*. OHM convention is that historic=* applies
         // to entities that have actually passed into history; using it on
@@ -1054,6 +1076,234 @@ public class TagConsistencyTest extends Test {
         }
     }
 
+    /**
+     * Rule 4333: detect Mapwarper URLs in {@code source}/{@code source:url}
+     * (and their numbered {@code source:N}/{@code source:N:url} variants)
+     * and offer to migrate them to OHM's preferred layout — separate
+     * {@code source:tiles} for the raster tile endpoint, {@code source:url}
+     * for the canonical map page, and {@code source:name} for the human-
+     * readable title fetched from the Mapwarper API.
+     *
+     * <p>Mirrors {@code MapwarperSourceFixer.py} in the qa-scripts repo:
+     * <ul>
+     *   <li><b>Rule 1A</b>: tile URL on {@code source[:N:]url} →
+     *       add {@code source[:N:]tiles=&lt;original&gt;}, rewrite
+     *       {@code source[:N:]url} to canonical map page.</li>
+     *   <li><b>Rule 1B</b>: tile URL on bare {@code source[:N]} →
+     *       add {@code source[:N:]tiles=&lt;original&gt;}, move any existing
+     *       {@code source[:N:]url} to {@code source[:N:]url:2},
+     *       set {@code source[:N:]url=&lt;canonical&gt;}, remove the bare
+     *       key (its content is now split into tiles + url).</li>
+     *   <li><b>Rule 2</b>: canonical URL on bare {@code source[:N]} →
+     *       add {@code source[:N:]tiles=&lt;derived tile URL&gt;}, leave
+     *       the bare key unchanged.</li>
+     *   <li><b>Rule 3</b>: for any matched (discriminator, map_id), if
+     *       {@code source[:N:]name} is empty/absent, fetch the title from
+     *       {@code https://mapwarper.net/maps/&lt;id&gt;.json} and write it.</li>
+     *   <li><b>Rule 4</b>: if the title lookup returns HTTP 404, append
+     *       {@code "no such mapwarper map &lt;id&gt;"} to {@code fixme:tiles}.</li>
+     * </ul>
+     *
+     * <p>Skips Rules 1/2 if the target {@code source[:N:]tiles} already
+     * exists. Network calls (Rules 3/4) run lazily inside the fix lambda.
+     */
+    private void checkMapwarperSource(OsmPrimitive p) {
+        List<MapwarperCandidate> candidates = findMapwarperCandidates(p);
+        if (candidates.isEmpty()) return;
+
+        // Build a summary of the migration in the warning message.
+        List<String> mapIds = new ArrayList<>();
+        for (MapwarperCandidate c : candidates) {
+            if (!mapIds.contains(c.mapId)) mapIds.add(c.mapId);
+        }
+
+        TestError.Builder builder = TestError.builder(this, Severity.WARNING, CODE_MAPWARPER_SOURCE)
+            .message(tr("[ohm] Source optimization - Mapwarper URL in source; autofix by splitting into source:url + source:tiles (+ source:name lookup)"),
+                     marktr("Found Mapwarper URL(s) for map id(s) {0}. Split into source:url (canonical) + source:tiles (raster endpoint); fetch source:name from the Mapwarper API on apply."),
+                        String.join(", ", mapIds))
+            .primitives(p)
+            .fix(() -> buildMapwarperFix(p, candidates));
+        errors.add(builder.build());
+    }
+
+    /** One row of detected Mapwarper migration work. */
+    private static final class MapwarperCandidate {
+        enum Rule { TILE_ON_URL, TILE_ON_BARE, CANONICAL_ON_BARE }
+        final Rule rule;
+        final String srcKey;          // the key that holds the matched URL
+        final String srcOldValue;     // the matched URL value
+        final String discriminator;   // ":N" or ""
+        final String mapId;
+        // Rule 1B-only: a pre-existing source[:N:]url value to demote to :url:2.
+        final String existingUrlValue;
+
+        MapwarperCandidate(Rule rule, String srcKey, String srcOldValue,
+                           String discriminator, String mapId, String existingUrlValue) {
+            this.rule = rule;
+            this.srcKey = srcKey;
+            this.srcOldValue = srcOldValue;
+            this.discriminator = discriminator;
+            this.mapId = mapId;
+            this.existingUrlValue = existingUrlValue;
+        }
+    }
+
+    private static List<MapwarperCandidate> findMapwarperCandidates(OsmPrimitive p) {
+        List<MapwarperCandidate> out = new ArrayList<>();
+        for (String key : new ArrayList<>(p.keySet())) {
+            String value = p.get(key);
+            if (value == null) continue;
+
+            Matcher urlKeyMatch = MAPWARPER_URL_KEY.matcher(key);
+            if (urlKeyMatch.matches()) {
+                Matcher tile = MAPWARPER_TILE.matcher(value);
+                if (tile.matches()) {
+                    String disc = urlKeyMatch.group(1) == null ? "" : urlKeyMatch.group(1);
+                    if (p.get("source" + disc + ":tiles") != null) continue;
+                    out.add(new MapwarperCandidate(
+                        MapwarperCandidate.Rule.TILE_ON_URL,
+                        key, value, disc, tile.group(1), null));
+                }
+                continue;
+            }
+
+            if (isMapwarperBareSourceKey(key)) {
+                Matcher tile = MAPWARPER_TILE.matcher(value);
+                if (tile.matches()) {
+                    Matcher bareMatch = MAPWARPER_BARE_KEY.matcher(key);
+                    String disc = bareMatch.matches() && bareMatch.group(1) != null
+                        ? bareMatch.group(1) : "";
+                    if (p.get("source" + disc + ":tiles") != null) continue;
+                    String existingUrl = p.get("source" + disc + ":url");
+                    out.add(new MapwarperCandidate(
+                        MapwarperCandidate.Rule.TILE_ON_BARE,
+                        key, value, disc, tile.group(1), existingUrl));
+                    continue;
+                }
+                Matcher canon = MAPWARPER_CANONICAL.matcher(value);
+                if (canon.matches()) {
+                    Matcher bareMatch = MAPWARPER_BARE_KEY.matcher(key);
+                    String disc = bareMatch.matches() && bareMatch.group(1) != null
+                        ? bareMatch.group(1) : "";
+                    if (p.get("source" + disc + ":tiles") != null) continue;
+                    out.add(new MapwarperCandidate(
+                        MapwarperCandidate.Rule.CANONICAL_ON_BARE,
+                        key, value, disc, canon.group(1), null));
+                }
+            }
+        }
+        return out;
+    }
+
+    private static boolean isMapwarperBareSourceKey(String key) {
+        if (!MAPWARPER_BARE_KEY.matcher(key).matches()) return false;
+        if (key.endsWith(":url") || key.endsWith(":tiles")
+            || key.endsWith(":name") || key.endsWith(":url:2")) return false;
+        return true;
+    }
+
+    /**
+     * Apply Rules 1/2 immediately, then Rules 3/4 via a lazy Mapwarper API
+     * call. Returns a SequenceCommand suitable for the JOSM fix lambda.
+     */
+    private Command buildMapwarperFix(OsmPrimitive p, List<MapwarperCandidate> candidates) {
+        List<Command> cmds = new ArrayList<>();
+        Set<String> seenDiscriminators = new LinkedHashSet<>();
+        List<String> notFoundIds = new ArrayList<>();
+
+        for (MapwarperCandidate c : candidates) {
+            String canonical = "https://mapwarper.net/maps/" + c.mapId;
+            String tilesKey  = "source" + c.discriminator + ":tiles";
+            String urlKey    = "source" + c.discriminator + ":url";
+
+            if (c.rule == MapwarperCandidate.Rule.TILE_ON_URL) {
+                // Add tiles=original, rewrite url=canonical.
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), tilesKey, c.srcOldValue));
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, canonical));
+            } else if (c.rule == MapwarperCandidate.Rule.TILE_ON_BARE) {
+                // Add tiles=original.
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), tilesKey, c.srcOldValue));
+                // Demote pre-existing url to url:2 if different.
+                if (c.existingUrlValue != null && !c.existingUrlValue.equals(canonical)) {
+                    cmds.add(new ChangePropertyCommand(Arrays.asList(p),
+                        "source" + c.discriminator + ":url:2", c.existingUrlValue));
+                }
+                // Set url=canonical.
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), urlKey, canonical));
+                // Remove the bare source key.
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), c.srcKey, null));
+            } else {
+                // CANONICAL_ON_BARE: add tiles, leave bare key as-is.
+                String derivedTileUrl = "https://mapwarper.net/maps/tile/" + c.mapId
+                    + "/{z}/{x}/{y}.png";
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), tilesKey, derivedTileUrl));
+            }
+        }
+
+        // Rules 3/4: per unique discriminator, fetch title if name is empty.
+        for (MapwarperCandidate c : candidates) {
+            if (!seenDiscriminators.add(c.discriminator)) continue;
+            String nameKey = "source" + c.discriminator + ":name";
+            String existingName = p.get(nameKey);
+            if (existingName != null && !existingName.trim().isEmpty()) continue;
+            MapwarperLookup look = lookupMapwarperTitle(c.mapId);
+            if (look.title != null) {
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), nameKey, look.title));
+            } else if (look.notFound) {
+                notFoundIds.add(c.mapId);
+            }
+        }
+        if (!notFoundIds.isEmpty()) {
+            String existingFixme = p.get("fixme:tiles");
+            StringBuilder sb = new StringBuilder(existingFixme == null ? "" : existingFixme);
+            for (String id : notFoundIds) {
+                String entry = "no such mapwarper map " + id;
+                if (sb.length() > 0 && sb.indexOf(entry) >= 0) continue;
+                if (sb.length() > 0) sb.append("; ");
+                sb.append(entry);
+            }
+            cmds.add(new ChangePropertyCommand(Arrays.asList(p), "fixme:tiles", sb.toString()));
+        }
+
+        return new SequenceCommand(
+            tr("Migrate Mapwarper source URL(s)"), cmds);
+    }
+
+    /** Title-lookup result. */
+    private static final class MapwarperLookup {
+        final String title;     // non-null on success
+        final boolean notFound; // true for HTTP 404
+        MapwarperLookup(String title, boolean notFound) {
+            this.title = title;
+            this.notFound = notFound;
+        }
+    }
+
+    private static MapwarperLookup lookupMapwarperTitle(String mapId) {
+        try {
+            String url = "https://mapwarper.net/maps/" + mapId + ".json";
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(10))
+                .header("User-Agent",
+                    "OHM_Tag_Validator (https://github.com/OpenHistoricalMap/ohm-josm-tag-validator)")
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+            HttpResponse<String> response = HTTP_CLIENT.send(request,
+                HttpResponse.BodyHandlers.ofString());
+            int status = response.statusCode();
+            if (status == 404) return new MapwarperLookup(null, true);
+            if (status < 200 || status >= 300) return new MapwarperLookup(null, false);
+            Matcher m = MAPWARPER_TITLE_PATTERN.matcher(response.body());
+            if (!m.find()) return new MapwarperLookup(null, false);
+            String title = m.group(1).trim();
+            if (title.isEmpty()) return new MapwarperLookup(null, false);
+            return new MapwarperLookup(title, false);
+        } catch (Exception e) {
+            return new MapwarperLookup(null, false);
+        }
+    }
+
     /** True if any key on the primitive starts with "source". */
     private static boolean hasAnySourceTag(OsmPrimitive p) {
         for (String key : p.keySet()) {
@@ -1097,13 +1347,24 @@ public class TagConsistencyTest extends Test {
         "(?i)^\\s*"
         + "(?:c\\.?\\s+|ca\\.?\\s+|circa\\s+|before\\s+|after\\s+|[~?%])?"
         + "(?:"
-        +     "\\d{4}-\\d\\d-\\d{4}-\\d\\d|"   // YYYY-MM-YYYY-MM (longest first)
-        +     "\\d{4}-\\d{4}|"                  // YYYY-YYYY
-        +     "\\d{4}-\\d\\d-\\d\\d|"           // YYYY-MM-DD
-        +     "\\d{4}-\\d\\d|"                  // YYYY-MM
-        +     "\\d{4}-|"                        // YYYY-  (open-ended right)
-        +     "-\\d{4}|"                        // -YYYY  (open-ended left)
-        +     "\\d{4}"                          // YYYY
+        // Two-bound ranges with all combinations of precision — longest first.
+        +     "\\d{4}-\\d\\d-\\d\\d-\\d{4}-\\d\\d-\\d\\d|"   // YMD-YMD
+        +     "\\d{4}-\\d\\d-\\d\\d-\\d{4}-\\d\\d|"           // YMD-YM
+        +     "\\d{4}-\\d\\d-\\d{4}-\\d\\d-\\d\\d|"           // YM-YMD
+        +     "\\d{4}-\\d\\d-\\d\\d-\\d{4}|"                  // YMD-Y
+        +     "\\d{4}-\\d{4}-\\d\\d-\\d\\d|"                  // Y-YMD
+        +     "\\d{4}-\\d\\d-\\d{4}-\\d\\d|"                  // YM-YM
+        +     "\\d{4}-\\d\\d-\\d{4}|"                         // YM-Y
+        +     "\\d{4}-\\d{4}-\\d\\d|"                         // Y-YM
+        +     "\\d{4}-\\d{4}|"                                // Y-Y
+        // 2-digit tail year (only when > 12 so it isn't a valid month).
+        +     "\\d{4}-(?:1[3-9]|[2-9]\\d)|"                   // Y-NN (NN > 12)
+        // Single dates.
+        +     "\\d{4}-\\d\\d-\\d\\d|"           // YMD
+        +     "\\d{4}-\\d\\d|"                  // YM
+        +     "\\d{4}-|"                        // Y-  (open-ended right)
+        +     "-\\d{4}|"                        // -Y  (open-ended left)
+        +     "\\d{4}"                          // Y
         + ")\\s*$"
     );
 
@@ -1114,8 +1375,19 @@ public class TagConsistencyTest extends Test {
      * model number, etc.
      */
     private static final Pattern INLINE_DATE_RANGE = Pattern.compile(
-        "\\b\\d{4}-\\d\\d-\\d{4}-\\d\\d\\b"   // YYYY-MM-YYYY-MM (longest first)
-        + "|\\b\\d{4}-\\d{4}\\b"               // YYYY-YYYY
+        // Longest precision combinations first so the regex engine prefers them.
+        "\\b\\d{4}-\\d\\d-\\d\\d-\\d{4}-\\d\\d-\\d\\d\\b"   // YMD-YMD
+        + "|\\b\\d{4}-\\d\\d-\\d\\d-\\d{4}-\\d\\d\\b"        // YMD-YM
+        + "|\\b\\d{4}-\\d\\d-\\d{4}-\\d\\d-\\d\\d\\b"        // YM-YMD
+        + "|\\b\\d{4}-\\d\\d-\\d\\d-\\d{4}\\b"               // YMD-Y
+        + "|\\b\\d{4}-\\d{4}-\\d\\d-\\d\\d\\b"               // Y-YMD
+        + "|\\b\\d{4}-\\d\\d-\\d{4}-\\d\\d\\b"               // YM-YM
+        + "|\\b\\d{4}-\\d\\d-\\d{4}\\b"                      // YM-Y
+        + "|\\b\\d{4}-\\d{4}-\\d\\d\\b"                      // Y-YM
+        + "|\\b\\d{4}-\\d{4}\\b"                             // Y-Y
+        // 2-digit tail year deliberately omitted inline (no parens) — too
+        // many false-positive risks for naked "Foo 1985-92" patterns that
+        // might be model numbers, addresses, etc.
     );
 
     /**
@@ -1168,8 +1440,19 @@ public class TagConsistencyTest extends Test {
     }
 
     // Patterns to parse the various CLEAN_DATE_SHAPE variants into structured form.
-    private static final Pattern PNAME_RANGE_YM = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d{4})-(\\d\\d)$");
-    private static final Pattern PNAME_RANGE_Y  = Pattern.compile("^(\\d{4})-(\\d{4})$");
+    // Two-bound asymmetric-precision ranges (longest matches first).
+    private static final Pattern PNAME_RANGE_YMD_YMD = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d\\d)-(\\d{4})-(\\d\\d)-(\\d\\d)$");
+    private static final Pattern PNAME_RANGE_YMD_YM  = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d\\d)-(\\d{4})-(\\d\\d)$");
+    private static final Pattern PNAME_RANGE_YM_YMD  = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d{4})-(\\d\\d)-(\\d\\d)$");
+    private static final Pattern PNAME_RANGE_YMD_Y   = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d\\d)-(\\d{4})$");
+    private static final Pattern PNAME_RANGE_Y_YMD   = Pattern.compile("^(\\d{4})-(\\d{4})-(\\d\\d)-(\\d\\d)$");
+    private static final Pattern PNAME_RANGE_YM      = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d{4})-(\\d\\d)$");
+    private static final Pattern PNAME_RANGE_YM_Y    = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d{4})$");
+    private static final Pattern PNAME_RANGE_Y_YM    = Pattern.compile("^(\\d{4})-(\\d{4})-(\\d\\d)$");
+    private static final Pattern PNAME_RANGE_Y       = Pattern.compile("^(\\d{4})-(\\d{4})$");
+    // 2-digit tail year. Pattern requires the tail to be > 12 (so it isn't a valid month).
+    private static final Pattern PNAME_RANGE_Y_NN    = Pattern.compile("^(\\d{4})-(1[3-9]|[2-9]\\d)$");
+    // Single-date and open-ended forms.
     private static final Pattern PNAME_DATE_YMD = Pattern.compile("^(\\d{4})-(\\d\\d)-(\\d\\d)$");
     private static final Pattern PNAME_DATE_YM  = Pattern.compile("^(\\d{4})-(\\d\\d)$");
     private static final Pattern PNAME_OPEN_R   = Pattern.compile("^(\\d{4})-$");
@@ -1188,10 +1471,67 @@ public class TagConsistencyTest extends Test {
     private static NameDate parseNameDate(String s) {
         s = s.trim();
         Matcher m;
+        // Try longest-precision-first asymmetric ranges.
+        if ((m = PNAME_RANGE_YMD_YMD.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(4));
+            return new NameDate(sy, ey,
+                m.group(1) + "-" + m.group(2) + "-" + m.group(3),
+                m.group(4) + "-" + m.group(5) + "-" + m.group(6),
+                false, false, false);
+        }
+        if ((m = PNAME_RANGE_YMD_YM.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(4));
+            return new NameDate(sy, ey,
+                m.group(1) + "-" + m.group(2) + "-" + m.group(3),
+                m.group(4) + "-" + m.group(5),
+                false, false, false);
+        }
+        if ((m = PNAME_RANGE_YM_YMD.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(3));
+            return new NameDate(sy, ey,
+                m.group(1) + "-" + m.group(2),
+                m.group(3) + "-" + m.group(4) + "-" + m.group(5),
+                false, false, false);
+        }
+        if ((m = PNAME_RANGE_YMD_Y.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(4));
+            return new NameDate(sy, ey,
+                m.group(1) + "-" + m.group(2) + "-" + m.group(3),
+                m.group(4),
+                false, false, false);
+        }
+        if ((m = PNAME_RANGE_Y_YMD.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(2));
+            return new NameDate(sy, ey,
+                m.group(1),
+                m.group(2) + "-" + m.group(3) + "-" + m.group(4),
+                false, false, false);
+        }
         if ((m = PNAME_RANGE_YM.matcher(s)).matches()) {
             return new NameDate(
                 Integer.parseInt(m.group(1)), Integer.parseInt(m.group(3)),
                 m.group(1) + "-" + m.group(2), m.group(3) + "-" + m.group(4),
+                false, false, false);
+        }
+        if ((m = PNAME_RANGE_YM_Y.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(3));
+            return new NameDate(sy, ey,
+                m.group(1) + "-" + m.group(2),
+                m.group(3),
+                false, false, false);
+        }
+        if ((m = PNAME_RANGE_Y_YM.matcher(s)).matches()) {
+            int sy = Integer.parseInt(m.group(1));
+            int ey = Integer.parseInt(m.group(2));
+            return new NameDate(sy, ey,
+                m.group(1),
+                m.group(2) + "-" + m.group(3),
                 false, false, false);
         }
         if ((m = PNAME_RANGE_Y.matcher(s)).matches()) {
@@ -1199,6 +1539,14 @@ public class TagConsistencyTest extends Test {
                 Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)),
                 m.group(1), m.group(2),
                 false, false, false);
+        }
+        if ((m = PNAME_RANGE_Y_NN.matcher(s)).matches()) {
+            // Expand 2-digit tail using start year's century (first 2 digits).
+            int sy = Integer.parseInt(m.group(1));
+            String century = m.group(1).substring(0, 2);
+            String expandedEnd = century + m.group(2);
+            int ey = Integer.parseInt(expandedEnd);
+            return new NameDate(sy, ey, m.group(1), expandedEnd, false, false, false);
         }
         if ((m = PNAME_DATE_YMD.matcher(s)).matches()) {
             int y = Integer.parseInt(m.group(1));

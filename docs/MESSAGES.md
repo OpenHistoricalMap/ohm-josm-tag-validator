@@ -797,11 +797,11 @@ Suggested manual fix: decide whether to merge the calendar-conversion note with 
 
 | Code | Title |
 |------|-------|
-| 4234 | `[ohm] Chronology - member date range outside parent chronology range; unfixable, please review` |
+| 4234 | `[ohm] Chronology - member date range outside parent chronology range; autofix by recomputing parent dates from member envelope` |
 | 4235 | `[ohm] Chronology - member date range overlap; unfixable, please review` |
 | 4236 | `[ohm] Chronology - gap between member date ranges; unfixable, please review` |
-| 4236 | `[ohm] Chronology - gap between parent start & oldest member; unfixable, please review` |
-| 4236 | `[ohm] Chronology - gap between latest member end & parent end; unfixable, please review` |
+| 4236 | `[ohm] Chronology - gap between parent start & oldest member; autofix by recomputing parent dates from member envelope` |
+| 4236 | `[ohm] Chronology - gap between latest member end & parent end; autofix by recomputing parent dates from member envelope` |
 | 4237 | `[ohm] Chronology - member missing required date tag; unfixable, please review` |
 | 4238 | `[ohm] Chronology - member duplicate to its predecessor; unfixable, please review` |
 | 4239 | `[ohm] Chronology - member without dates; unfixable, please review` |
@@ -836,7 +836,9 @@ These six rules apply only to `type=chronology` relations. Comparisons use only 
 
 **4254 (WARNING) trigger:** `type=chronology` relation has zero members (`getMembers().size() == 0`). Typically an editing accident — relation created from a template but members never added, or all members removed, leaving the wrapper behind. JOSM core has a generic empty-relation warning; this one fires on top of it with OHM-specific framing ("add the constituent features or delete the relation"). Fires before the other chronology rules so the noise of "no members to compare" doesn't compound. No autofix — the user has to choose between adding members or deleting the relation.
 
-**4234 (ERROR) trigger:** Any member's `start_date` falls before the parent chronology relation's own `start_date`, or any member's `end_date` falls after the parent's `end_date`. Skipped if neither parent date is strictly parseable.
+**4234 (WARNING) trigger:** Any member's `start_date` falls before the parent chronology relation's own `start_date`, or any member's `end_date` falls after the parent's `end_date`. Skipped if neither parent date is strictly parseable. (Downgraded to WARNING and made fixable in v0.8.1.)
+
+**4234 / 4236 fix:** Recompute the parent chronology's `start_date` and `end_date` from the member envelope — set parent's `start_date` to the oldest member's `start_date`, parent's `end_date` to the latest member's `end_date`. If the youngest member (most-recent `start_date`) has no `end_date`, remove the parent's `end_date` instead (the chronology is still-extant). The fix is shared between 4234 and 4236 so applying it from any one finding resolves the related findings on the next validation pass.
 
 **4235 (WARNING) trigger:** Any pair of members has overlapping date ranges. Touching boundaries at matching precision (e.g. member A `end_date=1850`, member B `start_date=1850`) are treated as adjacency and **don't** fire — this is the canonical OHM successor pattern. Day-level expansion is used for the strict intersection test otherwise (year-only `1850` expands to Jan 1 – Dec 31). A member with `start_date == end_date` (instantaneous event) only collides if another member's range strictly contains the instant.
 
@@ -875,7 +877,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4332)
+## TagConsistencyTest (codes 4300–4333)
 
 **Source slot contract (v0.5).** Three keys, three roles:
 
@@ -1294,6 +1296,34 @@ Three rules introduced in v0.8 that target ways and nodes participating in `type
 
 **4332 trigger:** a `type=boundary` relation's way members form one or more closed rings (every endpoint Node appears exactly twice across each role-group) but are not listed in topological order — consecutive members don't share an endpoint, or a ring doesn't close. Direction-agnostic; each role is evaluated as its own group. Open chains and other geometry problems are left for the core JOSM validator.  
 **4332 fix:** reorders the way members within each unsorted role-group so consecutive members share an endpoint and each ring closes. Non-way members keep their positions in the member list; way-members of already-sorted role-groups keep their positions too.
+
+---
+
+### Mapwarper source URL split (4333)
+
+| Code | Title |
+|------|-------|
+| 4333 | `[ohm] Source optimization - Mapwarper URL in source; autofix by splitting into source:url + source:tiles (+ source:name lookup)` |
+
+**Trigger:** an OHM feature carries a Mapwarper URL in a source-family key. Two recognized shapes:
+- Tile endpoint: `https://[www.]mapwarper.net/maps/tile/<ID>/{z}/{x}/{y}.png`
+- Canonical page: `https://[www.]mapwarper.net/maps/<ID>`
+
+Fires for any of these layouts:
+- Tile URL on `source[:N:]url` (Rule 1A)
+- Tile URL on bare `source[:N]` (Rule 1B)
+- Canonical URL on bare `source[:N]` (Rule 2)
+
+Skips when the corresponding `source[:N:]tiles` already exists (already migrated).
+
+**Fix:**
+- **Rule 1A** (tile on `:url`): write `source[:N:]tiles=<original>`, rewrite `source[:N:]url` to the canonical page URL.
+- **Rule 1B** (tile on bare): write `source[:N:]tiles=<original>`; if a pre-existing `source[:N:]url` differs from canonical, demote it to `source[:N:]url:2`; set `source[:N:]url` to canonical; remove the bare source key.
+- **Rule 2** (canonical on bare): write `source[:N:]tiles=<derived tile URL>`; leave the bare key unchanged.
+- **Name lookup** (Rule 3): for each affected discriminator, if `source[:N:]name` is empty/absent, fetch the map title from `https://mapwarper.net/maps/<ID>.json` and write it.
+- **404 flag** (Rule 4): if the lookup returns HTTP 404, append `"no such mapwarper map <ID>"` to `fixme:tiles`.
+
+The HTTP call runs lazily inside the fix lambda — validation scans stay offline and fast. Mirrors `MapwarperSourceFixer.py` in `jeffreyameyer/JOSM-OHM-qa-scripts`.
 
 ---
 

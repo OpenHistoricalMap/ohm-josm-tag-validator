@@ -39085,6 +39085,40 @@
     <tag k='start_date' v='1880' />
     <tag k='source' v='https://example.com/x48' />
   </node>
+  <node id='9100960' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Asymmetric range YM-Y - World War 1 (1914-07-1918)' />
+    <tag k='start_date' v='1914-07' />
+    <tag k='end_date' v='1918' />
+    <tag k='source' v='https://example.com/asym-y1' />
+  </node>
+  <node id='9100961' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Asymmetric range Y-YM - Russian Revolution (1917-1923-12)' />
+    <tag k='start_date' v='1917' />
+    <tag k='end_date' v='1923-12' />
+    <tag k='source' v='https://example.com/asym-y2' />
+  </node>
+  <node id='9100962' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Asymmetric range YMD-Y - Boer War (1899-10-11-1902)' />
+    <tag k='start_date' v='1899-10-11' />
+    <tag k='end_date' v='1902' />
+    <tag k='source' v='https://example.com/asym-y3' />
+  </node>
+  <node id='9100963' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='2-digit tail range - WW2 (1939-45)' />
+    <tag k='start_date' v='1939' />
+    <tag k='end_date' v='1945' />
+    <tag k='source' v='https://example.com/2dt1' />
+  </node>
+  <node id='9100964' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='2-digit tail range no tags - WW2 (1939-45)' />
+    <tag k='source' v='https://example.com/2dt2' />
+  </node>
+  <node id='9100965' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='YM tag - February 1985 (1985-02)' />
+    <tag k='start_date' v='1985-02' />
+    <tag k='end_date' v='1985-02' />
+    <tag k='source' v='https://example.com/ym1' />
+  </node>
   <node id='9100949' visible='true' version='1' lat='0.0' lon='0.0'>
     <tag k='name' v='Wild West (1900)' />
     <tag k='start_date' v='1900' />

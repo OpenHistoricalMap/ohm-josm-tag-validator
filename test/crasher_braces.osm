@@ -830,4 +830,107 @@
     <tag k='end_date:edtf' v='1950/1960' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000211' visible='true' version='1' lat='0.0' lon='15.0'>
+    <tag k='name' v='dash-mdy probe DD-MM-YYYY day greater than 12' />
+    <tag k='start_date' v='15-03-1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000212' visible='true' version='1' lat='0.0' lon='15.1'>
+    <tag k='name' v='dash-mdy probe MM-DD-YYYY day greater than 12' />
+    <tag k='start_date' v='03-15-1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000213' visible='true' version='1' lat='0.0' lon='15.2'>
+    <tag k='name' v='dash-mdy probe both sides at most 12 ambiguous unfixable' />
+    <tag k='start_date' v='05-04-1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000214' visible='true' version='1' lat='0.0' lon='15.3'>
+    <tag k='name' v='dash-mdy probe both sides equal 12 12' />
+    <tag k='start_date' v='12-12-1850' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000221' visible='true' version='1' lat='0.0' lon='16.0'>
+    <tag k='name' v='dash month-year probe MM-YYYY march 1944' />
+    <tag k='start_date' v='03-1944' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000222' visible='true' version='1' lat='0.0' lon='16.1'>
+    <tag k='name' v='dash month-year probe MM-YYYY dec 1999' />
+    <tag k='start_date' v='12-1999' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000223' visible='true' version='1' lat='0.0' lon='16.2'>
+    <tag k='name' v='dash month-year probe invalid month 13 untouched' />
+    <tag k='start_date' v='13-1944' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000231' visible='true' version='1' lat='0.0' lon='17.0'>
+    <tag k='name' v='dot date probe DD.MM.YYYY day greater than 12' />
+    <tag k='start_date' v='15.03.1944' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000232' visible='true' version='1' lat='0.0' lon='17.1'>
+    <tag k='name' v='dot date probe MM.DD.YYYY day greater than 12' />
+    <tag k='start_date' v='03.15.1944' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000233' visible='true' version='1' lat='0.0' lon='17.2'>
+    <tag k='name' v='dot date probe both sides at most 12 ambiguous unfixable' />
+    <tag k='start_date' v='05.04.1944' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000234' visible='true' version='1' lat='0.0' lon='17.3'>
+    <tag k='name' v='dot month-year probe MM.YYYY march 1944' />
+    <tag k='start_date' v='03.1944' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000235' visible='true' version='1' lat='0.0' lon='17.4'>
+    <tag k='name' v='dot date probe both sides equal 12 12' />
+    <tag k='start_date' v='12.12.1850' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000241' visible='true' version='1' lat='0.0' lon='18.0'>
+    <tag k='name' v='mapwarper probe Rule 1B bare source = tile URL' />
+    <tag k='start_date' v='1900' />
+    <tag k='source' v='https://mapwarper.net/maps/tile/12345/{z}/{x}/{y}.png' />
+  </node>
+  <node id='9000242' visible='true' version='1' lat='0.0' lon='18.1'>
+    <tag k='name' v='mapwarper probe Rule 1A source:url = tile URL' />
+    <tag k='start_date' v='1900' />
+    <tag k='source:url' v='https://mapwarper.net/maps/tile/67890/{z}/{x}/{y}.png' />
+    <tag k='source' v='Original survey notes' />
+  </node>
+  <node id='9000243' visible='true' version='1' lat='0.0' lon='18.2'>
+    <tag k='name' v='mapwarper probe Rule 2 bare source = canonical URL' />
+    <tag k='start_date' v='1900' />
+    <tag k='source' v='https://mapwarper.net/maps/55555' />
+  </node>
+  <node id='9000244' visible='true' version='1' lat='0.0' lon='18.3'>
+    <tag k='name' v='mapwarper probe already migrated source:tiles present skip' />
+    <tag k='start_date' v='1900' />
+    <tag k='source:url' v='https://mapwarper.net/maps/22222' />
+    <tag k='source:tiles' v='https://mapwarper.net/maps/tile/22222/{z}/{x}/{y}.png' />
+    <tag k='source:name' v='Some Map Title' />
+  </node>
+  <node id='9000251' visible='true' version='1' lat='0.0' lon='19.0'>
+    <tag k='name' v='CN-CN century range C5-C8' />
+    <tag k='start_date' v='C5-C8' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000252' visible='true' version='1' lat='0.0' lon='19.1'>
+    <tag k='name' v='CN-CN century range C19-C20' />
+    <tag k='start_date' v='C19-C20' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000253' visible='true' version='1' lat='0.0' lon='19.2'>
+    <tag k='name' v='CN-CN with modifiers early C5 - mid C8' />
+    <tag k='start_date' v='early C5 - mid C8' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000254' visible='true' version='1' lat='0.0' lon='19.3'>
+    <tag k='name' v='CN-CN BCE C5 - C8 BC' />
+    <tag k='start_date' v='C5 - C8 BC' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>
