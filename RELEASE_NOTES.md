@@ -1,3 +1,56 @@
+# v0.8.1 — Coverage parity with JOSM-OHM-qa-scripts
+
+Cross-referenced the validator against the Python scripts in `jeffreyameyer/JOSM-OHM-qa-scripts` and closed the gaps that were in scope. Seven additions / extensions, all building on the v0.8.0 surface.
+
+## DateNormalizer preprocess additions
+
+- **Dash-separated MDY date `DD-MM-YYYY` / `MM-DD-YYYY`** — mirrors the existing slash-form `SLASH_DATE_MDY` with the same `>12` disambiguation. `15-03-1999` → `1999-03-15`. Genuinely-ambiguous cases (both sides ≤ 12 and unequal) fall through.
+- **Dash month-year `MM-YYYY`** — `03-1944` → `1944-03`. Only fires when the month value is ≤ 12, so year-range `1850-1900` and negative-year `-1900` are untouched.
+- **European dot dates `DD.MM.YYYY` / `MM.YYYY`** — `15.03.1944` → `1944-03-15`; `03.1944` → `1944-03`. Same `>12` disambiguation for the two-component form.
+- **`CN-CN` century-shorthand range** — `C5-C8`, `C19-C20`, `early C5 - mid C8`, `C5 - C8 BC` all normalize. Preprocess rewrites to the `Nth - Mth Century` form so the existing `ORDINAL_CENTURY_RANGE` handler picks it up.
+
+## Rule 4234 / 4236 made fixable (chronology parent-range autofix)
+
+The two chronology-vs-parent rules — "member date range outside parent" (4234) and "gap between parent and oldest/latest member" (4236) — were previously unfixable advisories. v0.8.1 attaches a shared autofix that recomputes the parent's `start_date` and `end_date` from the member envelope (oldest member's start, latest member's end). If the youngest member has no `end_date`, the parent's `end_date` is removed (chronology is still-extant). 4234 is also downgraded from ERROR to WARNING — consistent with the "loose envelope" interpretation where the parent's curated range may legitimately differ from the strict member envelope; the autofix lets the editor opt into the strict reconciliation.
+
+## Rule 4301 extended — asymmetric ranges + 2-digit tail
+
+Name-parens date-range patterns gained support for all asymmetric-precision two-bound combinations:
+- `(YYYY-MM-DD-YYYY)`, `(YYYY-MM-YYYY)`, `(YYYY-YYYY-MM-DD)`, `(YYYY-YYYY-MM)`, `(YYYY-MM-DD-YYYY-MM)`, `(YYYY-MM-YYYY-MM-DD)`, `(YYYY-MM-DD-YYYY-MM-DD)`
+
+Plus the **2-digit-tail year**: `name=WW2 (1939-45)` is now recognized as a range with the tail expanded using the start year's century (`1939–1945`). To disambiguate from year-month, the rule only fires when the tail is > 12 (so `(1985-02)` stays a year-month, while `(1985-92)` is a range). Inline (no-parens) ranges deliberately don't include the 2-digit-tail shape — too many false-positive risks for "Building 1985-92"-style strings.
+
+## Rule 4333 (NEW) — Mapwarper source URL split
+
+Detects Mapwarper URLs in `source`-family keys and offers to split them into OHM's preferred layout:
+- **source:url** = canonical map page (`https://mapwarper.net/maps/<ID>`)
+- **source:tiles** = raster tile endpoint (`https://mapwarper.net/maps/tile/<ID>/{z}/{x}/{y}.png`)
+- **source:name** = map title (fetched lazily from Mapwarper's `/maps/<ID>.json` when the user applies the fix)
+
+Handles three input shapes — tile URL on `source[:N:]url`, tile URL on bare `source[:N]`, canonical URL on bare `source[:N]`. Mirrors `MapwarperSourceFixer.py` from `jeffreyameyer/JOSM-OHM-qa-scripts`, including its handling of pre-existing `source:url` (demote to `source:url:2` rather than overwrite) and 404 flagging (append `"no such mapwarper map <ID>"` to `fixme:tiles`). Network call happens inside the fix lambda — validation scans stay offline.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — four new preprocess rewrites (dash MDY, dash MY, dot MDY, dot MY, CN-CN range)
+- `src/.../validation/DateTagTest.java` — chronology parent-dates autofix builder and wiring on rules 4234/4236
+- `src/.../validation/TagConsistencyTest.java` — rule 4333 (Mapwarper) plus rule 4301 regex expansion and parser additions
+- `docs/MESSAGES.md` — new rule entries and chronology-fixability update
+- `test/test_data.osm`, `test/crasher_braces.osm`, `test/expected.txt` — fixture coverage for every new path
+
+Emission sites scanned: 109 (up from 108 at v0.8.0).
+
+## Skipped from the qa-scripts review (and why)
+
+- **BeforeAfterDateFixer**, **DotDotDateRangeFixer**, **LeadingTildeFixer**, **YYYYsFixer** — already covered (and broader) in the plugin.
+- **CenturyDateFixer** (base case) — covered; only the CN-CN range extension was added.
+- **MissingStart_dateFixer** — kept as a workflow tool. The plugin's rule 4200 stays unfixable; auto-deriving `start_date=end_date` (or `:edtf=/<end_date>`) is too lossy/misleading to apply at scale without operator review.
+- **CountryBoundaryWaysConverterFixer** — utility for promoting a way to a relation; manual operator decision, not a rule.
+- **JapanWaterwayValueChecker** — region- and Wikidata-API-specific; out of scope.
+- **JeffmeyerArbitraryFebFixer** — explicitly user-private.
+- **MultipolygonRelationOuterInnerRoleFixer** — multipolygon role correction overlaps with core JOSM validators.
+
+---
+
 # v0.8.0 — Date-shorthand expansion, raw-tag philosophy refactor, boundary-geometry rules
 
 A meaningful minor bump: validator now accepts a much wider vocabulary of casually-written date strings, the `:raw` tag is treated as inviolable human input, and three new rules target structural hygiene in `type=boundary` relations.
