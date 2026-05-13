@@ -174,7 +174,9 @@ public class DateTagTest extends Test {
     protected static final int CODE_NEEDS_NORMALIZATION = 4202;
     protected static final int CODE_AMBIGUOUS_DECADE = 4203;
     protected static final int CODE_AMBIGUOUS_CENTURY = 4204;
-    protected static final int CODE_RAW_MISMATCH_BOT = 4205;
+    // 4205 (CODE_RAW_MISMATCH_BOT) retired: assumed :raw was bot-written and
+    //   auto-rewrote base/:edtf from it. :raw is by design human-authored;
+    //   the validator no longer makes that assumption.
     protected static final int CODE_RAW_MISMATCH_HUMAN = 4206;
     protected static final int CODE_RAW_UNPARSEABLE = 4207;
     protected static final int CODE_EDTF_INVALID_NO_BASE = 4208;
@@ -243,6 +245,9 @@ public class DateTagTest extends Test {
     protected static final int CODE_AMBIGUOUS_MONTH_YEAR_TAIL = 4253;
     protected static final int CODE_CHRONOLOGY_EMPTY = 4254;
     protected static final int CODE_EDTF_INTERVAL_BACKWARDS = 4255;
+    protected static final int CODE_FUTURE_START_DATE = 4256;
+    protected static final int CODE_EDTF_START_AFTER_END = 4257;
+    protected static final int CODE_EDTF_RANGES_OVERLAP = 4258;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -430,7 +435,7 @@ public class DateTagTest extends Test {
                 checkDateFamily(p, baseKey);
                 checkSuspiciousYearBoundary(p, baseKey);
                 checkInvalidComponents(p, baseKey);
-                checkFutureEndDate(p, baseKey);
+                checkFutureDate(p, baseKey);
             }
             checkStartAfterEnd(p);
             checkStartEndEqualityAndBackslash(p);
@@ -438,6 +443,7 @@ public class DateTagTest extends Test {
         checkAllEdtfKeys(p);
         checkLongEdtfRange(p);
         checkBackwardsEdtfInterval(p);
+        checkStartEdtfVsEndEdtf(p);
     }
 
     /**
@@ -970,7 +976,7 @@ public class DateTagTest extends Test {
         if (DateNormalizer.looksLikeValidEdtf(value)) return false;
         errors.add(TestError.builder(this, Severity.ERROR, CODE_FIVE_PLUS_DIGIT_NUMBER)
             .message(tr("[ohm] Invalid date - 5+ digit number; unfixable, please review"),
-                     marktr("{0}={1} contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually."),
+                     marktr("{0}={1} contains a run of 5 or more digits and is not valid EDTF. Review and correct manually."),
                         baseKey, value)
             .primitives(p)
             .build());
@@ -985,14 +991,25 @@ public class DateTagTest extends Test {
      * recently-planted trees with projected lifespans, etc.) and near-future
      * values are legitimate. Only dates well beyond that window (more
      * than 10 years out) are almost always typos or stale data entry,
-     * so we warn and offer deletion.
+     * so we warn.
+     *
+     * <p>The {@code start_date} and {@code end_date} cases differ:
+     * <ul>
+     *   <li>{@code end_date} far in the future: fixable, autofix deletes
+     *       the key (4216). Common pattern is a stale planned-demolition
+     *       date or a typo year.</li>
+     *   <li>{@code start_date} far in the future: unfixable warning
+     *       (4256). Deletion is not safe — a far-future start_date may
+     *       legitimately describe a planned construction whose details
+     *       belong elsewhere; manual review is required.</li>
+     * </ul>
      *
      * <p>"Future" is relative to the machine clock at validation time.
      * Running the same validation at different moments can produce
      * different results for dates close to the ten-year boundary — a minor
      * inconsistency we accept as the cost of a simple check.
      */
-    private void checkFutureEndDate(OsmPrimitive p, String baseKey) {
+    private void checkFutureDate(OsmPrimitive p, String baseKey) {
         String value = p.get(baseKey);
         if (value == null) return;
         if (!DateNormalizer.isIsoCalendarDate(value)) return;
@@ -1005,14 +1022,23 @@ public class DateTagTest extends Test {
         if (parsed == null) return;
 
         LocalDate threshold = today.plusYears(10);
-        if (parsed.isAfter(threshold)) {
+        if (!parsed.isAfter(threshold)) return;
+
+        if ("end_date".equals(baseKey)) {
             Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, null);
             errors.add(TestError.builder(this, Severity.WARNING, CODE_FUTURE_DATE)
-                .message(tr("[ohm] Suspicious date - >10 year into the future; autofix by deleting the key"),
-                         marktr("{0}={1} is more than ten years in the future. Likely a typo; delete the key?"),
-                            baseKey, value)
+                .message(tr("[ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key"),
+                         marktr("end_date={0} is more than ten years in the future. Delete the key?"),
+                            value)
                 .primitives(p)
                 .fix(() -> fix)
+                .build());
+        } else {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_FUTURE_START_DATE)
+                .message(tr("[ohm] Suspicious date - start_date >10 year into the future; unfixable, please review"),
+                         marktr("start_date={0} is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo."),
+                            value)
+                .primitives(p)
                 .build());
         }
     }
@@ -1565,11 +1591,26 @@ public class DateTagTest extends Test {
         for (String baseKey : BASE_KEYS) {
             String edtfKey = baseKey + ":edtf";
             String value = p.get(edtfKey);
-            if (value == null || !value.contains("/")) continue;
+            if (value == null) continue;
 
-            int slash = value.indexOf('/');
-            String startBound = value.substring(0, slash);
-            String endBound   = value.substring(slash + 1);
+            // Two interval syntaxes: slash form "A/B" and bracket-set form
+            // "[A..B]". Both fire the same backwards-interval warning when
+            // A's year is greater than B's year.
+            String startBound;
+            String endBound;
+            if (value.contains("/")) {
+                int slash = value.indexOf('/');
+                startBound = value.substring(0, slash);
+                endBound   = value.substring(slash + 1);
+            } else if (value.startsWith("[") && value.endsWith("]")
+                    && value.contains("..")) {
+                String inner = value.substring(1, value.length() - 1);
+                int dotdot = inner.indexOf("..");
+                startBound = inner.substring(0, dotdot);
+                endBound   = inner.substring(dotdot + 2);
+            } else {
+                continue;
+            }
 
             if (startBound.isEmpty() || startBound.equals("..")
                     || endBound.isEmpty() || endBound.equals("..")) continue;
@@ -1591,6 +1632,92 @@ public class DateTagTest extends Test {
                     .primitives(p)
                     .build());
             }
+        }
+    }
+
+    /**
+     * Cross-key consistency check for {@code start_date:edtf} vs
+     * {@code end_date:edtf}: detects two failure modes.
+     *
+     * <ul>
+     *   <li><b>Entirely later:</b> the lowest year that {@code start_date:edtf}
+     *       could represent is greater than the highest year that
+     *       {@code end_date:edtf} could represent. The entity ended before it
+     *       started — a clear logical violation. Fires rule 4257.</li>
+     *   <li><b>Overlapping ranges:</b> the two intervals share at least one
+     *       year. The entity's starting period and ending period claim
+     *       overlapping dates, which is logically inconsistent — the
+     *       starting period is supposed to be entirely before the ending
+     *       period. Fires rule 4258.</li>
+     * </ul>
+     *
+     * <p>Open-ended intervals are skipped to avoid false positives (open
+     * forms are inherently fuzzy and frequently overlap legitimately).
+     */
+    private void checkStartEdtfVsEndEdtf(OsmPrimitive p) {
+        String startEdtf = p.get("start_date:edtf");
+        String endEdtf   = p.get("end_date:edtf");
+        if (startEdtf == null || endEdtf == null) return;
+
+        Optional<String> startLowerOpt = DateNormalizer.lowerBoundIso(startEdtf);
+        Optional<String> startUpperOpt = DateNormalizer.upperBoundIso(startEdtf);
+        Optional<String> endLowerOpt   = DateNormalizer.lowerBoundIso(endEdtf);
+        Optional<String> endUpperOpt   = DateNormalizer.upperBoundIso(endEdtf);
+        if (startLowerOpt.isEmpty() || startUpperOpt.isEmpty()
+            || endLowerOpt.isEmpty() || endUpperOpt.isEmpty()) {
+            return;
+        }
+
+        Integer startLower = parseLeadingYear(startLowerOpt.get());
+        Integer startUpper = parseLeadingYear(startUpperOpt.get());
+        Integer endLower   = parseLeadingYear(endLowerOpt.get());
+        Integer endUpper   = parseLeadingYear(endUpperOpt.get());
+        if (startLower == null || startUpper == null
+            || endLower == null || endUpper == null) return;
+
+        if (startLower > endUpper) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_START_AFTER_END)
+                .message(tr("[ohm] Suspicious date - start_date:edtf is entirely later than end_date:edtf; unfixable, please review"),
+                         marktr("start_date:edtf={0} ({1}–{2}) is entirely later than "
+                            + "end_date:edtf={3} ({4}–{5}). The entity ended before it "
+                            + "started — review whether the two values were swapped or "
+                            + "one is wrong."),
+                            startEdtf, startLower.toString(), startUpper.toString(),
+                            endEdtf, endLower.toString(), endUpper.toString())
+                .primitives(p)
+                .build());
+            return;
+        }
+
+        int overlapLo = Math.max(startLower, endLower);
+        int overlapHi = Math.min(startUpper, endUpper);
+        if (overlapLo <= overlapHi) {
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_RANGES_OVERLAP)
+                .message(tr("[ohm] Suspicious date - start_date:edtf and end_date:edtf overlap; unfixable, please review"),
+                         marktr("start_date:edtf={0} ({1}–{2}) and end_date:edtf={3} "
+                            + "({4}–{5}) overlap on {6}–{7}. The starting period "
+                            + "should be entirely before the ending period; review and tighten "
+                            + "whichever bound is wrong."),
+                            startEdtf, startLower.toString(), startUpper.toString(),
+                            endEdtf, endLower.toString(), endUpper.toString(),
+                            Integer.toString(overlapLo), Integer.toString(overlapHi))
+                .primitives(p)
+                .build());
+        }
+    }
+
+    /**
+     * Parse the leading year of an ISO calendar date such as
+     * {@code 1900}, {@code 1900-03-15}, or {@code -0500}. Returns
+     * {@code null} on failure.
+     */
+    private static Integer parseLeadingYear(String iso) {
+        Matcher m = Pattern.compile("^(-?\\d{1,4})").matcher(iso);
+        if (!m.find()) return null;
+        try {
+            return Integer.parseInt(m.group(1));
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
@@ -1890,17 +2017,24 @@ public class DateTagTest extends Test {
     }
 
     /**
-     * Check the date family when {@code :raw} is present. {@code :raw} is
-     * treated as source of truth; we compute what base and {@code :edtf}
-     * should be from {@code :raw} and compare.
+     * Check the date family when {@code :raw} is present.
+     *
+     * <p>{@code :raw} is by design the human-authored original input —
+     * preserved verbatim, never auto-rewritten or deleted. The validator
+     * uses it as a reference for what {@code :base} / {@code :edtf} should
+     * mean, but only modifies {@code :base} / {@code :edtf} when fixing.
+     *
+     * <p>Comparisons between {@code :raw} and {@code :edtf} are semantic
+     * (both passed through {@link DateNormalizer#toEdtf}) so equivalent
+     * forms like {@code :raw="between 1920 and 1940"} and
+     * {@code :edtf="1920/1940"} count as matching.
      */
     private void checkWithRaw(OsmPrimitive p, String baseKey,
                               String base, String edtf, String raw) {
-        Optional<String> expectedEdtfOpt = DateNormalizer.toEdtf(raw);
-        if (expectedEdtfOpt.isEmpty()) {
+        Optional<String> rawEdtfOpt = DateNormalizer.toEdtf(raw);
+        if (rawEdtfOpt.isEmpty()) {
             // :raw is unparseable. Only warn if there's also no salvage route
             // through base or :edtf — otherwise let those paths handle it.
-            // "Salvage route" means either already valid, or normalizable.
             boolean baseSalvageable = base != null
                 && (DateNormalizer.isIsoCalendarDate(base)
                     || DateNormalizer.toEdtf(base).isPresent());
@@ -1919,56 +2053,77 @@ public class DateTagTest extends Test {
             }
             return;
         }
-        String expectedEdtf = expectedEdtfOpt.get();
-        Optional<String> expectedBaseOpt = "start_date".equals(baseKey)
-            ? DateNormalizer.lowerBoundIso(expectedEdtf)
-            : DateNormalizer.upperBoundIso(expectedEdtf);
-        String expectedBase = expectedBaseOpt.orElse(null);
+        String rawNormalizedEdtf = rawEdtfOpt.get();
 
-        boolean baseOk = Objects.equals(base, expectedBase);
-        boolean edtfOk = Objects.equals(edtf, expectedEdtf);
-
-        if (baseOk && edtfOk) {
-            return; // Consistent triple; nothing to do.
+        // Derive what base would be implied by :edtf (not by :raw). Used for
+        // both the "populate missing base" fix and for detecting a real
+        // base-vs-:edtf mismatch.
+        boolean edtfValid = edtf != null && DateNormalizer.looksLikeValidEdtf(edtf);
+        String baseFromEdtf = null;
+        if (edtfValid) {
+            Optional<String> opt = "start_date".equals(baseKey)
+                ? DateNormalizer.lowerBoundIso(edtf)
+                : DateNormalizer.upperBoundIso(edtf);
+            baseFromEdtf = opt.orElse(null);
         }
 
-        // If base is a precision refinement of :edtf (more specific, within
-        // :edtf's bounds), that's the expected OHM state — no warning. The
-        // high-precision authoritative value lives on `:base`; the wider
-        // or qualified context lives on `:edtf`.
-        if (!baseOk && edtfOk
-            && base != null && edtf != null
-            && isBaseMoreSpecificWithinBounds(base, edtf)) {
+        // Case A: :base missing but :edtf is valid → populate :base from :edtf.
+        // The :raw value is not touched. This is the canonical "the only thing
+        // wrong is the missing base" case.
+        if (base == null && edtfValid && baseFromEdtf != null) {
+            String derivedBase = baseFromEdtf;
+            Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, derivedBase);
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_MISSING_BASE)
+                .message(tr("[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf"),
+                         marktr("{0}:edtf={1} implies {0}={2}."),
+                            baseKey, edtf, derivedBase)
+                .primitives(p)
+                .fix(() -> fix)
+                .build());
             return;
         }
 
-        if (lastEditorIsTrustedBot(p)) {
-            // Trust the raw value, assume the bot made a mistake; autofix
-            // rewrites base and :edtf from :raw.
-            Command fix = buildBaseAndEdtfFix(p, baseKey, expectedBase, expectedEdtf);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_MISMATCH_BOT)
-                .message(tr("[ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf"),
-                         marktr("{0}:raw={1} implies {0}={2}, {0}:edtf={3}."),
-                            baseKey, raw,
-                            expectedBase == null ? "(absent)" : expectedBase,
-                            edtfDisplayValue(expectedBase, expectedEdtf))
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
-        } else {
-            // Human edit somewhere; offer to delete :raw so the human-edited
-            // base/:edtf become canonical.
-            Command fix = new ChangePropertyCommand(Arrays.asList(p),
-                                                    baseKey + ":raw", null);
-            errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_MISMATCH_HUMAN)
-                .message(tr("[ohm] Date mismatch - across date tags; autofix by deleting :raw"),
-                         marktr("{0} and {0}:edtf don''t match {0}:raw={1}. "
-                            + "Delete the machine-generated :raw tag?"),
-                            baseKey, raw)
-                .primitives(p)
-                .fix(() -> fix)
-                .build());
+        // Semantic comparison: does :raw normalize to the same EDTF as :edtf?
+        // Pass :edtf through toEdtf too so equivalent forms like "1920..1940"
+        // and "1920/1940" compare equal.
+        String edtfNormalized = edtf == null ? null
+            : DateNormalizer.toEdtf(edtf).orElse(edtf);
+        boolean rawMatchesEdtf = edtf != null
+            && Objects.equals(rawNormalizedEdtf, edtfNormalized);
+
+        // Does :base match what :edtf implies?
+        boolean baseMatchesEdtf = base != null && baseFromEdtf != null
+            && (base.equals(baseFromEdtf)
+                || isBaseMoreSpecificWithinBounds(base, edtf));
+
+        // All three consistent: nothing to do.
+        if (rawMatchesEdtf && baseMatchesEdtf) {
+            return;
         }
+
+        // Real mismatch. :raw is never auto-rewritten or deleted; warn
+        // unfixable so the editor can reconcile manually. The specific
+        // disagreement guides the description.
+        String detail;
+        if (!rawMatchesEdtf && !baseMatchesEdtf) {
+            detail = tr("{0}={1}, {0}:edtf={2}, and {0}:raw={3} do not agree.",
+                        baseKey, base == null ? "(absent)" : base,
+                        edtf == null ? "(absent)" : edtf, raw);
+        } else if (!rawMatchesEdtf) {
+            detail = tr("{0}:raw={1} normalizes to {2}, but {0}:edtf={3} disagrees.",
+                        baseKey, raw, rawNormalizedEdtf,
+                        edtf == null ? "(absent)" : edtf);
+        } else {
+            detail = tr("{0}={1} does not match {0}:edtf={2}.",
+                        baseKey, base == null ? "(absent)" : base,
+                        edtf == null ? "(absent)" : edtf);
+        }
+        errors.add(TestError.builder(this, Severity.WARNING, CODE_RAW_MISMATCH_HUMAN)
+            .message(tr("[ohm] Date mismatch - across date tags; unfixable, please review (:raw is preserved as-is)"),
+                     marktr("{0}"),
+                        detail)
+            .primitives(p)
+            .build());
     }
 
     /**

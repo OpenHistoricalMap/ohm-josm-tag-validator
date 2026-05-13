@@ -50,7 +50,7 @@ E   n/2087732269   [ohm] Invalid date - *_date; fixable, please review   start_d
 E   n/2088092554   [ohm] Invalid date - *_date; fixable, please review   start_date=1855_12 ? start_date=1855-12, start_date:edtf=(absent), start_date:raw=1855_12
 E   n/2088126233   [ohm] Invalid date - *_date; fixable, please review   end_date=1979-02..1984 ? end_date=1984, end_date:edtf=1979-02/1984, end_date:raw=1979-02..1984
 E   n/2088126936   [ohm] Invalid date - *_date; fixable, please review   start_date=2008-10..2009-04 ? start_date=2008-10, start_date:edtf=2008-10/2009-04, start_date:raw=2008-10..2009-04
-E   n/2090178444   [ohm] Invalid date - 5+ digit number; unfixable, please review   end_date=Q1438579 contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually.
+E   n/2090178444   [ohm] Invalid date - 5+ digit number; unfixable, please review   end_date=Q1438579 contains a run of 5 or more digits and is not valid EDTF. Review and correct manually.
 E   n/2090178444   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   n/2090339577   [ohm] Invalid date - *_date; fixable, please review   end_date=2008-10..2009-04 ? end_date=2009-04, end_date:edtf=2008-10/2009-04, end_date:raw=2008-10..2009-04
 E   n/2090339577   [ohm] Invalid date - *_date; fixable, please review   start_date=1981-06..1988-12 ? start_date=1981-06, start_date:edtf=1981-06/1988-12, start_date:raw=1981-06..1988-12
@@ -61,7 +61,7 @@ E   n/2090578812   [ohm] Invalid date - *_date; fixable, please review   end_dat
 E   n/2090586932   [ohm] Invalid date - *_date; fixable, please review   end_date=2007-02..2007-07 ? end_date=2007-07, end_date:edtf=2007-02/2007-07, end_date:raw=2007-02..2007-07
 E   n/2090587413   [ohm] Invalid date - *_date; fixable, please review   start_date=1997-04..1997-06 ? start_date=1997-04, start_date:edtf=1997-04/1997-06, start_date:raw=1997-04..1997-06
 E   n/2090587414   [ohm] Invalid date - *_date; fixable, please review   start_date=1997-04..1997-06 ? start_date=1997-04, start_date:edtf=1997-04/1997-06, start_date:raw=1997-04..1997-06
-E   n/2090587414   [ohm] Invalid date - 5+ digit number; unfixable, please review   end_date=1997-04..1997-06006 contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually.
+E   n/2090587414   [ohm] Invalid date - 5+ digit number; unfixable, please review   end_date=1997-04..1997-06006 contains a run of 5 or more digits and is not valid EDTF. Review and correct manually.
 E   n/2090595544   [ohm] Invalid date - *_date; fixable, please review   end_date=2006-02..2006-05 ? end_date=2006-05, end_date:edtf=2006-02/2006-05, end_date:raw=2006-02..2006-05
 E   n/2090595545   [ohm] Invalid date - *_date; fixable, please review   end_date=2006-02..2006-05 ? end_date=2006-05, end_date:edtf=2006-02/2006-05, end_date:raw=2006-02..2006-05
 E   n/2091813675   [ohm] Invalid date - *_date; fixable, please review   start_date=.2012-03-29 ? start_date=2012-03-29, start_date:edtf=/2012-03-29, start_date:raw=.2012-03-29
@@ -230,6 +230,63 @@ E   n/9000023   [ohm] Invalid date - *_date; fixable, please review   start_date
 E   n/9000061   [ohm] Invalid date - *_date; fixable, please review   start_date=1875-1031: missing hyphen between month and day; rewrite as start_date=1875-10-31?
 E   n/9000062   [ohm] Invalid date - *_date; fixable, please review   start_date=1500-731: missing hyphen between month and day; rewrite as start_date=1500-07-31?
 E   n/9000063   [ohm] Invalid date - *_date; fixable, please review   end_date=2000-0229: missing hyphen between month and day; rewrite as end_date=2000-02-29?
+E   n/9000081   [ohm] Invalid date - *_date; fixable, please review   start_date=1880~1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=1880~1922
+E   n/9000082   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1880~1922 is not valid EDTF. Normalize to 1880/1922 and preserve original in start_date:edtf:raw?
+E   n/9000083   [ohm] Invalid date - *_date; fixable, please review   start_date=1880-03~1922-06 ? start_date=1880-03, start_date:edtf=1880-03/1922-06, start_date:raw=1880-03~1922-06
+E   n/9000084   [ohm] Invalid date - *_date; fixable, please review   start_date=~1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=~1900
+E   n/9000091   [ohm] Invalid date - *_date; fixable, please review   start_date=1880,..1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=1880,..1922
+E   n/9000092   [ohm] Invalid date - *_date; fixable, please review   start_date=1880.,.1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=1880.,.1922
+E   n/9000093   [ohm] Invalid date - *_date; fixable, please review   start_date=1880..,1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=1880..,1922
+E   n/9000094   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1880,..1922 is not valid EDTF. Normalize to 1880/1922 and preserve original in start_date:edtf:raw?
+E   n/9000101   [ohm] Invalid date - *_date; fixable, please review   start_date=[1880-1922] ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=[1880-1922]
+E   n/9000102   [ohm] Invalid date - *_date; fixable, please review   start_date=[1880-03-1922-06] ? start_date=1880-03, start_date:edtf=1880-03/1922-06, start_date:raw=[1880-03-1922-06]
+E   n/9000103   [ohm] Invalid date - *_date; fixable, please review   start_date=[1880-03-15-1922-06-20] ? start_date=1880-03-15, start_date:edtf=1880-03-15/1922-06-20, start_date:raw=[1880-03-15-1922-06-20]
+E   n/9000104   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=[1880-1922] is not valid EDTF. Normalize to 1880/1922 and preserve original in start_date:edtf:raw?
+E   n/9000105   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=[1880-03-1922-06] is not valid EDTF. Normalize to 1880-03/1922-06 and preserve original in start_date:edtf:raw?
+E   n/9000111   [ohm] Invalid date - *_date; fixable, please review   start_date=between 1880 and 1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=between 1880 and 1922
+E   n/9000112   [ohm] Invalid date - *_date; fixable, please review   start_date=Between 1880 and 1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=Between 1880 and 1922
+E   n/9000113   [ohm] Invalid date - *_date; fixable, please review   start_date=BETWEEN 1880 and 1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=BETWEEN 1880 and 1922
+E   n/9000114   [ohm] Invalid date - *_date; fixable, please review   start_date=between 1880-1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=between 1880-1922
+E   n/9000115   [ohm] Invalid date - *_date; fixable, please review   start_date=Between 1880-1922 ? start_date=1880, start_date:edtf=1880/1922, start_date:raw=Between 1880-1922
+E   n/9000116   [ohm] Invalid date - *_date; fixable, please review   start_date=between 1880-03 and 1922-06 ? start_date=1880-03, start_date:edtf=1880-03/1922-06, start_date:raw=between 1880-03 and 1922-06
+E   n/9000117   [ohm] Invalid date - *_date; fixable, please review   start_date=between 1880-03-1922-06 ? start_date=1880-03, start_date:edtf=1880-03/1922-06, start_date:raw=between 1880-03-1922-06
+E   n/9000121   [ohm] Invalid date - *_date; fixable, please review   start_date=mid-1900s ? start_date=1903, start_date:edtf=1903~/1906~, start_date:raw=mid-1900s
+E   n/9000122   [ohm] Invalid date - *_date; fixable, please review   start_date=early-1900s ? start_date=1900, start_date:edtf=1900~/1902~, start_date:raw=early-1900s
+E   n/9000123   [ohm] Invalid date - *_date; fixable, please review   start_date=late-1900s ? start_date=1907, start_date:edtf=1907~/1909~, start_date:raw=late-1900s
+E   n/9000124   [ohm] Invalid date - *_date; fixable, please review   start_date=mid-19th century ? start_date=1830, start_date:edtf=1830~/1869~, start_date:raw=mid-19th century
+E   n/9000125   [ohm] Invalid date - *_date; fixable, please review   start_date=circa-1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=circa-1900
+E   n/9000126   [ohm] Invalid date - *_date; fixable, please review   start_date=before-1900 ? start_date=1900, start_date:edtf=/1900, start_date:raw=before-1900
+E   n/9000127   [ohm] Invalid date - *_date; fixable, please review   start_date=after-1900 ? start_date=1900, start_date:edtf=1900/, start_date:raw=after-1900
+E   n/9000128   [ohm] Invalid date - *_date; fixable, please review   start_date=during-1900 ? start_date=1900, start_date:edtf=(absent), start_date:raw=during-1900
+E   n/9000129   [ohm] Invalid date - *_date; fixable, please review   start_date=first half of-1900 ? start_date=1900-01, start_date:edtf=1900-01/1900-06, start_date:raw=first half of-1900
+E   n/9000130   [ohm] Invalid date - *_date; fixable, please review   start_date=second half of-1900 ? start_date=1900-07, start_date:edtf=1900-07/1900-12, start_date:raw=second half of-1900
+E   n/9000131   [ohm] Invalid date - *_date; fixable, please review   start_date=around-1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=around-1900
+E   n/9000132   [ohm] Invalid date - *_date; fixable, please review   start_date=by-1900 ? start_date=1900, start_date:edtf=/1900, start_date:raw=by-1900
+E   n/9000141   [ohm] Invalid date - *_date; fixable, please review   start_date=~?1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=~?1900
+E   n/9000142   [ohm] Invalid date - *_date; fixable, please review   start_date=?~1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=?~1900
+E   n/9000143   [ohm] Invalid date - *_date; fixable, please review   start_date=1900~? ? start_date=1900, start_date:edtf=1900~, start_date:raw=1900~?
+E   n/9000144   [ohm] Invalid date - *_date; fixable, please review   start_date=1900?~ ? start_date=1900, start_date:edtf=1900~, start_date:raw=1900?~
+E   n/9000145   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900-03~? is not valid EDTF. Normalize to 1900-03~ and preserve original in start_date:edtf:raw?
+E   n/9000146   [ohm] Invalid date - *_date:edtf; fixable, please review   start_date:edtf=1900-03?~ is not valid EDTF. Normalize to 1900-03~ and preserve original in start_date:edtf:raw?
+E   n/9000151   [ohm] Invalid date - *_date; fixable, please review   start_date=mid1930s ? start_date=1933, start_date:edtf=1933~/1936~, start_date:raw=mid1930s
+E   n/9000152   [ohm] Invalid date - *_date; fixable, please review   start_date=early1945 ? start_date=1945-01, start_date:edtf=1945-01/1945-04, start_date:raw=early1945
+E   n/9000153   [ohm] Invalid date - *_date; fixable, please review   start_date=late1823-10 ? start_date=1823-10-21, start_date:edtf=1823-10-21/1823-10-31, start_date:raw=late1823-10
+E   n/9000154   [ohm] Invalid date - *_date; fixable, please review   start_date=mid19th century ? start_date=1830, start_date:edtf=1830~/1869~, start_date:raw=mid19th century
+E   n/9000155   [ohm] Invalid date - *_date; fixable, please review   start_date=circa1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=circa1900
+E   n/9000156   [ohm] Invalid date - *_date; fixable, please review   start_date=ca.1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=ca.1900
+E   n/9000157   [ohm] Invalid date - *_date; fixable, please review   start_date=before1900 ? start_date=1900, start_date:edtf=/1900, start_date:raw=before1900
+E   n/9000158   [ohm] Invalid date - *_date; fixable, please review   start_date=after1900 ? start_date=1900, start_date:edtf=1900/, start_date:raw=after1900
+E   n/9000159   [ohm] Invalid date - *_date; fixable, please review   start_date=around1900 ? start_date=1900, start_date:edtf=1900~, start_date:raw=around1900
+E   n/9000160   [ohm] Invalid date - *_date; fixable, please review   start_date=Mid1930s ? start_date=1933, start_date:edtf=1933~/1936~, start_date:raw=Mid1930s
+E   n/9000171   [ohm] Invalid date - *_date; fixable, please review   start_date=by the 1900 ? start_date=1900, start_date:edtf=/1900, start_date:raw=by the 1900
+E   n/9000172   [ohm] Invalid date - *_date; fixable, please review   start_date=by the 1900s ? start_date=1900, start_date:edtf=/190X, start_date:raw=by the 1900s
+E   n/9000173   [ohm] Invalid date - *_date; fixable, please review   start_date=By the 1900 ? start_date=1900, start_date:edtf=/1900, start_date:raw=By the 1900
+E   n/9000174   [ohm] Invalid date - *_date; fixable, please review   start_date=BY THE 1900 ? start_date=1900, start_date:edtf=/1900, start_date:raw=BY THE 1900
+E   n/9000181   [ohm] Invalid date - *_date; fixable, please review   start_date=end 1900 ? start_date=1900-09, start_date:edtf=1900-09/1900-12, start_date:raw=end 1900
+E   n/9000182   [ohm] Invalid date - *_date; fixable, please review   start_date=end of 1900 ? start_date=1900-09, start_date:edtf=1900-09/1900-12, start_date:raw=end of 1900
+E   n/9000183   [ohm] Invalid date - *_date; fixable, please review   start_date=end of 19th century ? start_date=1870, start_date:edtf=1870~/1899~, start_date:raw=end of 19th century
+E   n/9000184   [ohm] Invalid date - *_date; fixable, please review   start_date=end 19th century ? start_date=1870, start_date:edtf=1870~/1899~, start_date:raw=end 19th century
+E   n/9000185   [ohm] Invalid date - *_date; fixable, please review   start_date=end of 1900s ? start_date=1907, start_date:edtf=1907~/1909~, start_date:raw=end of 1900s
 E   n/9100011   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9100011 outside parent range [1900..2000]: start_date=1850 before parent start 1900.
 E   n/9100221   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
 E   n/9100222   [ohm] Chronology - member duplicate to its predecessor; unfixable, please review   Member n/9100222 (1850..1900) is identical to its predecessor n/9100221 (1800..1850) in every tag except date-related fields. If the entity did not change, do not split it into separate chronology members.
@@ -301,6 +358,7 @@ E   n/9101150   [ohm] Invalid date - *_date; fixable, please review   start_date
 E   n/9101151   [ohm] Invalid date - *_date; fixable, please review   start_date=after -0799 ? start_date=-0799, start_date:edtf=-0799/, start_date:raw=after -0799
 E   n/9101152   [ohm] Invalid date - *_date; fixable, please review   start_date=by -0799 ? start_date=-0799, start_date:edtf=/-0799, start_date:raw=by -0799
 E   n/9101153   [ohm] Invalid date - *_date; fixable, please review   start_date=after -799 ? start_date=-0799, start_date:edtf=-0799/, start_date:raw=after -799
+E   n/9101200   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   r/2660797   [ohm] Invalid date - *_date cannot be read; unfixable, please review   end_date=uncertain cannot be normalized.
 E   r/2691043   [ohm] Invalid date - end_date=present; autofix to no end_date   end_date=present means an ongoing feature. Clear base and :edtf, mark with :raw=present?
 E   r/2692209   [ohm] Invalid date - *_date; fixable, please review   start_date=1700-1800 ? start_date=1700, start_date:edtf=1700/1800, start_date:raw=1700-1800
@@ -354,6 +412,10 @@ E   r/9100990   [ohm] Missing tag - wikidata; unfixable, please review   Wikidat
 E   r/9101095   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101090 outside parent range [1800..2000]: start_date=1700 before parent start 1800.
 E   r/9101095   [ohm] Chronology - member date range outside parent chronology range; unfixable, please review   Member n/9101091 outside parent range [1800..2000]: start_date=1720 before parent start 1800.
 E   r/9101095   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9101220   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9101250   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9101280   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
+E   r/9101281   [ohm] Missing tag - wikidata; unfixable, please review   Wikidata QIDs help link OHM data to other databases.
 E   w/127598699   [ohm] Invalid date - invalid day in start_date or end_date; autofix to YYYY-MM   end_date=2200-05-32: day 32 is out of range. Trim to 2200-05?
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   end_date=4C ? end_date=0399, end_date:edtf=03XX, end_date:raw=4C
 E   w/198163917   [ohm] Invalid date - *_date; fixable, please review   start_date=1C ? start_date=0000, start_date:edtf=00XX, start_date:raw=1C
@@ -398,8 +460,8 @@ E   w/198201496   [ohm] Invalid date - *_date; fixable, please review   start_da
 E   w/198201497   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198201498   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
 E   w/198201499   [ohm] Invalid date - *_date; fixable, please review   start_date=0..1802: implausibly-ancient leading zeros; rewrite as start_date=1802, start_date:edtf=/1802, start_date:raw=0..1802?
-E   w/198201626   [ohm] Invalid date - *_date cannot be read; unfixable, please review   start_date=end 12 cannot be normalized.
 E   w/198201626   [ohm] Invalid date - *_date; fixable, please review   end_date=mid C20 ? end_date=1969, end_date:edtf=1930~/1969~, end_date:raw=mid C20
+E   w/198201626   [ohm] Invalid date - *_date; fixable, please review   start_date=end 12 ? start_date=0012-09, start_date:edtf=0012-09/0012-12, start_date:raw=end 12
 E   w/198201790   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1902/2018 ? start_date=1902, start_date:edtf=1902/2018
 E   w/198201791   [ohm] Invalid date - *_date contains a readable EDTF date; fixable, please review   start_date=1902/2018 ? start_date=1902, start_date:edtf=1902/2018
 E   w/198258772   [ohm] Invalid date - *_date; fixable, please review   start_date=1960-09-16..1963 ? start_date=1960-09-16, start_date:edtf=1960-09-16/1963, start_date:raw=1960-09-16..1963
@@ -819,8 +881,8 @@ W   n/2083579138   [ohm] Missing tag - source on named feature; unfixable, pleas
 W   n/2083579139   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083589874   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083701639   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   n/2083854278   [ohm] Date mismatch - across date tags; unfixable, please review (:raw is preserved as-is)   start_date=early 1100, start_date:edtf=(absent), and start_date:raw=early C12 do not agree.
 W   n/2083854278   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
-W   n/2083854278   [ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf   start_date:raw=early C12 implies start_date=1100, start_date:edtf=1100~/1129~.
 W   n/2083871134   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   n/2083871134   [ohm] Suspicious tag - historic; unfixable, please review   historic=city_gate: confirm the entity has actually passed into history before applying this tag.
 W   n/2087583620   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1005,12 +1067,24 @@ W   n/9000064   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixabl
 W   n/9000065   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=1100-1031: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000066   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   end_date=1875-0229: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to end_date=YYYY-MM-DD or trim to end_date=YYYY if the day-precision was unintentional.
 W   n/9000067   [ohm] Invalid date - YYYY-MMDD packed form not safely autofixable; unfixable, please review   start_date=0500-1031: looks like a packed YYYY-MMDD date with the month-day hyphen missing, but the autofix is held back (year is below the 1200 threshold for packed-date autofixes, or the implied MM-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
-W   n/9000067   [ohm] Name warning - dates in name; autofix by stripping the date range   name=packed-date edge ? 0500-1031 valid MD year less than MMDD: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=packed-date edge ? valid MD year less than MMDD?
+W   n/9000067   [ohm] Name warning - dates in name disagree with start_date / end_date; unfixable, please review   name=packed-date edge ? 0500-1031 valid MD year less than MMDD: dates in names are discouraged, but the names date(s) do not agree with the primitives start_date / end_date tags. Reconcile manually before stripping.
 W   n/9000068   [ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review   start_date=1500-732: looks like a packed YYYY-MDD date (3-digit suffix, leading zero on the month omitted) with the month-day hyphen missing, but the autofix is held back (year is below the 1000 threshold for packed-date autofixes, or the implied M-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000069   [ohm] Invalid date - YYYY-MDD packed form not safely autofixable; unfixable, please review   start_date=0900-731: looks like a packed YYYY-MDD date (3-digit suffix, leading zero on the month omitted) with the month-day hyphen missing, but the autofix is held back (year is below the 1000 threshold for packed-date autofixes, or the implied M-DD is not a real calendar date). Manual review needed: rewrite to start_date=YYYY-MM-DD or trim to start_date=YYYY if the day-precision was unintentional.
 W   n/9000071   [ohm] Suspicious feature - 1 feature that should be 3; autofix by collapsing to min/max bounds   start_date=1850;1900;1950 and end_date=1899;1949;2000: looks like 3 features merged into one. The autofix collapses to start_date=1850 and end_date=2000 (min/max), preserves the originals in start_date:raw=1850;1900;1950 and end_date:raw=1899;1949;2000, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
 W   n/9000072   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   start_date=1850-03;1900-06-15 and end_date=1899-12-31;1949: looks like 2 features merged into one. The autofix collapses to start_date=1850-03 and end_date=1949 (min/max), preserves the originals in start_date:raw=1850-03;1900-06-15 and end_date:raw=1899-12-31;1949, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
 W   n/9000073   [ohm] Suspicious feature - 1 feature that should be 2; unfixable, please review   start_date=1850;1900 and end_date=1899;1949: looks like 2 features merged into one. Would collapse to start_date=1850 and end_date=1949 (min/max), but start_date:raw or end_date:raw already holds a different value. Manual review needed: clear or merge the conflicting :raw before re-running.
+W   n/9000191   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   start_date:edtf=1920/1940 implies start_date=1920.
+W   n/9000192   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=1920/1940 implies end_date=1940.
+W   n/9000201   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   start_date:edtf=[2000..1900] implies start_date=2000.
+W   n/9000201   [ohm] Suspicious date - EDTF interval is backwards (start > end); unfixable, please review   start_date:edtf=[2000..1900]: interval start year (2000) is later than end year (1900). The validator can't tell which side you meant; fix by swapping the bounds or correcting whichever is wrong.
+W   n/9000202   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=1900/1920 implies end_date=1920.
+W   n/9000202   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   start_date:edtf=1950/1960 implies start_date=1950.
+W   n/9000202   [ohm] Suspicious date - start_date:edtf is entirely later than end_date:edtf; unfixable, please review   start_date:edtf=1950/1960 (1950?1960) is entirely later than end_date:edtf=1900/1920 (1900?1920). The entity ended before it started ? review whether the two values were swapped or one is wrong.
+W   n/9000203   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=1940/1960 implies end_date=1960.
+W   n/9000203   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   start_date:edtf=1900/1950 implies start_date=1900.
+W   n/9000203   [ohm] Suspicious date - start_date:edtf and end_date:edtf overlap; unfixable, please review   start_date:edtf=1900/1950 (1900?1950) and end_date:edtf=1940/1960 (1940?1960) overlap on 1940?1950. The starting period should be entirely before the ending period; review and tighten whichever bound is wrong.
+W   n/9000204   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   end_date:edtf=1950/1960 implies end_date=1960.
+W   n/9000204   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf   start_date:edtf=1900/1920 implies start_date=1900.
 W   n/9100011   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100011 (in chronology relation r/9100020) ends at 1950 but the chronology's end_date is 2000, leaving a 49 year(s) gap at the end of the chronology.
 W   n/9100021   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100030 starts at 1700 but oldest member n/9100021 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
 W   n/9100021   [ohm] Chronology - member date range overlap; unfixable, please review   Members n/9100021 (1800..1850) and n/9100022 (1840..1900) have overlapping date ranges in chronology relation r/9100030.
@@ -1029,10 +1103,10 @@ W   n/9100062   [ohm] Chronology - member date range overlap; unfixable, please 
 W   n/9100062   [ohm] Suspicious date - start_date = end_date; unfixable, please review   did this feature exist for just 1 day/month/year?
 W   n/9100091   [ohm] Chronology - member missing required date tag; unfixable, please review   Member n/9100091 of chronology relation r/9100100 is missing end_date and is not the youngest member (only the youngest may omit end_date).
 W   n/9100092   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100100 starts at 1900 but oldest member n/9100092 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   n/9100092   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   n/9100092   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Delete the key?
 W   n/9100101   [ohm] Chronology - member missing required date tag; unfixable, please review   Member n/9100101 of chronology relation r/9100110 is missing start_date.
 W   n/9100102   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100110 starts at 1900 but oldest member n/9100102 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   n/9100102   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   n/9100102   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Delete the key?
 W   n/9100301   [ohm] Chronology - member without dates; unfixable, please review   Member n/9100301 of chronology relation r/9100310 has neither start_date nor end_date.
 W   n/9100302   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
 W   n/9100504   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
@@ -1057,11 +1131,16 @@ W   n/9100903   [ohm] Suspicious date - man-made object w/out start_date; unfixa
 W   n/9100906   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
 W   n/9100907   [ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review   end_date:edtf=1904-05..08: tail "08" could be a month sharing the year prefix (1904-05/1904-08) or a 2-digit year sharing the century prefix (1904-05/1908). Manual review needed: rewrite the value explicitly.
 W   n/9100908   [ohm] Ambiguous date - YYYY-MM..MM tail could be month or year; unfixable, please review   start_date=1904-05..08: tail "08" could be a month sharing the year prefix (1904-05/1904-08) or a 2-digit year sharing the century prefix (1904-05/1908). Manual review needed: rewrite the value explicitly.
-W   n/9100940   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1950-): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
-W   n/9100941   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West 1942-04-1948-09: dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
-W   n/9100942   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1880-1922): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
-W   n/9100943   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (c. 1900): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100940   [ohm] Name warning - dates in name disagree with start_date / end_date; unfixable, please review   name=Wild West (1950-): dates in names are discouraged, but the names date(s) do not agree with the primitives start_date / end_date tags. Reconcile manually before stripping.
+W   n/9100941   [ohm] Name warning - dates in name; autofix by populating start_date / end_date and stripping the date range   name=Wild West 1942-04-1948-09: dates in names are discouraged; move to start_date / end_date. Set start_date=1942-04, end_date=1948-09, and strip the date range to leave name=Wild West?
+W   n/9100942   [ohm] Name warning - dates in name; autofix by populating start_date / end_date and stripping the date range   name=Wild West (1880-1922): dates in names are discouraged; move to start_date / end_date. Set start_date=1880, end_date=1922, and strip the date range to leave name=Wild West?
+W   n/9100943   [ohm] Name warning - dates in name disagree with start_date / end_date; unfixable, please review   name=Wild West (c. 1900): dates in names are discouraged, but the names date(s) do not agree with the primitives start_date / end_date tags. Reconcile manually before stripping.
 W   n/9100944   [ohm] Name warning - parentheses in name; unfixable, please review   name=Wild West (Springfield 1950): dates in parentheses are discouraged in names; move the date to start_date / end_date instead.
+W   n/9100946   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1880-1922): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100947   [ohm] Name warning - dates in name disagree with start_date / end_date; unfixable, please review   name=Wild West (1880-1922): dates in names are discouraged, but the names date(s) do not agree with the primitives start_date / end_date tags. Reconcile manually before stripping.
+W   n/9100948   [ohm] Name warning - dates in name disagree with start_date / end_date; unfixable, please review   name=Wild West (1880-1922): dates in names are discouraged, but the names date(s) do not agree with the primitives start_date / end_date tags. Reconcile manually before stripping.
+W   n/9100949   [ohm] Name warning - dates in name; autofix by stripping the date range   name=Wild West (1900): dates in names are discouraged; move to start_date / end_date. Strip the date range to leave name=Wild West?
+W   n/9100949   [ohm] Suspicious date - start_date = end_date; unfixable, please review   did this feature exist for just 1 day/month/year?
 W   n/9100950   [ohm] Source optimization - URL missing 'http[s]://'; autofix by prepending https://   start_date:source=usgs.gov/topo1925 looks like a URL missing the scheme. Prepend 'https://'?
 W   n/9100951   [ohm] Source optimization - source contains multiple URLs; autofix by enumerating source:# keys   start_date:source=https://example.com/a;https://example.com/b;https://example.com/c: enumerate into start_date:source, start_date:source:1, start_date:source:2, ...?
 W   n/9100952   [ohm] Source mismatch - source contains multiple text strings separated by semicolons; unfixable, please review   start_date:source=Archive folder 12; Field notes 1923: semicolons in text are ambiguous. If these are separate sources, split manually into start_date:source, start_date:source:1, start_date:source:2, ?; if the semicolons are punctuation in a single citation, leave alone.
@@ -1097,6 +1176,7 @@ W   n/9101145   [ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by de
 W   n/9101154   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date=-6xx: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
 W   n/9101155   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   start_date=-06XX: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
 W   n/9101156   [ohm] Suspicious date - negative *_date:edtf with X digit(s); autofix to EDTF range   end_date=-6XX: negative year with X digit(s). Bounds are -0699 (earlier) to -0600 (later). Replace with -0699/-0600?
+W   n/9101200   [ohm] Boundary geometry - node has non-date/non-source tags; autofix by moving tags to a new node   Boundary-member node has 3 tag(s) unrelated to date or source (name, place, population). Move all tags to a new node at the same location, leaving only date/source tags here?
 W   r/2692209   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693810   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   r/2693811   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1129,15 +1209,24 @@ W   r/9100050   [ohm] Chronology - gap between latest member end & parent end; u
 W   r/9100050   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100050 starts at 1700 but oldest member n/9100041 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
 W   r/9100070   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9100061 (in chronology relation r/9100070) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
 W   r/9100070   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100070 starts at 1700 but oldest member n/9100061 starts at 1800, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100090   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   r/9100090   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Delete the key?
 W   r/9100100   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100100 starts at 1900 but oldest member n/9100092 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100100   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   r/9100100   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Delete the key?
 W   r/9100110   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100110 starts at 1900 but oldest member n/9100102 starts at 2000, leaving a 99 year(s) gap at the start of the chronology.
-W   r/9100110   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Likely a typo; delete the key?
+W   r/9100110   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2050 is more than ten years in the future. Delete the key?
 W   r/9100210   [ohm] Suspicious member - role=label; unfixable, please review   OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ? Download parent relations / ways). role=label members on this relation: n/9100201.
 W   r/9100310   [ohm] Chronology - gap between parent start & oldest member; unfixable, please review   Chronology relation r/9100310 starts at 1700 but oldest member n/9100302 starts at 1900, leaving a 199 year(s) gap at the start of the chronology.
 W   r/9100990   [ohm] Chronology - relation has no members; unfixable, please review   Chronology relation has no members. Add the constituent features as members, or delete this relation if it's no longer needed.
 W   r/9101095   [ohm] Chronology - gap between latest member end & parent end; unfixable, please review   Latest member n/9101092 (in chronology relation r/9101095) ends at 1900 but the chronology's end_date is 2000, leaving a 99 year(s) gap at the end of the chronology.
+W   r/9101220   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/9101220   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   r/9101250   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/9101250   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   r/9101280   [ohm] Boundary geometry - members not in topological order; autofix by sorting   Closed boundary ring(s) for role(s) outer are not in topological order. Sort the way members so consecutive members share an endpoint?
+W   r/9101280   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/9101280   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
+W   r/9101281   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
+W   r/9101281   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/114353260   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/114490699   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1906-05/ but start_date:edtf=/1909-05 implies start_date=1909-05. Manual review needed.
 W   w/198163917   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1195,63 +1284,63 @@ W   w/198815639   [ohm] Suspicious date range - >100 year EDTF range in start or
 W   w/198815640   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
 W   w/198815641   [ohm] Suspicious date range - >100 year EDTF range in start or end; unfixable, please review   start_date:edtf=1800/1950: interval spans 150 years.
 W   w/198816535   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
-W   w/198853224   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198853224   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853227   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853224   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198853227   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853228   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853227   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198853228   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853229   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853228   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198853229   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198853230   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853229   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198853230   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1983-99-99. Swap?
-W   w/198864518   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198853230   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198864518   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2014-99-99. Swap?
-W   w/198864524   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198864518   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198864524   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2000-99-99. Swap?
-W   w/198864525   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198864524   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198864525   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2014-99-99. Swap?
-W   w/198865179   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198864525   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198865179   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865180   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865179   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198865180   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865184   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865180   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198865184   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865185   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865184   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198865185   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198865186   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865185   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198865186   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2010-99-99. Swap?
-W   w/198907134   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198865186   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907134   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907135   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907134   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907135   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907140   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907135   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907140   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907141   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907140   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907141   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907142   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907141   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907142   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907143   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907142   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907143   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2001-99-99. Swap?
-W   w/198907193   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907143   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907193   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907194   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907193   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907194   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907195   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907194   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907195   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
-W   w/198907224   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907195   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907224   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1970-99-99. Swap?
+W   w/198907224   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907238   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
-W   w/198907238   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
 W   w/198907238   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=1958-99-99. Swap?
-W   w/198907692   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907238   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907692   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907838   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907692   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907838   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907841   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907838   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907841   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
-W   w/198907932   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   start_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/198907841   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907932   [ohm] Suspicious date - start_date > end_date; autofix by swapping these   start_date=2099, end_date=2018-99-99. Swap?
+W   w/198907932   [ohm] Suspicious date - start_date >10 year into the future; unfixable, please review   start_date=2099 is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo.
 W   w/198907969   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/198911040   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/198936154   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
@@ -1266,10 +1355,13 @@ W   w/200014946   [ohm] Date mismatch - *_date does not match *_date:edtf; unfix
 W   w/200014946   [ohm] Source mismatch - source contains multiple values of different types; unfixable, please review   source=https://www.deutschefotothek.de/documents/obj/71052176;https://e-docs.geo-leo.de/handle/11858/7797;OSM 22.04.24: 3 or more items mixing URLs and text. Manual review needed ? split into source, source:N, source:url, source:N:url as appropriate.
 W   w/200160746   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=2019 but end_date:edtf=2019/2022 implies end_date=2022. Manual review needed.
 W   w/200160746   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1920/1929 but start_date:edtf=2019/2022 implies start_date=2019. Manual review needed.
+W   w/200160746   [ohm] Suspicious date - start_date:edtf and end_date:edtf overlap; unfixable, please review   start_date:edtf=2019/2022 (2019?2022) and end_date:edtf=2019/2022 (2019?2022) overlap on 2019?2022. The starting period should be entirely before the ending period; review and tighten whichever bound is wrong.
 W   w/200160747   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=2019 but end_date:edtf=2019/2022 implies end_date=2022. Manual review needed.
 W   w/200160747   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1920/1929 but start_date:edtf=2019/2022 implies start_date=2019. Manual review needed.
+W   w/200160747   [ohm] Suspicious date - start_date:edtf and end_date:edtf overlap; unfixable, please review   start_date:edtf=2019/2022 (2019?2022) and end_date:edtf=2019/2022 (2019?2022) overlap on 2019?2022. The starting period should be entirely before the ending period; review and tighten whichever bound is wrong.
 W   w/200160751   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   end_date=2019 but end_date:edtf=2019/2022 implies end_date=2022. Manual review needed.
 W   w/200160751   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1920/1929 but start_date:edtf=2019/2022 implies start_date=2019. Manual review needed.
+W   w/200160751   [ohm] Suspicious date - start_date:edtf and end_date:edtf overlap; unfixable, please review   start_date:edtf=2019/2022 (2019?2022) and end_date:edtf=2019/2022 (2019?2022) overlap on 2019?2022. The starting period should be entirely before the ending period; review and tighten whichever bound is wrong.
 W   w/200262935   [ohm] Missing tag - source on named feature; unfixable, please review & add   other mappers are lost without it.
 W   w/200262935   [ohm] Suspicious date - man-made object w/out start_date; unfixable, please review & add a reasonable start_date:edtf range & explain the reasons in start_date:source   
 W   w/200493671   [ohm] Suspicious tag - historic; unfixable, please review   historic=fountain: confirm the entity has actually passed into history before applying this tag.
@@ -1358,20 +1450,21 @@ W   w/201921825   [ohm] Missing tag - source on named feature; unfixable, please
 W   w/201966134   [ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review   start_date=1953-10=15 but start_date:edtf=1953-10-15 implies start_date=1953-10-15. Manual review needed.
 W   w/201983599   [ohm] Source optimization - source contains 1 URL & 1 text string; autofix by splitting into source & source:url   source=https://de.wikipedia.org/wiki/Stra%C3%9Fenbahn_Hagen;Rolf L?ttgers, Wolfgang R. Reimann: Rund um Hagen (Verlag Monika Reimann, 1989): move text to source and URL to source:url?
 W   w/201983599   [ohm] Suspicious feature - 1 feature that should be 2; autofix by collapsing to min/max bounds   start_date=1900-04-12;1964-05-13 and end_date=1953-07-26;1975-05-31: looks like 2 features merged into one. The autofix collapses to start_date=1900-04-12 and end_date=1975-05-31 (min/max), preserves the originals in start_date:raw=1900-04-12;1964-05-13 and end_date:raw=1953-07-26;1975-05-31, and adds fixme=split into multiple features so the editor remembers the manual follow-up.
-W   w/201986468   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=9999 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089069   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089070   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089075   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089076   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089077   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089078   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089079   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089080   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089081   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089229   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089230   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089240   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089255   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
-W   w/202089256   [ohm] Suspicious date - >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Likely a typo; delete the key?
+W   w/201986468   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=9999 is more than ten years in the future. Delete the key?
+W   w/202089069   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089070   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089075   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089076   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089077   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089078   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089079   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089080   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089081   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089229   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089230   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089240   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089255   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
+W   w/202089256   [ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key   end_date=2099 is more than ten years in the future. Delete the key?
 W   w/9000044   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000045 (1800..1850) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
 W   w/9000044   [ohm] Chronology - member date range overlap; unfixable, please review   Members r/9000046 (1850..1900) and w/9000044 (1800..1900) have overlapping date ranges in chronology relation r/9000040.
+W   w/9101240   [ohm] Boundary geometry - waterway way is a boundary member; autofix by creating a coincident boundary way   waterway=river way is a member of boundary relation. Boundary geometry should be separate from waterway identity. Create a new way at the same coordinates (with its own cloned nodes and only source tags) to replace this one in the boundary?

@@ -39068,6 +39068,29 @@
     <tag k='name' v='Wild West (Springfield)' />
     <tag k='source' v='https://example.com/x45' />
   </node>
+  <node id='9100946' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (1880-1922)' />
+    <tag k='start_date' v='1880' />
+    <tag k='end_date' v='1922' />
+    <tag k='source' v='https://example.com/x46' />
+  </node>
+  <node id='9100947' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (1880-1922)' />
+    <tag k='start_date' v='1885' />
+    <tag k='end_date' v='1920' />
+    <tag k='source' v='https://example.com/x47' />
+  </node>
+  <node id='9100948' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (1880-1922)' />
+    <tag k='start_date' v='1880' />
+    <tag k='source' v='https://example.com/x48' />
+  </node>
+  <node id='9100949' visible='true' version='1' lat='0.0' lon='0.0'>
+    <tag k='name' v='Wild West (1900)' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='1900' />
+    <tag k='source' v='https://example.com/x49' />
+  </node>
   <node id='9100950' visible='true' version='1' lat='0.0' lon='0.0'>
     <tag k='name' v='Test 4307 attr-source URL missing scheme' />
     <tag k='start_date' v='1900' />
@@ -39373,4 +39396,96 @@
     <tag k='end_date' v='-6XX' />
     <tag k='source' v='https://example.com/x126' />
   </node>
+  <node id='9101200' visible='true' version='1' lat='10.0' lon='20.0'>
+    <tag k='place' v='town' />
+    <tag k='name' v='Boundary corner POI' />
+    <tag k='population' v='1000' />
+    <tag k='start_date' v='1900' />
+    <tag k='source' v='https://example.org/boundary-source' />
+  </node>
+  <node id='9101201' visible='true' version='1' lat='10.0' lon='20.1' />
+  <node id='9101202' visible='true' version='1' lat='10.1' lon='20.1' />
+  <node id='9101203' visible='true' version='1' lat='10.1' lon='20.0' />
+  <node id='9101204' visible='true' version='1' lat='11.0' lon='20.0'>
+    <tag k='start_date' v='1900' />
+    <tag k='source' v='https://example.org/boundary-source' />
+  </node>
+  <way id='9101210' visible='true' version='1'>
+    <nd ref='9101200' />
+    <nd ref='9101201' />
+    <nd ref='9101202' />
+    <nd ref='9101203' />
+    <nd ref='9101200' />
+  </way>
+  <way id='9101211' visible='true' version='1'>
+    <nd ref='9101200' />
+    <nd ref='9101204' />
+  </way>
+  <relation id='9101220' visible='true' version='1'>
+    <member type='way' ref='9101210' role='outer' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='name' v='Test Boundary' />
+  </relation>
+  <node id='9101230' visible='true' version='1' lat='12.0' lon='30.0' />
+  <node id='9101231' visible='true' version='1' lat='12.1' lon='30.1' />
+  <node id='9101232' visible='true' version='1' lat='12.2' lon='30.0' />
+  <node id='9101233' visible='true' version='1' lat='12.0' lon='30.0' />
+  <way id='9101240' visible='true' version='1'>
+    <nd ref='9101230' />
+    <nd ref='9101231' />
+    <nd ref='9101232' />
+    <tag k='waterway' v='river' />
+    <tag k='name' v='Test River' />
+    <tag k='source' v='https://example.org/waterway-source' />
+  </way>
+  <way id='9101241' visible='true' version='1'>
+    <nd ref='9101232' />
+    <nd ref='9101233' />
+  </way>
+  <relation id='9101250' visible='true' version='1'>
+    <member type='way' ref='9101240' role='outer' />
+    <member type='way' ref='9101241' role='outer' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='name' v='Boundary with waterway segment' />
+  </relation>
+  <node id='9101260' visible='true' version='1' lat='15.0' lon='40.0' />
+  <node id='9101261' visible='true' version='1' lat='15.1' lon='40.0' />
+  <node id='9101262' visible='true' version='1' lat='15.1' lon='40.1' />
+  <node id='9101263' visible='true' version='1' lat='15.0' lon='40.1' />
+  <way id='9101270' visible='true' version='1'>
+    <nd ref='9101260' />
+    <nd ref='9101261' />
+  </way>
+  <way id='9101271' visible='true' version='1'>
+    <nd ref='9101261' />
+    <nd ref='9101262' />
+  </way>
+  <way id='9101272' visible='true' version='1'>
+    <nd ref='9101262' />
+    <nd ref='9101263' />
+  </way>
+  <way id='9101273' visible='true' version='1'>
+    <nd ref='9101263' />
+    <nd ref='9101260' />
+  </way>
+  <relation id='9101280' visible='true' version='1'>
+    <member type='way' ref='9101270' role='outer' />
+    <member type='way' ref='9101272' role='outer' />
+    <member type='way' ref='9101271' role='outer' />
+    <member type='way' ref='9101273' role='outer' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='name' v='Boundary - unsorted ring' />
+  </relation>
+  <relation id='9101281' visible='true' version='1'>
+    <member type='way' ref='9101270' role='outer' />
+    <member type='way' ref='9101271' role='outer' />
+    <member type='way' ref='9101272' role='outer' />
+    <member type='way' ref='9101273' role='outer' />
+    <tag k='type' v='boundary' />
+    <tag k='boundary' v='administrative' />
+    <tag k='name' v='Boundary - sorted ring' />
+  </relation>
 </osm>

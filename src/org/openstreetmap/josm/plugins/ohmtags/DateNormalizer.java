@@ -269,6 +269,19 @@ public final class DateNormalizer {
         Pattern.compile("^(?i)between\\s+(.+?)\\s+and\\s+(.+)$");
 
     /**
+     * Two ISO-shaped dates joined by {@code ~}. Users sometimes write
+     * {@code 1880~1922} or {@code 1880-03~1922-06} meaning "1880 to 1922";
+     * preprocess rewrites the {@code ~} to {@code /} so the standard range
+     * pipeline handles it.
+     *
+     * <p>Anchored to the full string and requires both sides to be year-only
+     * or YYYY-MM[-DD] (optionally astronomical-negative). Single-bound
+     * {@code ~YYYY} (circa) is unaffected because it doesn't have a left date.
+     */
+    private static final Pattern TILDE_BETWEEN_DATES =
+        Pattern.compile("^(-?\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?)\\s*~\\s*(-?\\d{4}(?:-\\d\\d(?:-\\d\\d)?)?)$");
+
+    /**
      * "first half of X" / "second half of X" — half-year/decade/century ranges.
      * Case-insensitive. Captures the half indicator (1=first, 2=second) and
      * the tail.
@@ -593,6 +606,46 @@ public final class DateNormalizer {
              .replace('—', '-')
              .replace('−', '-');
 
+        // Comma-adjacent ".." typos: ",.." / ".,." / "..," → "..". The comma
+        // and period are neighbors on QWERTY (and most keyboards) so users
+        // fat-finger a comma when they meant a period in a range separator.
+        // None of these three patterns have a legitimate interpretation in
+        // OHM/EDTF date strings, so unconditional replace is safe.
+        s = s.replace(",..", "..").replace(".,.", "..").replace("..,", "..");
+
+        // Combined approximate-plus-uncertain qualifiers "~?" / "?~" → "~".
+        // EDTF reserves "%" for "both approximate and uncertain", but users
+        // often write "~?" or "?~" instead. Coerce to plain "~" (approximate
+        // only) — the "?" component is rarely meaningful in OHM contexts
+        // and dropping it makes the value parseable.
+        s = s.replace("~?", "~").replace("?~", "~");
+
+        // Strip "the" article after "by": "by the 1900s" → "by 1900s". The
+        // article carries no information and the downstream BEFORE pattern
+        // expects "by" directly followed by the date. Done before the
+        // qualifier-prefix-separator rewrite below so the result is in
+        // canonical space-separated form.
+        s = s.replaceFirst("(?i)^by\\s+the\\s+", "by ");
+
+        // Alias "end" / "end of" to "late": both forms mean the closing
+        // portion of the period and share semantics with "late X". This
+        // gives "end of 1900s", "end 19th century", etc. the full
+        // late-family coverage (decades, centuries, year-month). Note:
+        // changes the prior "end of YYYY" → YYYY-12 behavior to the
+        // "late YYYY" → last-third semantics; that's intentional.
+        s = s.replaceFirst("(?i)^end(?:\\s+of)?\\s+", "late ");
+
+        // Missing separator after a qualifier prefix: insert a space before
+        // a digit or in place of a hyphen so "mid-1900s", "mid1900s", and
+        // "mid 1900s" all reach downstream qualifier patterns identically.
+        // The {@code (-|(?=\d))} branch consumes a hyphen if present,
+        // otherwise matches zero-width before a digit. Anchored to the
+        // start so we don't touch hyphens elsewhere (date ranges).
+        s = s.replaceFirst(
+            "(?i)^(early|mid|late|circa|ca\\.?|around|before|after|during|by|as of|"
+                + "first half of|second half of|1st half of|2nd half of)(-|(?=\\d))",
+            "$1 ");
+
         // 1a. Case-insensitive 'x' uppercasing for EDTF unspecified-digit
         //     markers. Only fires when the value contains 'x' AND the value's
         //     character set is restricted to date-shape chars (digits, sign,
@@ -731,6 +784,30 @@ public final class DateNormalizer {
             s = preprocess(mb.group(1)) + ".." + preprocess(mb.group(2));
         }
 
+        // 3b-bis. "date1~date2" → "date1/date2": treat a tilde between two
+        //     ISO-shaped dates as the range separator. Single-bound circa
+        //     ("~YYYY") is untouched because TILDE_BETWEEN_DATES requires a
+        //     left date.
+        Matcher mt = TILDE_BETWEEN_DATES.matcher(s);
+        if (mt.matches()) {
+            s = mt.group(1) + "/" + mt.group(2);
+        }
+
+        // 3b-ter. "between date1-date2" → "date1/date2" (hyphen separator,
+        //     no "and"). Three precisions: YMD, YM, year-only. Order matters
+        //     here for readability only — the patterns are anchored and
+        //     mutually exclusive by length. Allow optional whitespace around
+        //     the central hyphen to tolerate "between 1880 - 1922".
+        s = s.replaceAll(
+            "(?i)^between\\s+(-?\\d{4}-\\d\\d-\\d\\d)\\s*-\\s*(-?\\d{4}-\\d\\d-\\d\\d)$",
+            "$1/$2");
+        s = s.replaceAll(
+            "(?i)^between\\s+(-?\\d{4}-\\d\\d)\\s*-\\s*(-?\\d{4}-\\d\\d)$",
+            "$1/$2");
+        s = s.replaceAll(
+            "(?i)^between\\s+(-?\\d{4})\\s*-\\s*(-?\\d{4})$",
+            "$1/$2");
+
         // 3c. "first half of X" / "second half of X" — halfs of a year,
         //     decade, or century. Resolved to an explicit slash interval.
         //     The "half" handling is inline here (rather than going through
@@ -837,6 +914,19 @@ public final class DateNormalizer {
         if (br.matches()) {
             s = br.group(1) + "-" + br.group(2);
         }
+
+        // 6b-bis. Bracket-enclosed hyphen range at YM or YMD precision:
+        //     "[YYYY-MM-YYYY-MM]" or "[YYYY-MM-DD-YYYY-MM-DD]". Rewrite to
+        //     "date1/date2" so the standard slash-range pipeline handles it.
+        //     (The year-only case above goes through HYPHEN_RANGE_YY; the
+        //     richer-precision cases need an explicit split because there's
+        //     no single regex in HYPHEN_RANGE_YY for them.)
+        s = s.replaceAll(
+            "^\\[(-?\\d{4}-\\d\\d-\\d\\d)-(-?\\d{4}-\\d\\d-\\d\\d)\\]$",
+            "$1/$2");
+        s = s.replaceAll(
+            "^\\[(-?\\d{4}-\\d\\d)-(-?\\d{4}-\\d\\d)\\]$",
+            "$1/$2");
 
         // 6c. Double-bracket-enclosed dotdot range: "[[date1..date2]]".
         //     Strip the wrappers (and any whitespace immediately inside them)
@@ -1064,16 +1154,7 @@ public final class DateNormalizer {
     private static final Pattern QUALIFIED_HYPHEN_RANGE =
         Pattern.compile("^([~?%])(-?\\d{1,4})-(-?\\d{1,4})$");
 
-    /**
-     * "end of YYYY" / "end of YYYY BC" — collapses to year-month December
-     * ({@code 1955-12}). The "end of" prefix narrows the year to its last
-     * month. Symmetric handlers for {@code beginning of} and {@code mid of}
-     * could be added similarly if/when needed.
-     */
-    private static final Pattern END_OF_YEAR =
-        Pattern.compile("^(?i)end of\\s+(-?\\d{4})(\\s+BC)?$");
-
-    /**
+/**
      * Convert the given OHM/OSM-format date string to EDTF.
      *
      * @param osm input date string; may be null
@@ -1517,23 +1598,7 @@ public final class DateNormalizer {
             return toEdtf(m.group(1)).map(s -> s + "/");
         }
 
-        // "end of YYYY" — collapse to year-month December (the last month
-        // of the named year). Mirrors the THIRD_CENTURY-style "late C..."
-        // handling but at year granularity.
-        m = END_OF_YEAR.matcher(osm);
-        if (m.matches()) {
-            String year = m.group(1);
-            boolean bc = m.group(2) != null;
-            // Apply the existing N-1 BCE convention for individual years.
-            if (bc) {
-                int y = Integer.parseInt(year.startsWith("-") ? year.substring(1) : year) - 1;
-                return Optional.of("-" + padYear(y) + "-12");
-            }
-            int y = year.startsWith("-") ? Integer.parseInt(year.substring(1)) : Integer.parseInt(year);
-            return Optional.of((year.startsWith("-") ? "-" : "") + padYear(y) + "-12");
-        }
-
-        // Final passthrough: if the post-preprocess input is already valid
+// Final passthrough: if the post-preprocess input is already valid
         // EDTF and no specific pattern produced output above, return it
         // unchanged. This catches forms the specific matchers don't cover
         // — bracket-set notation ({@code [1907..]}, {@code [196X]}),

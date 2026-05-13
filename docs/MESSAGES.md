@@ -14,7 +14,7 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 ---
 
-## DateTagTest (codes 4200–4239)
+## DateTagTest (codes 4200–4258)
 
 **`*_date:edtf` is never written equal to `*_date`.** When an autofix
 would set `start_date=1900` and `start_date:edtf=1900`, the validator
@@ -225,15 +225,16 @@ After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` 
 
 | Code | Title |
 |------|-------|
-| 4216 | `[ohm] Suspicious date - >10 year into the future; autofix by deleting the key` |
+| 4216 | `[ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key` |
+| 4256 | `[ohm] Suspicious date - start_date >10 year into the future; unfixable, please review` |
 
 **Trigger:** A 4-digit date tag value is more than 10 years beyond today.  
-**Fix:** Deletes the offending key.  
-**Description:** _{key}={value} is more than ten years in the future. Likely a typo; delete the key?_
+**Fix (end_date, 4216):** Deletes the offending key. Far-future end_date is almost always a stale planned-demolition or a typo.  
+**Fix (start_date, 4256):** Unfixable — deletion is not safe for a far-future start_date (it may legitimately describe a planned future construction whose details belong elsewhere). Manual review required.
 
-**Example:**  
-Before: `end_date=2099` on a feature edited in 2026  
-After autofix: `end_date` removed (treated as a typo / data-import artifact).
+**4216 description:** _end_date={value} is more than ten years in the future. Delete the key?_
+
+**4256 description:** _start_date={value} is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo._
 
 ---
 
@@ -245,7 +246,7 @@ After autofix: `end_date` removed (treated as a typo / data-import artifact).
 
 **Trigger:** A `*_date` value contains a run of five or more consecutive digits (anywhere in the string) and does not parse as valid EDTF. Catches typos like `20251`, `12345-06`, `1997-04..1997-06006`, and Wikidata Q-numbers mistakenly placed in date tags (`Q1438579`). Legitimate EDTF long-year forms (e.g. `Y20251`, `Y-20251`) and any other syntax the upstream `edtf-java` library accepts are exempt.  
 **Fix:** None — we can't tell whether the intent was `2025`, `12025`, or something else, so the editor must decide. When this rule fires, the rest of the per-key date checks are suppressed for that key (they would otherwise emit a generic "cannot be read" warning that obscures the specific typo diagnosis).  
-**Description:** _{key}={value} contains a run of 5 or more digits and is not valid EDTF. Likely a typo - review and correct manually._
+**Description:** _{key}={value} contains a run of 5 or more digits and is not valid EDTF. Review and correct manually._
 
 **Example:**  
 `start_date=20251` → flagged; editor decides whether the intent was `2025` or `12025`.  
@@ -655,6 +656,27 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 
 **Why this matters:** Without 4255, rule 4211 (the only rule that previously fired on a backwards interval) would silently derive `start_date=1900` from `:edtf=2000/1900` by extracting the upper bound — freezing the bad state in place. 4255 fires *before* that autofix would otherwise mask the problem.
 
+**v0.8 extension:** 4255 now also fires on the bracket-set form `[A..B]` (in addition to slash `A/B`). The pattern `[2000..1900]` is detected the same way.
+
+---
+
+### Cross-key EDTF range checks (4257, 4258)
+
+| Code | Title |
+|------|-------|
+| 4257 | `[ohm] Suspicious date - start_date:edtf is entirely later than end_date:edtf; unfixable, please review` |
+| 4258 | `[ohm] Suspicious date - start_date:edtf and end_date:edtf overlap; unfixable, please review` |
+
+**4257 trigger:** the lowest possible year of `start_date:edtf` is greater than the highest possible year of `end_date:edtf` — i.e., the entity ended before it could have started. Open-ended intervals are skipped to avoid false positives.
+
+**4258 trigger:** the two ranges share at least one year (max of lower bounds ≤ min of upper bounds). The starting period should be entirely before the ending period; an overlap is logically inconsistent. Open-ended intervals are skipped.
+
+**Fix (both):** None. Manual review needed; the validator can't tell which side is wrong.
+
+**4257 description:** _start_date:edtf={start} ({start_lo}–{start_hi}) is entirely later than end_date:edtf={end} ({end_lo}–{end_hi}). The entity ended before it started — review whether the two values were swapped or one is wrong._
+
+**4258 description:** _start_date:edtf={start} ({start_lo}–{start_hi}) and end_date:edtf={end} ({end_lo}–{end_hi}) overlap on {overlap_lo}–{overlap_hi}. The starting period should be entirely before the ending period; review and tighten whichever bound is wrong._
+
 ---
 
 ### Date mismatch — base vs. :edtf disagreement
@@ -692,29 +714,22 @@ After autofix: `start_date=1850`, `start_date:edtf` deleted.
 
 | Code | Title |
 |------|-------|
-| 4205 | `[ohm] Suspicious date - *_date:raw exists, but no *_date{:edtf}; autofix to reconstruct *_date and/or *_date:edtf` |
-| 4206 | `[ohm] Date mismatch - across date tags; autofix by deleting :raw` |
+| 4206 | `[ohm] Date mismatch - across date tags; unfixable, please review (:raw is preserved as-is)` |
 | 4207 | `[ohm] Invalid date - Unparseable data preserved in *_date:raw tag, no valid *_date:edtf or *_date tags; unfixable, please review` |
 | 4242 | `[ohm] Date mismatch - normalize would overwrite *_date:raw; unfixable, please review` |
 
-**4205 trigger (Rule A):** `tagcleanupbot` wrote a `:raw` value and the derived `*_date` / `*_date:edtf` can be reconstructed from it.  
-**4205 fix:** Reconstructs the triple from `:raw`.  
-**4205 description:** _{key}:raw={raw} implies {key}={date}, {key}:edtf={edtf}._
+**v0.8 :raw philosophy.** `:raw` is by design the human-authored original input — preserved verbatim, never auto-rewritten or deleted. The validator uses it as a reference for what `:base` / `:edtf` should mean, but only modifies `:base` / `:edtf` when fixing. Comparisons between `:raw` and `:edtf` are **semantic** (both passed through `toEdtf` so equivalent forms like `:raw="between 1920 and 1940"` and `:edtf="1920/1940"` count as matching). Rule 4205 (which had auto-rewritten `:base`/`:edtf` from `:raw` when the last editor was `tagcleanupbot`) is retired.
 
-**4206 trigger:** Non-bot editor; `*_date` and `*_date:edtf` don't match the `:raw` value.  
-**4206 fix:** Offers deletion of the stale `:raw` tag.  
-**4206 description:** _{key} and {key}:edtf don't match {key}:raw={raw}. Delete the machine-generated :raw tag?_
+**4206 trigger:** `*_date:raw` is present and the triple is genuinely inconsistent — e.g., `:edtf` doesn't match the EDTF that `:raw` normalizes to, OR `*_date` disagrees with the bound implied by `:edtf`. Specifically excluded: cases where `*_date` is missing and `:edtf` is valid (rule 4211 handles by deriving `*_date` from `:edtf`).  
+**4206 fix:** None. `:raw` is never auto-deleted; the editor must reconcile manually.  
+**4206 description:** _{key}={value} (or absent), {key}:edtf={edtf} (or absent), and {key}:raw={raw} do not agree._ (Specific phrasing varies by which side disagrees.)
 
 **4207 trigger:** `*_date:raw` is set but `*_date:edtf` and `*_date` are absent or unparseable.  
 **4207 fix:** None.
 
-**4205 example:**  
-Before: `start_date:raw=ca. 1900` (last editor: `tagcleanupbot`), no `start_date` or `:edtf`  
-After autofix: `start_date=1900`, `start_date:edtf=1900~`, `start_date:raw=ca. 1900` (triple reconstructed from the bot-authored :raw).
-
 **4206 example:**  
-Before: `start_date=1950`, `start_date:edtf=1950`, `start_date:raw=ca. 1900` (last editor was a human, who edited base/edtf away from the bot's :raw)  
-After autofix: `start_date:raw` deleted (the human edit is canonical; the stale :raw is removed).
+Trigger: `start_date=early 1100` (decade-early), `start_date:raw=early C12` (century-early). Both human-authored, semantically different.  
+Suggested manual fix: decide which is canonical and correct the other; `:raw` stays.
 
 **4207 example:**  
 Trigger: `start_date:raw=garbage`, no valid `start_date` or `:edtf`.  
@@ -860,7 +875,7 @@ Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronol
 
 ---
 
-## TagConsistencyTest (codes 4300–4326)
+## TagConsistencyTest (codes 4300–4332)
 
 **Source slot contract (v0.5).** Three keys, three roles:
 
@@ -1261,10 +1276,32 @@ Neither rule is autofixable — the validator can't guess the user's intent (typ
 
 ---
 
+### Boundary geometry hygiene (4330, 4331, 4332)
+
+Three rules introduced in v0.8 that target ways and nodes participating in `type=boundary` relations. The common theme: boundary geometry should be a clean substrate; identity, names, and dual-purpose tagging belong on separate nodes/ways at the same location.
+
+| Code | Title |
+|------|-------|
+| 4330 | `[ohm] Boundary geometry - node has non-date/non-source tags; autofix by moving tags to a new node` |
+| 4331 | `[ohm] Boundary geometry - waterway way is a boundary member; autofix by creating a coincident boundary way` |
+| 4332 | `[ohm] Boundary geometry - members not in topological order; autofix by sorting` |
+
+**4330 trigger:** a node that participates in a boundary way (a way that's a member of any `type=boundary` relation) has tags other than `start_date` / `end_date` / `*_date:*` / `source` / `source:*` / `attribute:source` / `attribute:source:*`. Non-date/non-source tags (name, place, historic, wikidata, etc.) trigger the warning.  
+**4330 fix:** clones the node into a new node at the same coordinates carrying ALL of the original's tags (full duplicate); strips the non-date/non-source tags from the original. The original keeps its relation memberships and roles, and stays in the boundary way. The new node has no relation memberships — it's a fresh standalone POI.
+
+**4331 trigger:** a way that carries `waterway=*` is also a geometry member of a `type=boundary` relation. The waterway-as-boundary pattern conflates two distinct identities.  
+**4331 fix:** creates a new way at the same coordinates (with its own cloned nodes) carrying only the original's source-family tags. At each endpoint, any other way sharing that endpoint AND a member of any boundary relation is rerouted onto the cloned endpoint, preserving boundary topology. The original way is replaced by the new way in every `type=boundary` relation it's a member of (preserving role). The original keeps its `waterway` and other tags, all its original nodes, and any non-boundary relation memberships.
+
+**4332 trigger:** a `type=boundary` relation's way members form one or more closed rings (every endpoint Node appears exactly twice across each role-group) but are not listed in topological order — consecutive members don't share an endpoint, or a ring doesn't close. Direction-agnostic; each role is evaluated as its own group. Open chains and other geometry problems are left for the core JOSM validator.  
+**4332 fix:** reorders the way members within each unsorted role-group so consecutive members share an endpoint and each ring closes. Non-way members keep their positions in the member list; way-members of already-sorted role-groups keep their positions too.
+
+---
+
 ## Retired codes
 
 | Code | Reason |
 |------|--------|
+| 4205 | Retired in v0.8 — assumed `:raw` was bot-written and auto-rewrote base/`:edtf` from it. `:raw` is by design human-authored; the validator no longer makes that assumption. |
 | 4209 | Merged into `CODE_EDTF_INVALID_NO_BASE` (4208) — invalid `:edtf` with base now fires 4208 alone |
 | 4219 | Retired — negative astronomical years are legitimate OHM notation; the rule's false-positive rate outweighed its signal value (forum feedback 2026-04-21) |
 | 4227 | Rule D2 now fires the unified "Invalid *_date:edtf" fixable/unfixable messages (4228) |

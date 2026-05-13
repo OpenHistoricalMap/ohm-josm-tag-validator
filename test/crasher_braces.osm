@@ -510,4 +510,324 @@
     <tag k='start_date:raw' v='hand-authored note about start' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000081' visible='true' version='1' lat='0.0' lon='4.7'>
+    <tag k='name' v='tilde-as-range probe — YYYY~YYYY year-only range' />
+    <tag k='start_date' v='1880~1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000082' visible='true' version='1' lat='0.0' lon='4.8'>
+    <tag k='name' v='tilde-as-range probe — :edtf YYYY~YYYY' />
+    <tag k='start_date:edtf' v='1880~1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000083' visible='true' version='1' lat='0.0' lon='4.9'>
+    <tag k='name' v='tilde-as-range probe — YYYY-MM~YYYY-MM precision' />
+    <tag k='start_date' v='1880-03~1922-06' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000084' visible='true' version='1' lat='0.0' lon='5.0'>
+    <tag k='name' v='tilde-as-range probe — single ~YYYY circa unaffected' />
+    <tag k='start_date' v='~1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000091' visible='true' version='1' lat='0.0' lon='5.1'>
+    <tag k='name' v='comma-typo probe — ,.. variant' />
+    <tag k='start_date' v='1880,..1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000092' visible='true' version='1' lat='0.0' lon='5.2'>
+    <tag k='name' v='comma-typo probe — .,. variant' />
+    <tag k='start_date' v='1880.,.1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000093' visible='true' version='1' lat='0.0' lon='5.3'>
+    <tag k='name' v='comma-typo probe — .., variant' />
+    <tag k='start_date' v='1880..,1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000094' visible='true' version='1' lat='0.0' lon='5.4'>
+    <tag k='name' v='comma-typo probe — :edtf variant' />
+    <tag k='start_date:edtf' v='1880,..1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000101' visible='true' version='1' lat='0.0' lon='5.5'>
+    <tag k='name' v='bracket-hyphen probe — year-only [YYYY-YYYY]' />
+    <tag k='start_date' v='[1880-1922]' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000102' visible='true' version='1' lat='0.0' lon='5.6'>
+    <tag k='name' v='bracket-hyphen probe — YM precision [YYYY-MM-YYYY-MM]' />
+    <tag k='start_date' v='[1880-03-1922-06]' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000103' visible='true' version='1' lat='0.0' lon='5.7'>
+    <tag k='name' v='bracket-hyphen probe — YMD precision [YYYY-MM-DD-YYYY-MM-DD]' />
+    <tag k='start_date' v='[1880-03-15-1922-06-20]' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000104' visible='true' version='1' lat='0.0' lon='5.8'>
+    <tag k='name' v='bracket-hyphen probe — :edtf year-only' />
+    <tag k='start_date:edtf' v='[1880-1922]' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000105' visible='true' version='1' lat='0.0' lon='5.9'>
+    <tag k='name' v='bracket-hyphen probe — :edtf YM precision' />
+    <tag k='start_date:edtf' v='[1880-03-1922-06]' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000111' visible='true' version='1' lat='0.0' lon='6.0'>
+    <tag k='name' v='between probe — lowercase + and' />
+    <tag k='start_date' v='between 1880 and 1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000112' visible='true' version='1' lat='0.0' lon='6.1'>
+    <tag k='name' v='between probe — titlecase + and' />
+    <tag k='start_date' v='Between 1880 and 1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000113' visible='true' version='1' lat='0.0' lon='6.2'>
+    <tag k='name' v='between probe — uppercase + and' />
+    <tag k='start_date' v='BETWEEN 1880 and 1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000114' visible='true' version='1' lat='0.0' lon='6.3'>
+    <tag k='name' v='between probe — hyphen form year-only' />
+    <tag k='start_date' v='between 1880-1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000115' visible='true' version='1' lat='0.0' lon='6.4'>
+    <tag k='name' v='between probe — titlecase hyphen form' />
+    <tag k='start_date' v='Between 1880-1922' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000116' visible='true' version='1' lat='0.0' lon='6.5'>
+    <tag k='name' v='between probe — YM precision + and' />
+    <tag k='start_date' v='between 1880-03 and 1922-06' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000117' visible='true' version='1' lat='0.0' lon='6.6'>
+    <tag k='name' v='between probe — YM precision hyphen form' />
+    <tag k='start_date' v='between 1880-03-1922-06' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000121' visible='true' version='1' lat='0.0' lon='7.0'>
+    <tag k='name' v='hyphen-prefix probe — mid-1900s decade' />
+    <tag k='start_date' v='mid-1900s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000122' visible='true' version='1' lat='0.0' lon='7.1'>
+    <tag k='name' v='hyphen-prefix probe — early-1900s decade' />
+    <tag k='start_date' v='early-1900s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000123' visible='true' version='1' lat='0.0' lon='7.2'>
+    <tag k='name' v='hyphen-prefix probe — late-1900s decade' />
+    <tag k='start_date' v='late-1900s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000124' visible='true' version='1' lat='0.0' lon='7.3'>
+    <tag k='name' v='hyphen-prefix probe — mid-19th century ordinal' />
+    <tag k='start_date' v='mid-19th century' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000125' visible='true' version='1' lat='0.0' lon='7.4'>
+    <tag k='name' v='hyphen-prefix probe — circa-YYYY' />
+    <tag k='start_date' v='circa-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000126' visible='true' version='1' lat='0.0' lon='7.5'>
+    <tag k='name' v='hyphen-prefix probe — before-YYYY' />
+    <tag k='start_date' v='before-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000127' visible='true' version='1' lat='0.0' lon='7.6'>
+    <tag k='name' v='hyphen-prefix probe — after-YYYY' />
+    <tag k='start_date' v='after-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000128' visible='true' version='1' lat='0.0' lon='7.7'>
+    <tag k='name' v='hyphen-prefix probe — during-YYYY' />
+    <tag k='start_date' v='during-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000129' visible='true' version='1' lat='0.0' lon='7.8'>
+    <tag k='name' v='hyphen-prefix probe — first half of-YYYY' />
+    <tag k='start_date' v='first half of-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000130' visible='true' version='1' lat='0.0' lon='7.9'>
+    <tag k='name' v='hyphen-prefix probe — second half of-YYYY' />
+    <tag k='start_date' v='second half of-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000131' visible='true' version='1' lat='0.0' lon='8.0'>
+    <tag k='name' v='hyphen-prefix probe — around-YYYY' />
+    <tag k='start_date' v='around-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000132' visible='true' version='1' lat='0.0' lon='8.1'>
+    <tag k='name' v='hyphen-prefix probe — by-YYYY' />
+    <tag k='start_date' v='by-1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000141' visible='true' version='1' lat='0.0' lon='8.2'>
+    <tag k='name' v='approx-uncertain probe — ~?YYYY prefix' />
+    <tag k='start_date' v='~?1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000142' visible='true' version='1' lat='0.0' lon='8.3'>
+    <tag k='name' v='approx-uncertain probe — ?~YYYY prefix' />
+    <tag k='start_date' v='?~1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000143' visible='true' version='1' lat='0.0' lon='8.4'>
+    <tag k='name' v='approx-uncertain probe — YYYY~? suffix' />
+    <tag k='start_date' v='1900~?' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000144' visible='true' version='1' lat='0.0' lon='8.5'>
+    <tag k='name' v='approx-uncertain probe — YYYY?~ suffix' />
+    <tag k='start_date' v='1900?~' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000145' visible='true' version='1' lat='0.0' lon='8.6'>
+    <tag k='name' v='approx-uncertain probe — :edtf YYYY-MM~?' />
+    <tag k='start_date:edtf' v='1900-03~?' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000146' visible='true' version='1' lat='0.0' lon='8.7'>
+    <tag k='name' v='approx-uncertain probe — :edtf YYYY-MM?~' />
+    <tag k='start_date:edtf' v='1900-03?~' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000151' visible='true' version='1' lat='0.0' lon='9.0'>
+    <tag k='name' v='no-separator-prefix probe — mid1930s' />
+    <tag k='start_date' v='mid1930s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000152' visible='true' version='1' lat='0.0' lon='9.1'>
+    <tag k='name' v='no-separator-prefix probe — early1945' />
+    <tag k='start_date' v='early1945' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000153' visible='true' version='1' lat='0.0' lon='9.2'>
+    <tag k='name' v='no-separator-prefix probe — late1823-10' />
+    <tag k='start_date' v='late1823-10' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000154' visible='true' version='1' lat='0.0' lon='9.3'>
+    <tag k='name' v='no-separator-prefix probe — mid19th century' />
+    <tag k='start_date' v='mid19th century' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000155' visible='true' version='1' lat='0.0' lon='9.4'>
+    <tag k='name' v='no-separator-prefix probe — circa1900' />
+    <tag k='start_date' v='circa1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000156' visible='true' version='1' lat='0.0' lon='9.5'>
+    <tag k='name' v='no-separator-prefix probe — ca.1900' />
+    <tag k='start_date' v='ca.1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000157' visible='true' version='1' lat='0.0' lon='9.6'>
+    <tag k='name' v='no-separator-prefix probe — before1900' />
+    <tag k='start_date' v='before1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000158' visible='true' version='1' lat='0.0' lon='9.7'>
+    <tag k='name' v='no-separator-prefix probe — after1900' />
+    <tag k='start_date' v='after1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000159' visible='true' version='1' lat='0.0' lon='9.8'>
+    <tag k='name' v='no-separator-prefix probe — around1900' />
+    <tag k='start_date' v='around1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000160' visible='true' version='1' lat='0.0' lon='9.9'>
+    <tag k='name' v='no-separator-prefix probe — Mid1930s titlecase' />
+    <tag k='start_date' v='Mid1930s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000171' visible='true' version='1' lat='0.0' lon='10.0'>
+    <tag k='name' v='by-the probe — lowercase YYYY' />
+    <tag k='start_date' v='by the 1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000172' visible='true' version='1' lat='0.0' lon='10.1'>
+    <tag k='name' v='by-the probe — lowercase decade' />
+    <tag k='start_date' v='by the 1900s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000173' visible='true' version='1' lat='0.0' lon='10.2'>
+    <tag k='name' v='by-the probe — titlecase' />
+    <tag k='start_date' v='By the 1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000174' visible='true' version='1' lat='0.0' lon='10.3'>
+    <tag k='name' v='by-the probe — uppercase' />
+    <tag k='start_date' v='BY THE 1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000181' visible='true' version='1' lat='0.0' lon='11.0'>
+    <tag k='name' v='end-prefix probe — bare end YYYY' />
+    <tag k='start_date' v='end 1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000182' visible='true' version='1' lat='0.0' lon='11.1'>
+    <tag k='name' v='end-prefix probe — end of YYYY' />
+    <tag k='start_date' v='end of 1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000183' visible='true' version='1' lat='0.0' lon='11.2'>
+    <tag k='name' v='end-prefix probe — end of century ordinal' />
+    <tag k='start_date' v='end of 19th century' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000184' visible='true' version='1' lat='0.0' lon='11.3'>
+    <tag k='name' v='end-prefix probe — bare end century ordinal' />
+    <tag k='start_date' v='end 19th century' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000185' visible='true' version='1' lat='0.0' lon='11.4'>
+    <tag k='name' v='end-prefix probe — end of decade' />
+    <tag k='start_date' v='end of 1900s' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000191' visible='true' version='1' lat='0.0' lon='13.0'>
+    <tag k='name' v='raw-edtf probe — missing start_date with valid :edtf and human :raw' />
+    <tag k='start_date:edtf' v='1920/1940' />
+    <tag k='start_date:raw' v='between 1920 and 1940' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000192' visible='true' version='1' lat='0.0' lon='13.1'>
+    <tag k='name' v='raw-edtf probe — missing end_date with valid :edtf and human :raw' />
+    <tag k='end_date:edtf' v='1920/1940' />
+    <tag k='end_date:raw' v='between 1920 and 1940' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000201' visible='true' version='1' lat='0.0' lon='14.0'>
+    <tag k='name' v='edtf-backwards probe — bracket-set form [A..B] A>B' />
+    <tag k='start_date:edtf' v='[2000..1900]' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000202' visible='true' version='1' lat='0.0' lon='14.1'>
+    <tag k='name' v='edtf-cross-key probe — start entirely later than end' />
+    <tag k='start_date:edtf' v='1950/1960' />
+    <tag k='end_date:edtf' v='1900/1920' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000203' visible='true' version='1' lat='0.0' lon='14.2'>
+    <tag k='name' v='edtf-cross-key probe — ranges overlap' />
+    <tag k='start_date:edtf' v='1900/1950' />
+    <tag k='end_date:edtf' v='1940/1960' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000204' visible='true' version='1' lat='0.0' lon='14.3'>
+    <tag k='name' v='edtf-cross-key probe — non-overlapping consistent (no warning)' />
+    <tag k='start_date:edtf' v='1900/1920' />
+    <tag k='end_date:edtf' v='1950/1960' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>
