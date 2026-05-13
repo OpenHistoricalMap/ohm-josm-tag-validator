@@ -248,6 +248,7 @@ public class DateTagTest extends Test {
     protected static final int CODE_FUTURE_START_DATE = 4256;
     protected static final int CODE_EDTF_START_AFTER_END = 4257;
     protected static final int CODE_EDTF_RANGES_OVERLAP = 4258;
+    protected static final int CODE_AMBIGUOUS_DAY_MONTH = 4259;
 
     /** Matches a full ISO date in {@code YYYY-MM-DD} form (astronomical, may be negative). */
     private static final Pattern FULL_ISO_DATE =
@@ -615,7 +616,8 @@ public class DateTagTest extends Test {
         m.put("landuse", new HashSet<>(Arrays.asList(
             "forest", "meadow", "grass", "wood", "scrub", "heath")));
         m.put("waterway", new HashSet<>(Arrays.asList(
-            "river", "stream", "brook", "riverbank", "tidal_channel", "wadi")));
+            "river", "stream", "brook", "riverbank", "tidal_channel", "wadi",
+            "creek", "spring", "waterfall", "rapids")));
         m.put("place", new HashSet<>(Arrays.asList(
             "island", "islet", "archipelago", "peninsula", "cape")));
         return m;
@@ -859,22 +861,6 @@ public class DateTagTest extends Test {
                     .build());
                 return;
             }
-            // 4247: any Feb 29 is suspicious in OHM. Almost nothing in
-            // history actually happened on Feb 29, and the date is widely
-            // used as a placeholder for approximate or made-up values.
-            // Fires regardless of leap-year status — and in addition to
-            // 4222 below when the year is non-leap (calendar-invalid).
-            if (month == 2 && day == 29) {
-                String trimmed = m.group(1);
-                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
-                errors.add(TestError.builder(this, Severity.WARNING, CODE_FEB_29_PLACEHOLDER)
-                    .message(tr("[ohm] Suspicious date - 02/29; autofix by stripping to year"),
-                             marktr("{0}={1}: Feb 29 is widely used in OHM as a placeholder for approximate or made-up dates. Strip to {2}?"),
-                                baseKey, value, trimmed)
-                    .primitives(p)
-                    .fix(() -> fix)
-                    .build());
-            }
             // Day-in-month check: month and day are in basic range, but is
             // this particular day actually valid for this particular month
             // and year? Use Java's LocalDate to do the leap-year arithmetic.
@@ -883,11 +869,7 @@ public class DateTagTest extends Test {
                 // Specific autofix: day=31 in a 30-day month (Apr/Jun/Sep/Nov).
                 // The user's most likely error is forgetting the month is
                 // 30-day, and the rest of the date is well-formed —
-                // clamping to day 30 preserves intent. February cases
-                // (Feb 30, Feb 29 on non-leap) are deliberately not
-                // autofixed here: too many possible interpretations
-                // (28 vs 29 vs strip-to-month vs month is wrong), and
-                // Feb 29 already gets the 4247 strip-to-year autofix.
+                // clamping to day 30 preserves intent.
                 if (day == 31 && (month == 4 || month == 6
                                   || month == 9 || month == 11)) {
                     String fixed = m.group(1) + "-" + m.group(2) + "-30";
@@ -902,16 +884,49 @@ public class DateTagTest extends Test {
                         .build());
                     return;
                 }
+                // Feb 29 on a non-leap year — fire 4222 as fixable (strip to
+                // year). 4247 deliberately does NOT also fire in this branch
+                // (we suppress the dual-warning by checking leap-year status
+                // for 4247 below).
+                if (month == 2 && day == 29) {
+                    String trimmed = m.group(1);
+                    Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
+                    errors.add(TestError.builder(this, Severity.WARNING, CODE_CALENDAR_INVALID)
+                        .message(tr("[ohm] Invalid date - Feb 29 on a non-leap year; autofix by stripping to year"),
+                                 marktr("{0}={1}: Feb 29 doesn''t exist in {2} (not a leap year). Strip to {3}?"),
+                                    baseKey, value, m.group(1), trimmed)
+                        .primitives(p)
+                        .fix(() -> fix)
+                        .build());
+                    return;
+                }
                 errors.add(TestError.builder(this, Severity.ERROR, CODE_CALENDAR_INVALID)
                     .message(tr("[ohm] Invalid date - month/day mismatch; too many days in the month; unfixable, please review"),
                              marktr("{0}={1}: {2}-{3}-{4} is not a real calendar date "
-                              + "(e.g. Feb 30, June 31, or Feb 29 on a non-leap year). "
+                              + "(e.g. Feb 30, June 31, or April 31). "
                               + "Manual review needed."),
                                 baseKey, value,
                                 m.group(1), m.group(2), m.group(3))
                     .primitives(p)
                     .build());
                 return;
+            }
+            // 4247: Feb 29 on a leap year — calendar-valid, but in OHM
+            // almost nothing historically happened on Feb 29; the date is
+            // widely used as a placeholder for approximate or made-up
+            // values. Fire only on valid (leap-year) Feb 29 — the non-leap
+            // case is handled above by 4222 with the same strip-to-year
+            // autofix, and we don't want both warnings firing.
+            if (month == 2 && day == 29) {
+                String trimmed = m.group(1);
+                Command fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, trimmed);
+                errors.add(TestError.builder(this, Severity.WARNING, CODE_FEB_29_PLACEHOLDER)
+                    .message(tr("[ohm] Suspicious date - 02/29; autofix by stripping to year"),
+                             marktr("{0}={1}: Feb 29 is widely used in OHM as a placeholder for approximate or made-up dates. Strip to {2}?"),
+                                baseKey, value, trimmed)
+                    .primitives(p)
+                    .fix(() -> fix)
+                    .build());
             }
             return;
         }
@@ -1442,6 +1457,38 @@ public class DateTagTest extends Test {
                         baseKey, base, moreNegative, lessNegative, rangeEdtf)
             .primitives(p)
             .fix(() -> fix)
+            .build());
+        return true;
+    }
+
+    /**
+     * NN-NN-YYYY / NN/NN/YYYY / NN.NN.YYYY where both leading numbers are
+     * &le; 12 and unequal — the day-vs-month order can't be inferred.
+     * Returns {@code true} after emitting a specific 4259 warning so the
+     * caller can short-circuit the generic "cannot be read" path.
+     */
+    private static final Pattern AMBIGUOUS_DAY_MONTH = Pattern.compile(
+        "^(\\d{1,2})([./-])(\\d{1,2})\\2(\\d{4})$");
+
+    private boolean checkAmbiguousDayMonth(OsmPrimitive p, String baseKey, String base) {
+        Matcher m = AMBIGUOUS_DAY_MONTH.matcher(base);
+        if (!m.matches()) return false;
+        int a = Integer.parseInt(m.group(1));
+        int b = Integer.parseInt(m.group(3));
+        if (a > 12 || b > 12) return false;   // disambiguated upstream
+        if (a == b) return false;             // equal collapses to the same date
+        if (a == 0 || b == 0) return false;   // 0 isn't a valid month or day
+        String sep = m.group(2);
+        String year = m.group(4);
+        String aPadded = a < 10 ? "0" + a : String.valueOf(a);
+        String bPadded = b < 10 ? "0" + b : String.valueOf(b);
+        errors.add(TestError.builder(this, Severity.ERROR, CODE_AMBIGUOUS_DAY_MONTH)
+            .message(tr("[ohm] Ambiguous date - day/month order unclear in NN{0}NN{0}YYYY form; unfixable, please review", sep),
+                     marktr("{0}={1}: both leading numbers are <=12, so it could be {2}-{3}-{4} or {2}-{5}-{6}. The validator can''t tell which side is the day. Rewrite explicitly as YYYY-MM-DD."),
+                        baseKey, base,
+                        year, aPadded, bPadded,
+                        bPadded, aPadded)
+            .primitives(p)
             .build());
         return true;
     }
@@ -2326,6 +2373,16 @@ public class DateTagTest extends Test {
      * </ol>
      */
     private void checkBaseOnly(OsmPrimitive p, String baseKey, String base) {
+        // Path 0-pre: Ambiguous NN-NN-YYYY / NN/NN/YYYY / NN.NN.YYYY where
+        //   both leading numbers are <= 12 and unequal — day-vs-month order
+        //   can't be determined. Fires a specific unfixable warning explaining
+        //   the two interpretations instead of falling through to the generic
+        //   "cannot be read" message. The matching disambiguation logic in
+        //   DateNormalizer's preprocess (SLASH_DATE_MDY, DASH_DATE_MDY,
+        //   DOT_DATE_MDY) intentionally rewrites only the unambiguous cases;
+        //   the ambiguous remainder lands here.
+        if (checkAmbiguousDayMonth(p, baseKey, base)) return;
+
         // Path 0a: Ambiguous or unsafe "cYY" shorthand. Fires unfixable in
         //   any case the rest of the pipeline can't handle correctly:
         //     - cYear == 0 (c0, c-0, c0bc): degenerate, no clean

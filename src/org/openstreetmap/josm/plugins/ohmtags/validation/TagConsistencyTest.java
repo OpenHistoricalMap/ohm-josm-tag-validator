@@ -826,7 +826,7 @@ public class TagConsistencyTest extends Test {
         String historic = p.get("historic");
         if (historic != null) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_HISTORIC_SUSPICIOUS)
-                .message(tr("[ohm] Suspicious tag - historic; unfixable, please review"),
+                .message(tr("[ohm] Suspicious tag - historic; unfixable, please review if object was historic at these times"),
                          marktr("historic={0}: confirm the entity has actually passed into "
                             + "history before applying this tag."),
                             historic)
@@ -848,7 +848,7 @@ public class TagConsistencyTest extends Test {
                 }
                 if (value != null && HISTORIC_IN_NAME.matcher(value).find()) {
                     errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_HISTORIC)
-                        .message(tr("[ohm] Name warning - \"historic\" in name; unfixable, please review if this is date appropriate"),
+                        .message(tr("[ohm] Name warning - \"historic\" in name; unfixable, please confirm object was historic at these times."),
                                  marktr("{0}={1}: \"historic\" in a name often reflects a "
                                     + "present-day perspective. In OHM, confirm the "
                                     + "entity was actually called this at the time it "
@@ -1766,7 +1766,7 @@ public class TagConsistencyTest extends Test {
         // Path 3: parens with year-like content but not a clean shape — unfixable.
         if (containsDateInParens(value)) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_NAME_HAS_PARENS)
-                .message(tr("[ohm] Name warning - parentheses in name; unfixable, please review"),
+                .message(tr("[ohm] Name warning - parentheses in name and no clear dates to remove; unfixable, please review"),
                          marktr("{0}={1}: dates in parentheses are discouraged in names; "
                             + "move the date to start_date / end_date instead."),
                             key, value)

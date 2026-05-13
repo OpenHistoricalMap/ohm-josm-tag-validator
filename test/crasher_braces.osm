@@ -933,4 +933,59 @@
     <tag k='start_date' v='C5 - C8 BC' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000261' visible='true' version='1' lat='0.0' lon='20.0'>
+    <tag k='name' v='ambiguous-or-fixable probe dot DD.MM.YYYY day 13' />
+    <tag k='start_date' v='13.11.1925' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000262' visible='true' version='1' lat='0.0' lon='20.1'>
+    <tag k='name' v='ambiguous probe dot N.N.YYYY both at most 12' />
+    <tag k='start_date' v='6.7.1925' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000263' visible='true' version='1' lat='0.0' lon='20.2'>
+    <tag k='name' v='ambiguous probe slash N/N/YYYY both at most 12' />
+    <tag k='start_date' v='6/7/1925' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000271' visible='true' version='1' lat='0.0' lon='21.0'>
+    <tag k='name' v='equals-as-hyphen probe YYYY=MM-DD' />
+    <tag k='start_date' v='1975=05-18' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000272' visible='true' version='1' lat='0.0' lon='21.1'>
+    <tag k='name' v='equals-as-hyphen probe YYY-MM=DD with year padding' />
+    <tag k='end_date' v='173-05=20' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000273' visible='true' version='1' lat='0.0' lon='21.2'>
+    <tag k='name' v='equals-as-hyphen probe multiple equals' />
+    <tag k='start_date' v='1975=05=18' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000281' visible='true' version='1' lat='0.0' lon='23.0'>
+    <tag k='name' v='leading-question-mark probe ?/YYYY' />
+    <tag k='start_date' v='?/1900' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000282' visible='true' version='1' lat='0.0' lon='23.1'>
+    <tag k='name' v='leading-question-mark probe ?/YYYY-MM-DD' />
+    <tag k='start_date' v='?/1900-05-18' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000283' visible='true' version='1' lat='0.0' lon='23.2'>
+    <tag k='name' v='leading-question-mark probe end_date ?/YYYY-MM' />
+    <tag k='end_date' v='?/1925-12' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000291' visible='true' version='1' lat='0.0' lon='24.0'>
+    <tag k='name' v='feb29 non-leap probe 1901' />
+    <tag k='start_date' v='1901-02-29' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000292' visible='true' version='1' lat='0.0' lon='24.2'>
+    <tag k='name' v='feb29 leap probe 2000' />
+    <tag k='start_date' v='2000-02-29' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

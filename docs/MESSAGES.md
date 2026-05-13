@@ -39,15 +39,23 @@ The trigger is a positive allowlist (since 2026-04). Earlier versions used a neg
 Notable allowlist entries:
 
 - **Always trigger (any value):** `building`, `building:part`, `highway`, `railway`, `aeroway`, `aerialway`, `bridge`, `tunnel`, `man_made`, `power`, `pipeline`, `amenity`, `shop`, `office`, `craft`, `tourism`, `historic`, `military`, `emergency`, `public_transport`, `telecom`, `leisure`, `barrier`, plus any `addr:*` key.
-- **Trigger unless value is in denylist:** `landuse` (skip `forest`/`meadow`/`grass`/`wood`/`scrub`/`heath`); `waterway` (skip `river`/`stream`/`brook`/`riverbank`/`tidal_channel`/`wadi`); `place` (skip `island`/`islet`/`archipelago`/`peninsula`/`cape`).
+- **Trigger unless value is in denylist:** `landuse` (skip `forest`/`meadow`/`grass`/`wood`/`scrub`/`heath`); `waterway` (skip `river`/`stream`/`brook`/`riverbank`/`tidal_channel`/`wadi`/`creek`/`spring`/`waterfall`/`rapids`); `place` (skip `island`/`islet`/`archipelago`/`peninsula`/`cape`).
 - **Relation-only triggers:** `boundary=*` (the political entity has a date; member ways/nodes carrying `boundary=*` do **not** trigger because their date lives on the parent), and `type=route`.
 
-**Example (fires):**  
-Trigger: `building=yes` with no `start_date`.  
-Suggested manual fix: add `start_date:edtf=1920~/1940~` (or whatever bracket fits) plus `start_date:source=USGS topo 1925`.
+**Example (fires):**
 
-**Example (does not fire):**  
-A way tagged `boundary=administrative` with no other keys. The line segment's date is implicit from the parent relation; only the relation itself fires.
+| Input         | Result                                              |
+|---------------|-----------------------------------------------------|
+| **building=yes** | start_date=                                      |
+| start_date=   | (no autofix; add manually, e.g. `start_date:edtf=1920~/1940~` plus `start_date:source=USGS topo 1925`) |
+
+**Example (does not fire):**
+
+| Input                           | Result        |
+|---------------------------------|---------------|
+| boundary=administrative on a way | (no warning) |
+
+The line segment's date is implicit from the parent relation; only the relation itself fires.
 
 ---
 
@@ -60,9 +68,11 @@ A way tagged `boundary=administrative` with no other keys. The line segment's da
 **4220 trigger:** Value ends with a trailing hyphen (e.g., `2021-`, `2021-03-`), which is ambiguous between a typo, an incomplete input, and an open-ended range. Fires on `*_date` base values AND on any top-level `*_date:edtf` value matching the same shape. Suppressed on base when `*_date:edtf` or `*_date:raw` is already set (the editor has been there already).  
 **4220 description:** _{key}={value}: could be a typo: {suggestion}; an incomplete input; or an open-ended range {suggestion}/. Manual review needed._
 
-**Example:**  
-Trigger: `start_date=2021-`  
-Suggested manual fix: choose one of `start_date=2021` (typo), `start_date=2021-03-15` (incomplete input), or `start_date:edtf=2021/` (open-ended range).
+**Example:**
+
+| Input                | Result                                                                                |
+|----------------------|---------------------------------------------------------------------------------------|
+| **start_date=2021-** | (no autofix; one of `start_date=2021` (typo), `start_date=2021-03-15` (incomplete), or `start_date:edtf=2021/` (open-ended)) |
 
 ---
 
@@ -85,9 +95,11 @@ There's no signal in the value alone to pick the right reading. `DateNormalizer.
 
 **Coverage:** The rule restricts the tail to 01-12 — i.e. only the indeterminate cases. Tails outside that range (e.g. `1904-05..13`) are unambiguously year-only but produce a backwards interval; left to existing normalize behavior, not in scope here.
 
-**Example:**  
-Trigger: `end_date:edtf=1904-05..08`.  
-Suggested manual fix: rewrite as `end_date:edtf=1904-05/1904-08` for "May to August 1904", or `end_date:edtf=1904-05/1908` for "May 1904 to 1908".
+**Example:**
+
+| Input                          | Result                                                                |
+|--------------------------------|-----------------------------------------------------------------------|
+| **end_date:edtf=1904-05..08**  | (no autofix; one of `end_date:edtf=1904-05/1904-08` (May–Aug 1904) or `end_date:edtf=1904-05/1908` (May 1904 – 1908)) |
 
 ---
 
@@ -102,10 +114,21 @@ Suggested manual fix: rewrite as `end_date:edtf=1904-05/1904-08` for "May to Aug
 **Fix:** Applies the chosen interpretation to `*_date` and `*_date:edtf`.  
 **Description:** _{key}={value} as a decade/century: {key}={normalized}, :edtf={edtf}_
 
-**Example:**  
-Before: `start_date=1800s`  
-After autofix as decade (4203): `start_date=1800`, `start_date:edtf=180X`, `start_date:raw=1800s` — bounds 1800–1809.  
-After autofix as century (4204): `start_date=1800`, `start_date:edtf=18`, `start_date:raw=1800s` — bounds 1800–1899.
+**Example (autofix as decade, 4203):** bounds 1800–1809.
+
+| Input                | Result                  |
+|----------------------|-------------------------|
+| **start_date=1800s** | start_date=1800         |
+| start_date:edtf=     | start_date:edtf=180X    |
+| start_date:raw=      | start_date:raw=1800s    |
+
+**Example (autofix as century, 4204):** bounds 1800–1899.
+
+| Input                | Result                  |
+|----------------------|-------------------------|
+| **start_date=1800s** | start_date=1800         |
+| start_date:edtf=     | start_date:edtf=18      |
+| start_date:raw=      | start_date:raw=1800s    |
 
 ---
 
@@ -126,13 +149,21 @@ OHM contributors sometimes write a compact `cYYYY` form for "circa YYYY" (e.g. `
 
 The `c` prefix is case-insensitive and accepts a `bc` / `BCE` suffix. BCE flips the sign of `YYYY` directly with no N-1 offset (so `c1920bc` becomes `~-1920`, not `~-1919`) — the historian's astronomical-year convention is too persnickety for typical OHM editing.
 
-**4202 example (cYYYY band, abs >= 100):**  
-Before: `start_date=c1920`  
-After autofix: `start_date=1920`, `start_date:edtf=1920~`, `start_date:raw=c1920`.
+**4202 example (cYYYY band, abs ≥ 100):**
 
-**4202 example (cYYYY with BCE suffix):**  
-Before: `start_date=c1920bc`  
-After autofix: `start_date=-1920`, `start_date:edtf=-1920~`, `start_date:raw=c1920bc`.
+| Input                | Result                |
+|----------------------|-----------------------|
+| **start_date=c1920** | start_date=1920       |
+| start_date:edtf=     | start_date:edtf=1920~ |
+| start_date:raw=      | start_date:raw=c1920  |
+
+**4202 example (cYYYY with BCE suffix):**
+
+| Input                  | Result                  |
+|------------------------|-------------------------|
+| **start_date=c1920bc** | start_date=-1920        |
+| start_date:edtf=       | start_date:edtf=-1920~  |
+| start_date:raw=        | start_date:raw=c1920bc  |
 
 **4202 — packed-date typo (`YYYY-MMDD` or `YYYY-MDD`):** Common typo where the user wrote a packed date with the month-day hyphen missing. The validator autofixes when:
 - Input matches `^YYYY-MMDD$` AND `YYYY > 1200` AND the implied `MM-DD` is a real calendar date for that year (leap-year-aware).

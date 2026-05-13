@@ -668,6 +668,22 @@ public final class DateNormalizer {
         // OHM/EDTF date strings, so unconditional replace is safe.
         s = s.replace(",..", "..").replace(".,.", "..").replace("..,", "..");
 
+        // "=" where "-" was meant. "=" sits one key right of "-" on QWERTY,
+        // and shift-state mishaps produce "=" in place of "-" in date values
+        // like "1975=05-18" or "173-05=20". "=" has no legitimate meaning in
+        // OHM/EDTF date strings, so unconditional replace is safe.
+        s = s.replace('=', '-');
+
+        // Leading "?" before "/" in open-ended-left intervals: "?/1900" →
+        // "/1900". The "?" is the EDTF uncertainty qualifier; as a bare
+        // standalone token before the slash it carries no information beyond
+        // what "/X" already conveys (open-ended-left). The original is
+        // preserved in :raw by the standard triple-fix path because the
+        // pre-preprocess value isn't valid EDTF.
+        if (s.startsWith("?/")) {
+            s = s.substring(1);
+        }
+
         // Combined approximate-plus-uncertain qualifiers "~?" / "?~" → "~".
         // EDTF reserves "%" for "both approximate and uncertain", but users
         // often write "~?" or "?~" instead. Coerce to plain "~" (approximate
