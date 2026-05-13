@@ -1,3 +1,53 @@
+# v0.8.2 — Ambiguity warning, more typo rewrites, rule polish
+
+Targeted improvements driven by hands-on review of real OHM data and the v0.8.1 release.
+
+## Date normalization
+
+- **`=` → `-` typo rewrite.** `=` sits next to `-` on QWERTY; users sometimes hit shift-state wrong. `1975=05-18` and `173-05=20` now autofix to `1975-05-18` and `0173-05-20` (with the original preserved in `:raw`).
+- **Leading `?/X` rewrite.** `?/1900` (and `?/1900-05-18`, `?/1925-12`) now resolves to the triple `*_date=X`, `*_date:edtf=/X`, `*_date:raw=?/X` — the leading `?` is the EDTF uncertainty qualifier, but as a bare prefix before `/` it carries no information beyond what `/X` already does. Several real-world fixtures (`w/198740059`, `w/201258996`, `w/201258997`) now resolve cleanly.
+
+## New rule 4259 — ambiguous NN-NN-YYYY
+
+For `NN-NN-YYYY` / `NN/NN/YYYY` / `NN.NN.YYYY` where both leading numbers are ≤ 12 and unequal, the validator now fires a specific "day/month order unclear" warning instead of the generic "cannot be read" fallback. The description names both possible interpretations so the editor can pick. The matching disambiguation logic in DateNormalizer's preprocess (SLASH, DASH, DOT MDY forms) intentionally only rewrites the unambiguous cases (one side > 12); the ambiguous remainder lands here.
+
+Example: `start_date=6.7.1925` now fires `Ambiguous date - day/month order unclear in NN.NN.YYYY form; unfixable, please review` and explains it could be `1925-06-07` or `1925-07-06`.
+
+## Rule 4222 split — Feb 29 on a non-leap year is now fixable
+
+The "month/day mismatch" rule (4222, previously always unfixable ERROR) now splits:
+- **Feb 29 on a non-leap year** (e.g. `1901-02-29`) → fixable WARNING; autofix strips to year.
+- **All other calendar-invalid dates** (Feb 30, June 31, April 31, etc.) → unfixable ERROR as before.
+
+To avoid double-firing with 4247 (the Feb 29 placeholder rule) on non-leap years, the order of checks was reorganized: 4247 now fires only on calendar-VALID Feb 29 (i.e., leap years); 4222 handles the non-leap case alone.
+
+## Title polish (no behavior change)
+
+- **4319** (`historic=*` tag): `[ohm] Suspicious tag - historic; unfixable, please review if object was historic at these times`
+- **4320** (`"historic"` in name): `[ohm] Name warning - "historic" in name; unfixable, please confirm object was historic at these times.`
+- **4301** (parens-in-name unfixable, Path 3): `[ohm] Name warning - parentheses in name and no clear dates to remove; unfixable, please review`
+
+## Rule 4200 — expanded waterway denylist
+
+The "no `start_date` on man-made object" rule (4200) ignores waterway features that are inherently natural. The denylist now includes `creek`, `spring`, `waterfall`, and `rapids` in addition to the existing `river`, `stream`, `brook`, `riverbank`, `tidal_channel`, `wadi`.
+
+## Docs
+
+- `MESSAGES.md` reformatted the first batch of sections (4200, 4220, 4253, 4203/4204, 4202/4241) with Input/Result pipe tables — pretty on GitHub, clearer for readers. The remaining sections will be converted in a follow-up pass.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — `=` → `-` and `?/X` → `/X` rewrites
+- `src/.../validation/DateTagTest.java` — 4259 ambiguous day/month rule, 4222 split, waterway denylist expansion
+- `src/.../validation/TagConsistencyTest.java` — title-only changes for 4319/4320/4301
+- `docs/MESSAGES.md` — first batch of pretty-table rewrites, waterway denylist sync
+- `test/crasher_braces.osm` — fixtures for the new rules
+- `test/expected.txt` — drift for renamed titles and new fixtures
+
+Emission sites scanned: 111 (up from 109 at v0.8.1).
+
+---
+
 # v0.8.1 — Coverage parity with JOSM-OHM-qa-scripts
 
 Cross-referenced the validator against the Python scripts in `jeffreyameyer/JOSM-OHM-qa-scripts` and closed the gaps that were in scope. Seven additions / extensions, all building on the v0.8.0 surface.
