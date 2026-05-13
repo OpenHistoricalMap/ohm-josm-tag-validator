@@ -1,3 +1,79 @@
+# v0.8.0 — Date-shorthand expansion, raw-tag philosophy refactor, boundary-geometry rules
+
+A meaningful minor bump: validator now accepts a much wider vocabulary of casually-written date strings, the `:raw` tag is treated as inviolable human input, and three new rules target structural hygiene in `type=boundary` relations.
+
+## Date-shorthand normalization (DateNormalizer preprocess)
+
+The preprocess pipeline now handles several common shorthand forms that previously fell through to "unparseable":
+
+- **`~` as range separator** — `1880~1922` and `1880-03~1922-06` now resolve to `1880/1922` / `1880-03/1922-06`. Single-bound `~YYYY` (circa) is unaffected.
+- **Comma-typo tolerance** — `,..`, `.,.`, and `..,` are coerced to `..` (range separator). Typo pattern: the comma sits next to a period on QWERTY/most layouts.
+- **Bracket-hyphen range at higher precision** — `[1880-03-1922-06]` and `[1880-03-15-1922-06-20]` now resolve. The year-only `[YYYY-YYYY]` case was already handled.
+- **`between date1-date2` (hyphen form)** — In addition to `between X and Y` (already supported), the hyphen variant now resolves at year-only, year-month, and year-month-day precisions. Case-insensitive on the `between` keyword.
+- **Hyphen-after-qualifier-prefix** — `mid-1900s`, `early-19th century`, `late-1823-10`, `circa-1900`, `before-1900`, `after-1900`, `during-1900`, `by-1900`, `as of-1900`, `around-1900`, `first half of-1900`, `second half of-1900` (and `1st/2nd half of`) all normalize to their space-separated form.
+- **No-separator-after-prefix** — `mid1930s`, `early1945`, `late1823-10`, `circa1900`, `ca.1900`, `before1900`, `Mid1930s` (case-insensitive) all normalize. Same prefix vocabulary as the hyphen rule.
+- **`~?` / `?~` → `~`** — Combined approximate-plus-uncertain qualifiers get coerced to plain `~`. Users wrote these instead of the canonical `%`.
+- **`by the X` → `by X`** — The article gets stripped after `by` (case-insensitive).
+- **`end X` / `end of X` → `late X`** — Both phrasings are now aliases for `late`, reusing the full late-family handlers (decades, centuries, year-month, etc.). The prior 4216-specific "end of YYYY → YYYY-12" handler is retired (`end of 1900` now resolves to `late 1900` → `1900-09/1900-12`, the same semantics as `late 1900`).
+
+These expansions also fixed several real-world fixtures that were previously unfixable.
+
+## Rule 4301 refinement — name-vs-tag date agreement
+
+`[ohm] Name warning - dates in name` (rule 4301) used to autofix-strip dates from names unconditionally. v0.8.0 splits the behavior by checking name dates against `start_date` / `end_date`:
+
+- **STRIPPABLE** — tags match the name's date(s); autofix strips the date from the name (existing behavior).
+- **POPULATABLE** — two-bound range in name and no date tags; autofix strips the date AND populates `start_date` / `end_date` in one command.
+- **UNFIXABLE** — mismatch, partial coverage (`start_date` present without `end_date` or vice versa where a range is needed), or single-year-without-matching-tags. New unfixable warning; user reconciles manually.
+
+Year-only equality is used for the comparison (so `start_date=1880-03-15` matches a name's `1880`).
+
+## Future-date warning split (4216 / new 4256)
+
+The "more than 10 years in the future" check is split by key:
+
+- **4216** (`end_date` only): fixable, autofix deletes the key. Title now `[ohm] Suspicious date - end_date >10 year into the future; autofix by deleting the key`.
+- **4256** (`start_date` only, NEW): unfixable. A far-future `start_date` may legitimately describe a planned future construction; deletion would lose data.
+
+Description phrasing was also cleaned up — "Likely a typo" was removed from the two rules that carried it.
+
+## `:raw` philosophy refactor (4205 retired, 4206 reframed)
+
+`:raw` is by design the human-authored original input — preserved verbatim, never auto-rewritten or deleted. v0.8.0 makes this explicit:
+
+- **Rule 4205 retired.** It had assumed `:raw` was bot-written (specifically by `tagcleanupbot`) and auto-rewrote `:base` / `:edtf` from it under certain conditions. The validator no longer makes that assumption.
+- **Rule 4206 reframed.** It used to offer autofix to delete `:raw`. Now it's unfixable — when `:raw` is inconsistent with `:base` / `:edtf`, the user must reconcile manually. `:raw` is preserved as-is.
+- **Semantic comparison.** `:raw` and `:edtf` are now compared through `toEdtf` normalization on both sides, so equivalent forms like `between 1920 and 1940` ≡ `1920/1940` count as matching.
+- **Missing-base autofix expanded.** When `:base` is missing AND `:edtf` is valid, rule 4211 now also fires from the with-`:raw` path (not just the no-`:raw` path), deriving `:base` from `:edtf` without touching `:raw`.
+
+## EDTF range cross-checks (4255 bracket form, new 4257, 4258)
+
+- **4255 extended to bracket-set form.** The backwards-interval rule now also matches `[A..B]` (in addition to slash `A/B`). `start_date:edtf=[2000..1900]` is now caught.
+- **4257 (NEW) — cross-key non-overlap.** Fires when `start_date:edtf` is entirely later than `end_date:edtf` — e.g., `start_date:edtf=1950/1960`, `end_date:edtf=1900/1920`. The entity ended before it could have started. Unfixable. Open-ended intervals skipped.
+- **4258 (NEW) — cross-key overlap.** Fires when the start and end ranges share at least one year — e.g., `start_date:edtf=1900/1950`, `end_date:edtf=1940/1960` (overlap 1940–1950). The starting period should be entirely before the ending period. Unfixable. Open-ended intervals skipped.
+
+## Boundary geometry hygiene (4330, 4331, 4332 — all new)
+
+Three rules that target structural problems in `type=boundary` relations. Common theme: boundary geometry should be a clean substrate, not load-bearing tagging.
+
+- **4330 — Node with non-date/non-source tags.** A node participating in a boundary way carries POI-style tags like `name`, `place`, `historic`, `wikidata`, etc. Autofix clones the node into a new node at the same coordinates carrying ALL the original tags; strips the non-date/non-source tags from the original. The original keeps its relation memberships and stays in the boundary way. The new node has no relation memberships — it's a standalone POI.
+
+- **4331 — Waterway way is a boundary member.** A way carries `waterway=*` and is also a geometry member of a `type=boundary` relation. Autofix creates a new way at the same coordinates with its own cloned nodes (no node identity shared with the original waterway), carrying only source-family tags. At each endpoint, any other way sharing that endpoint AND a member of any boundary relation is rerouted onto the cloned endpoint, preserving boundary topology. The new way replaces the original in every boundary relation (preserving role); the original keeps its `waterway` and other tags, all its original nodes, and any non-boundary relation memberships.
+
+- **4332 — Members not in topological order.** Way members of a `type=boundary` relation form closed rings but aren't listed so consecutive members share an endpoint. Per-role-group, direction-agnostic. Only fires when each role-group's ways actually form closed rings; open chains and other geometry problems are left for the core JOSM validator. Autofix reorders way members within each unsorted role-group; non-way members and members of already-sorted groups keep their positions.
+
+## Files touched
+
+- `src/.../DateNormalizer.java` — preprocess expansions
+- `src/.../validation/DateTagTest.java` — future-date split, `:raw` refactor, EDTF cross-checks, `end of YYYY` handler retired
+- `src/.../validation/TagConsistencyTest.java` — rule 4301 refinement, three boundary geometry rules
+- `docs/MESSAGES.md` — new and updated rule entries, retired-code table
+- `test/test_data.osm`, `test/crasher_braces.osm`, `test/expected.txt` — fixture coverage for every new path
+
+Emission sites scanned: 108 (up from 100 at v0.7.9).
+
+---
+
 # v0.7.9 — Attach built JAR to GitHub releases
 
 `release.sh` was missing the actual plugin JAR — previous releases (v0.5.x through v0.7.8) only had the release notes attached on GitHub. JOSM users couldn't download the plugin from the GitHub releases page.
