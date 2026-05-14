@@ -287,6 +287,18 @@ Both 4-digit (`YYYY-MMDD`) and 3-digit (`YYYY-MDD`) suffixes get the same treatm
 
 **4256 description:** _start_date={value} is more than ten years in the future. Unfixable; please review whether this represents a planned future entity or is a typo._
 
+**4216 example:** (`end_date` more than 10 years out is almost always stale)
+
+| Input             | Result    |
+|-------------------|-----------|
+| **end_date=2999** | end_date= |
+
+**4256 example:** (`start_date` more than 10 years out — could be planned construction or a typo)
+
+| Input               | Result                                                                                |
+|---------------------|---------------------------------------------------------------------------------------|
+| **start_date=2999** | (no autofix; review whether this represents a planned future entity (move details elsewhere) or is a typo) |
+
 ---
 
 ### Invalid date — 5+ digit number
@@ -491,6 +503,10 @@ Both 4-digit (`YYYY-MMDD`) and 3-digit (`YYYY-MDD`) suffixes get the same treatm
 
 **4201 -- abbreviated-tail range (`YYYY..YY`) wraps a century boundary:** When the 2-digit suffix resolves to a year before the start (e.g. `start_date=1985..05` → naive end = 1905 < 1985), the intended century is ambiguous (1905? 2005?). Flagged unfixable; contributor must write the full form (`1985/2005`).
 
+| Input                   | Result                                                                                |
+|-------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1985..05** | (no autofix; intended century is ambiguous — 1905 or 2005? Rewrite as `start_date=1985/2005` for the full form) |
+
 **4202 — implausibly-ancient leading zeros (`0000..YYYY`):** Inputs like `start_date=0000..1850` or `end_date=00..1900` are common when a contributor wanted to express "no known start" but wrote a placeholder year zero. When the upper bound `YYYY > 400` (clearly post-classical), the validator collapses to the open-start EDTF form `/YYYY` and uses `YYYY` as the base for both `start_date` and `end_date`. Below the threshold the input could be a real ancient range; falls through.
 
 | Input                      | Result                     |
@@ -541,6 +557,18 @@ Inner values that match nothing (`before:gibberish`) fall through and fire 4201.
 
 **4202 — qualifier on decade / century:** Decade and century shorthand accept a `~`, `?`, or `%` qualifier in either prefix or suffix position (`~1960s`, `670s~`, `~C3`, `C19~`). Plain (unqualified) inputs emit the EDTF unspecified-digit form (`196X`, `18XX`); qualified inputs emit an explicit slash range with the qualifier on each bound (`~1960s` → `1960~/1969~`, `C19~` → `1800~/1899~`). Qualifiers can't attach to X-form years in EDTF (`196X~` is rejected by the parser), so the explicit-bounds form is the only canonical option when a qualifier is present.
 
+| Input                  | Result                       |
+|------------------------|------------------------------|
+| **start_date=~1960s**  | start_date=1960              |
+| start_date:edtf=       | start_date:edtf=1960~/1969~  |
+| start_date:raw=        | start_date:raw=~1960s        |
+
+| Input               | Result                       |
+|---------------------|------------------------------|
+| **end_date=C19~**   | end_date=1899                |
+| end_date:edtf=      | end_date:edtf=1800~/1899~    |
+| end_date:raw=       | end_date:raw=C19~            |
+
 **4202 — `early` / `mid` / `late` partial year or month (case-insensitive):** The modifier splits a year or a month into non-overlapping thirds, emitted as a slash interval at the next-finer precision. Year-thirds use 4-month buckets; month-thirds use 10-day buckets (with a 9/10/9-or-10 split on February so all three thirds fit within 28/29 days). All three buckets are mutually exclusive — `mid` does not share an endpoint with `early` or `late`.
 
 - `early YYYY` → `YYYY-01/YYYY-04`; `mid YYYY` → `YYYY-05/YYYY-08`; `late YYYY` → `YYYY-09/YYYY-12`.
@@ -568,15 +596,95 @@ The output magnitudes correspond to BC year numbers directly (the project's loos
 
 The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an optional leading qualifier (`~late C1`) which is consumed for free — the output is already an explicit range with `~` on each bound (`0070~/0099~`).
 
+**4202 example (early/mid/late partial year — one row per sub-case):**
+
+| Input                       | Result                                |
+|-----------------------------|---------------------------------------|
+| **start_date=early 1900**   | start_date=1900-01                    |
+| start_date:edtf=            | start_date:edtf=1900-01/1900-04       |
+| start_date:raw=             | start_date:raw=early 1900             |
+
+| Input                       | Result                                |
+|-----------------------------|---------------------------------------|
+| **start_date=mid 1900**     | start_date=1900-05                    |
+| start_date:edtf=            | start_date:edtf=1900-05/1900-08       |
+| start_date:raw=             | start_date:raw=mid 1900               |
+
+| Input                       | Result                                |
+|-----------------------------|---------------------------------------|
+| **start_date=late 1900**    | start_date=1900-09                    |
+| start_date:edtf=            | start_date:edtf=1900-09/1900-12       |
+| start_date:raw=             | start_date:raw=late 1900              |
+
+**4202 example (early/mid/late partial month):**
+
+| Input                          | Result                                       |
+|--------------------------------|----------------------------------------------|
+| **start_date=early 1900-06**   | start_date=1900-06-01                        |
+| start_date:edtf=               | start_date:edtf=1900-06-01/1900-06-10        |
+| start_date:raw=                | start_date:raw=early 1900-06                 |
+
+| Input                          | Result                                       |
+|--------------------------------|----------------------------------------------|
+| **start_date=late 1900-06**    | start_date=1900-06-21                        |
+| start_date:edtf=               | start_date:edtf=1900-06-21/1900-06-30        |
+| start_date:raw=                | start_date:raw=late 1900-06                  |
+
+**4202 example (February special case — late, non-leap):** Feb's 28-day length and a 9/10/9-day split.
+
+| Input                          | Result                                       |
+|--------------------------------|----------------------------------------------|
+| **start_date=late 1900-02**    | start_date=1900-02-20                        |
+| start_date:edtf=               | start_date:edtf=1900-02-20/1900-02-28        |
+| start_date:raw=                | start_date:raw=late 1900-02                  |
+
+**4202 example (BCE on early/mid/late year):**
+
+| Input                          | Result                                       |
+|--------------------------------|----------------------------------------------|
+| **start_date=early 100 BC**    | start_date=-0099-01                          |
+| start_date:edtf=               | start_date:edtf=-0099-01/-0099-04            |
+| start_date:raw=                | start_date:raw=early 100 BC                  |
+
 **4202 — ordinal-century range:** Inputs of the form `<ordinal>[ - <ordinal>] Century [BC]`, where each side may carry an optional `early`/`mid`/`late` modifier and the trailing word `Century` applies to both halves. The two halves normalize as `CN` expressions and the bounds combine: `5th - mid 8th Century` → `0400/0770` (low of `04XX`, high of `0730~/0770~`).
+
+| Input                                       | Result                                  |
+|---------------------------------------------|-----------------------------------------|
+| **start_date=5th - mid 8th Century**        | start_date=0400                         |
+| start_date:edtf=                            | start_date:edtf=0400/0770               |
+| start_date:raw=                             | start_date:raw=5th - mid 8th Century    |
 
 **4202 — short-year range with qualifier:** Two 1- or 2-digit years separated by a hyphen, with an optional leading qualifier on the left bound (`~47-50` → `0047~/0050`, `47-50` → `0047/0050`). The qualifier applies to the left side only — the syntactic position of the `~` before the first year. Only fires when interpretation as a year-range is unambiguous: a qualifier is present, or the right side is `>12` (can't be a month). Otherwise falls through to year-month parsing (`5-10` → `0005-10`).
 
+| Input                | Result                       |
+|----------------------|------------------------------|
+| **start_date=~47-50** | start_date=0047             |
+| start_date:edtf=     | start_date:edtf=0047~/0050   |
+| start_date:raw=      | start_date:raw=~47-50        |
+
 **4202 — hyphen-as-range with negative years:** Astronomical BCE notation works on either side of a hyphen-range: `-0800 - -0600` (preprocess strips the spaces around the hyphens, leaving `-0800--0600`) → `-0800/-0600`. Mixed signs work too (`-0800-1500` → `-0800/1500`).
+
+| Input                            | Result                            |
+|----------------------------------|-----------------------------------|
+| **start_date=-0800 - -0600**     | start_date=-0800                  |
+| start_date:edtf=                 | start_date:edtf=-0800/-0600       |
+| start_date:raw=                  | start_date:raw=-0800 - -0600      |
 
 **4202 — per-bound BCE markers in dotdot range:** `182 BC..174 BC` correctly distributes each side's BCE marker rather than corrupting the start as `"182 BC BC"`. Output uses the existing N-1 convention for individual years: `-0181/-0173`.
 
+| Input                            | Result                            |
+|----------------------------------|-----------------------------------|
+| **start_date=182 BC..174 BC**    | start_date=-0181                  |
+| start_date:edtf=                 | start_date:edtf=-0181/-0173       |
+| start_date:raw=                  | start_date:raw=182 BC..174 BC     |
+
 **4202 — junk-tail strip:** Open-ended slash forms with garbage tails — `1959/..~`, `1959/..`, `1959/.~`, `1959/~` — all collapse to `1959/`. Typically arise from incomplete edits.
+
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=1959/..~**     | start_date=1959              |
+| start_date:edtf=            | start_date:edtf=1959/        |
+| start_date:raw=             | start_date:raw=1959/..~      |
 
 **4202 / 4228 — single-bracket single-dot range:** Values matching `[<ISO date>.<ISO date>]` (single brackets, single-dot separator, each side a clean ISO shape `YYYY` / `YYYY-MM` / `YYYY-MM-DD`) are rewritten to `<inner>..<inner>` so the standard RANGE branch can normalize to a slash interval. The single dot is almost always a typo for `..` or `/`. Strict on each side being a 4-digit-year ISO date to avoid splitting non-range values that contain a `.`. Double-dot bracket forms (`[1900..1950]`, EDTF set notation) are EDTF that the parser accepts and are NOT matched. Examples:
 
@@ -586,6 +694,12 @@ The early/mid/late century / decade forms (`late C1`, `mid 1850s`) accept an opt
 
 Surfaces as 4228 fixable on `*_date:edtf` keys; 4202 fixable on base `*_date` keys (autofix writes the full triple).
 
+| Input                          | Result                       |
+|--------------------------------|------------------------------|
+| **start_date=[1900.1950]**     | start_date=1900              |
+| start_date:edtf=               | start_date:edtf=1900/1950    |
+| start_date:raw=                | start_date:raw=[1900.1950]   |
+
 **4202 / 4228 — double-bracket dotdot range:** Values wrapped in `[[...]]` with a `..` separator inside are unwrapped so the standard RANGE branch can normalize the inner. Optional whitespace between the brackets and the inner is tolerated. Each side of the `..` is validated as a date by the recursive normalizer; if either side fails, the whole value falls through to the unfixable path. Examples:
 
 - `[[1900..1950]]` → `1900/1950`
@@ -594,6 +708,12 @@ Surfaces as 4228 fixable on `*_date:edtf` keys; 4202 fixable on base `*_date` ke
 
 Surfaces as 4228 fixable on `*_date:edtf` keys (autofix to the slash form, original preserved in `:edtf:raw`); surfaces as 4202 fixable on base `*_date` keys (autofix writes the full triple).
 
+| Input                            | Result                            |
+|----------------------------------|-----------------------------------|
+| **start_date=[[1900..1950]]**    | start_date=1900                   |
+| start_date:edtf=                 | start_date:edtf=1900/1950         |
+| start_date:raw=                  | start_date:raw=[[1900..1950]]     |
+
 **4202 / 4228 — single-dot open-ended marker:** Leading or trailing `.` (single, not the standard `..`) before/after a clean ISO date is rewritten to `/` so the value becomes a valid EDTF open-ended interval:
 
 - `.YYYY[-MM[-DD]]` → `/YYYY[-MM[-DD]]` (open-ended-left, "anything up to and including the date")
@@ -601,27 +721,99 @@ Surfaces as 4228 fixable on `*_date:edtf` keys (autofix to the slash form, origi
 
 Anchored on the whole value — only fires when the dot is the sole leading/trailing character. Internal `..` (the standard OHM range form, e.g. `1900..1950`) is untouched. Most commonly seen on `*_date:edtf` (surfaces as 4228 fixable), but also normalizes the base side (surfaces as 4202 fixable, autofix derives the bound for the base tag).
 
+| Input                   | Result                       |
+|-------------------------|------------------------------|
+| **start_date=.1900**    | start_date=1900              |
+| start_date:edtf=        | start_date:edtf=/1900        |
+| start_date:raw=         | start_date:raw=.1900         |
+
+| Input               | Result                       |
+|---------------------|------------------------------|
+| **end_date=1900.**  | end_date=1900                |
+| end_date:edtf=      | end_date:edtf=1900/          |
+| end_date:raw=       | end_date:raw=1900.           |
+
 **4202 — Unicode dash normalization:** En-dash (`–`, U+2013), em-dash (`—`, U+2014), figure-dash (`‒`, U+2012) and minus-sign (`−`, U+2212) are normalized to ASCII hyphen-minus before pattern matching. Catches inputs pasted from word processors that auto-replace `-`. Example: `0544–0595` → `0544/0595`.
+
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=0544–0595**    | start_date=0544              |
+| start_date:edtf=            | start_date:edtf=0544/0595    |
+| start_date:raw=             | start_date:raw=0544–0595     |
 
 **4202 — multi-dot collapse:** Runs of three or more dots collapse to two — three is always a typo, an ellipsis, or a copy-paste artifact (`[1907...]` → `[1907..]`, `1839...1859` → `1839..1859`, `...15/11/1997` → `..15/11/1997`).
 
+| Input                        | Result                       |
+|------------------------------|------------------------------|
+| **start_date=1839...1859**   | start_date=1839              |
+| start_date:edtf=             | start_date:edtf=1839/1859    |
+| start_date:raw=              | start_date:raw=1839...1859   |
+
 **4202 — junk `..` markers around `/`:** `..` directly adjacent to a `/` (on either side) is stripped. Cleans up partial-edit artifacts like `1839../..1859-12-02` → `1839/1859-12-02`. When this strip fires AND a leading or trailing `..` remains alongside the `/`, that `..` is treated as redundant junk too (`..1839/..1859` → `1839/1859`). The "remaining" strip is gated on whether inner-`..`-adjacent-to-`/` actually fired — so a clean leading `..` like `...15/11/1997` (an open-ended-left marker) is left for the standard step-8 rewrite to convert to `/`.
+
+| Input                                  | Result                                  |
+|----------------------------------------|-----------------------------------------|
+| **start_date=1839../..1859-12-02**     | start_date=1839                         |
+| start_date:edtf=                       | start_date:edtf=1839/1859-12-02         |
+| start_date:raw=                        | start_date:raw=1839../..1859-12-02      |
 
 **4202 — qualifier adjacent to `..`:** A leading or trailing qualifier on a `..` range marker promotes to the bound year via the slash form, since EDTF can't attach a qualifier to `..`:
 - `~..1907` → `/1907~` (open-ended-left, ends approximately 1907)
 - `1907..~` → `1907~/` (open-ended-right, starts approximately 1907)
 
+| Input                  | Result                       |
+|------------------------|------------------------------|
+| **end_date=1907..~**   | end_date=1907                |
+| end_date:edtf=         | end_date:edtf=1907~/         |
+| end_date:raw=          | end_date:raw=1907..~         |
+
 **4202 — `..` as `before`/`by`/`as of`/`during` separator:** After multi-dot collapse reduces `by...1907` to `by..1907`, the BEFORE pattern accepts `..` as a separator alongside the existing space and colon (`by..1907` → `/1907`, `during..1934` → `1934`). Same applies to the symmetric AFTER and DURING patterns.
+
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=by..1907**     | start_date=1907              |
+| start_date:edtf=            | start_date:edtf=/1907        |
+| start_date:raw=             | start_date:raw=by..1907      |
 
 **4202 — X-form with stray qualifier:** EDTF rejects qualifiers attached to X-forms (`196X?`, `18XX~`). Preprocess strips the qualifier, leaving the unspecified-digit form unchanged: `/196X?` → `/196X`. (The semantically distinct option of expanding the X-form to a specific year — e.g. `/196X?` → `/1960` — is not done because it changes the bound's meaning.)
 
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=/196X?**       | start_date=1960              |
+| start_date:edtf=            | start_date:edtf=/196X        |
+| start_date:raw=             | start_date:raw=/196X?        |
+
 **4202 / 4228 — short positive X-form padding:** Unpadded positive X-form years (`9XX`, `99X`, `9X`) are left-zero-padded to the canonical 4-char form (`09XX`, `099X`, `009X`). EDTF year bodies are 4 chars; the parser rejects shorter forms outright, so without padding these slip through as 4228 unfixable. Lowercase 'x' is uppercased as part of the rewrite. Mirrors the v0.7.3 negative-side fix that broadened rule 4250 to accept `-7XX`. All-X bodies (no digit anchor) are not matched — those remain unfixable. Surfaces as 4228 fixable on `*_date:edtf` keys (autofix preserves original in `:edtf:raw`); 4202 fixable on base `*_date` keys (autofix writes the full triple).
+
+| Input                   | Result                       |
+|-------------------------|------------------------------|
+| **start_date=9XX**      | start_date=0900              |
+| start_date:edtf=        | start_date:edtf=09XX         |
+| start_date:raw=         | start_date:raw=9XX           |
 
 **4202 — qualified hyphen range:** Hyphen ranges with a leading qualifier (`~1848-1854`, `?47-50`) propagate the qualifier to the start side and rewrite as a slash interval: `~1848-1854` → `1848~/1854`, `?47-50` → `47?/50`. Year padding still happens (`~47-50` → `0047~/0050`).
 
+| Input                          | Result                            |
+|--------------------------------|-----------------------------------|
+| **start_date=~1848-1854**      | start_date=1848                   |
+| start_date:edtf=               | start_date:edtf=1848~/1854        |
+| start_date:raw=                | start_date:raw=~1848-1854         |
+
 **4202 — "end of YYYY":** `end of 1955` → `1955-12` (collapses the year-level "end-of" qualifier to the last calendar month). Symmetric handlers for `beginning of` and `mid of` aren't implemented yet.
 
+| Input                         | Result                       |
+|-------------------------------|------------------------------|
+| **end_date=end of 1955**      | end_date=1955-12             |
+| end_date:edtf=                | end_date:edtf=               |
+| end_date:raw=                 | end_date:raw=end of 1955     |
+
 **4202 — valid-EDTF passthrough:** When preprocess produces a result that the EDTF parser already accepts (e.g. `192X`, `[1907..]`, `199X`) and no specific normalizer matched, the result is returned as-is. This lets the canonicalization pipeline recurse cleanly through wrappers like `192X/..` → `192X/`.
+
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=192X/..**      | start_date=1920              |
+| start_date:edtf=            | start_date:edtf=192X/        |
+| start_date:raw=             | start_date:raw=192X/..       |
 
 The same path runs from `checkAllEdtfKeys` for `*_date:edtf` siblings, so `end_date:edtf=before:1882` autofixes to `end_date:edtf=/1882` with the original moved to `end_date:edtf:raw`.
 
@@ -839,6 +1031,20 @@ No base:
 **4257 description:** _start_date:edtf={start} ({start_lo}–{start_hi}) is entirely later than end_date:edtf={end} ({end_lo}–{end_hi}). The entity ended before it started — review whether the two values were swapped or one is wrong._
 
 **4258 description:** _start_date:edtf={start} ({start_lo}–{start_hi}) and end_date:edtf={end} ({end_lo}–{end_hi}) overlap on {overlap_lo}–{overlap_hi}. The starting period should be entirely before the ending period; review and tighten whichever bound is wrong._
+
+**4257 example:** start range (1950–1960) is entirely after end range (1900–1920) — the entity ended before it could have started.
+
+| Input                            | Result                                                                                |
+|----------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=1950/1960**    | (no autofix; review whether the two values were swapped or one is wrong)              |
+| **end_date:edtf=1900/1920**      | (no autofix; manual review)                                                           |
+
+**4258 example:** start range (1800–1900) overlaps with end range (1850–1950) on 1850–1900.
+
+| Input                            | Result                                                                                |
+|----------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=1800/1900**    | (no autofix; tighten whichever bound is wrong so the starting period is entirely before the ending period) |
+| **end_date:edtf=1850/1950**      | (no autofix; manual review)                                                           |
 
 ---
 
@@ -1104,6 +1310,20 @@ The implication: if the entity didn't change in any meaningful way between succe
 |---------------------|---------------------------------------------------------------------------------------|
 | **start_date=**     | (no autofix; download the missing members (Ctrl+Alt+Down on the chronology relation) and re-run the validator) |
 | **end_date=**       | (no autofix; manual review)                                                           |
+
+**4243 example:** `type=chronology` relation includes a way (not a relation). Chronology members must themselves be boundary relations.
+
+| Input (on chronology relation)         | Result                                                                                |
+|----------------------------------------|---------------------------------------------------------------------------------------|
+| type=chronology                        | (no autofix)                                                                          |
+| **member type=way ref=12345**          | (no autofix; replace the way member with the boundary relation that wraps it, or remove the member) |
+
+**4254 example:** `type=chronology` relation has zero members.
+
+| Input (on chronology relation)         | Result                                                                                |
+|----------------------------------------|---------------------------------------------------------------------------------------|
+| type=chronology                        | (no autofix)                                                                          |
+| **members=(none)**                     | (no autofix; add the constituent features as members, or delete the relation)         |
 
 ---
 
@@ -1521,6 +1741,26 @@ In addition to 4308/4309 above, the v0.5 source-content rules (4304/4305 are pla
 
 The autofix enumeration scheme (4312, 4315) always lands at `<attr>:source:N+1` where N is the highest existing numeric index on the matching prefix. **Never overwrites** existing `<attr>:source:N[:*]` slots.
 
+**4307 example on an attribute source:** `name:source` lacks the URL scheme.
+
+| Input                                     | Result                                          |
+|-------------------------------------------|-------------------------------------------------|
+| **name:source=example.org/article**       | name:source=https://example.org/article         |
+
+**4314 example on an attribute source:** `name:source` mixes a URL and text.
+
+| Input                                                           | Result                              |
+|-----------------------------------------------------------------|-------------------------------------|
+| **name:source=https://example.org/article; Reference book p.7** | name:source=Reference book p.7      |
+| name:source:url=                                                | name:source:url=https://example.org/article |
+
+**4324 example on an attribute source:** URL value parked in the `:name` slot.
+
+| Input                                              | Result                                              |
+|----------------------------------------------------|-----------------------------------------------------|
+| **start_date:source:name=https://example.org/scan** | start_date:source:name=                            |
+| start_date:source:url=                             | start_date:source:url=https://example.org/scan      |
+
 ---
 
 ### Suspicious tag — historic
@@ -1628,6 +1868,20 @@ Three sub-paths, checked in priority order:
 
 Neither rule is autofixable — the validator can't guess the user's intent (typo? truncated URL? wrong tag?). Both fire WARNING severity.
 
+**4328 example:** value is not a valid QID shape.
+
+| Input                                                   | Result                                                                                |
+|---------------------------------------------------------|---------------------------------------------------------------------------------------|
+| **wikidata=https://www.wikidata.org/wiki/Q243**         | (no autofix; rewrite to `wikidata=Q243`)                                              |
+| **wikidata=notaqid**                                    | (no autofix; replace with the canonical `Q<digits>` shape)                            |
+
+**4329 example:** value is not in `<lang>:<title>` form.
+
+| Input                                                          | Result                                                                                |
+|----------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| **wikipedia=https://en.wikipedia.org/wiki/Eiffel_Tower**       | (no autofix; rewrite to `wikipedia=en:Eiffel Tower`)                                  |
+| **wikipedia=Eiffel Tower**                                     | (no autofix; add the language prefix, e.g. `wikipedia=en:Eiffel Tower`)               |
+
 ---
 
 ### Boundary geometry hygiene (4330, 4331, 4332)
@@ -1648,6 +1902,28 @@ Three rules introduced in v0.8 that target ways and nodes participating in `type
 
 **4332 trigger:** a `type=boundary` relation's way members form one or more closed rings (every endpoint Node appears exactly twice across each role-group) but are not listed in topological order — consecutive members don't share an endpoint, or a ring doesn't close. Direction-agnostic; each role is evaluated as its own group. Open chains and other geometry problems are left for the core JOSM validator.  
 **4332 fix:** reorders the way members within each unsorted role-group so consecutive members share an endpoint and each ring closes. Non-way members keep their positions in the member list; way-members of already-sorted role-groups keep their positions too.
+
+**4330 example:** a node sitting on a boundary way carries a place name. The fix clones the node so the boundary geometry stays clean while the identity-bearing tags move to a new standalone node.
+
+| Input (on boundary-member node)   | Result (on original node)                           |
+|-----------------------------------|-----------------------------------------------------|
+| **name=Some Town**                | name=                                               |
+| **place=village**                 | place=                                              |
+| start_date=1850                   | start_date=1850                                     |
+| (new standalone POI at same lat/lon carries `name=Some Town`, `place=village`, `start_date=1850`) | |
+
+**4331 example:** a `waterway=stream` way also doubles as a boundary segment. The fix creates a coincident boundary-only way (carrying any source-family tags) and rewires the boundary relation to use it.
+
+| Input (on dual-purpose way)   | Result                                                                                |
+|-------------------------------|---------------------------------------------------------------------------------------|
+| **waterway=stream**           | waterway=stream (unchanged; way keeps its original nodes and non-boundary memberships) |
+| (member of type=boundary)     | (boundary relation now references a new coincident way; the new way carries only source-family tags) |
+
+**4332 example:** boundary relation with way members `[w1, w3, w2]` — w1 and w3 don't share an endpoint, but `[w1, w2, w3]` would close a ring.
+
+| Input (on boundary relation)      | Result                                                                                |
+|-----------------------------------|---------------------------------------------------------------------------------------|
+| **members=[w1, w3, w2]**          | members=[w1, w2, w3] (reordered so consecutive ways share an endpoint and the ring closes) |
 
 ---
 
@@ -1676,6 +1952,22 @@ Skips when the corresponding `source[:N:]tiles` already exists (already migrated
 - **404 flag** (Rule 4): if the lookup returns HTTP 404, append `"no such mapwarper map <ID>"` to `fixme:tiles`.
 
 The HTTP call runs lazily inside the fix lambda — validation scans stay offline and fast. Mirrors `MapwarperSourceFixer.py` in `jeffreyameyer/JOSM-OHM-qa-scripts`.
+
+**4333 example (Rule 1A — tile URL on `:url`):** rewrite the URL slot to the canonical page and stash the tile template in `:tiles`.
+
+| Input                                                                            | Result                                                                  |
+|----------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| **source:url=https://mapwarper.net/maps/tile/12345/{z}/{x}/{y}.png**             | source:url=https://mapwarper.net/maps/12345                             |
+| source:tiles=                                                                    | source:tiles=https://mapwarper.net/maps/tile/12345/{z}/{x}/{y}.png      |
+| source:name=                                                                     | source:name=<looked up from mapwarper.net/maps/12345.json>              |
+
+**4333 example (Rule 2 — canonical URL on bare `source`):** derive the tile template and write it to `:tiles`; bare key is left unchanged.
+
+| Input                                          | Result                                                                  |
+|------------------------------------------------|-------------------------------------------------------------------------|
+| **source=https://mapwarper.net/maps/12345**    | source=https://mapwarper.net/maps/12345                                 |
+| source:tiles=                                  | source:tiles=https://mapwarper.net/maps/tile/12345/{z}/{x}/{y}.png      |
+| source:name=                                   | source:name=<looked up from mapwarper.net/maps/12345.json>              |
 
 ---
 
