@@ -1,3 +1,24 @@
+# v0.8.3 — MESSAGES.md every rule now has an example table
+
+Docs-only patch. No source or test changes; plugin behavior identical to v0.8.2.
+
+The `docs/MESSAGES.md` reference now has at least one Input/Result pipe table for every rule. Two prior passes filled in the easy cases (the v0.8.2 commit converted ~5 sections, the follow-up converted the remaining ~35 prose-example blocks); this pass closes the last gaps where rules had only inline arrow-patterns (`X → Y` definitions) or no example at all.
+
+Sections newly gaining tables in this pass include:
+- Suspicious date — future date (4216 / 4256)
+- Cross-key EDTF range checks (4257 / 4258)
+- Attribute-source content rules on `attr:source` slots (4307 / 4314 / 4324)
+- Malformed external-reference tag values (4328 / 4329)
+- Boundary geometry hygiene (4330 / 4331 / 4332)
+- Mapwarper source URL split (4333)
+- ~20 sub-rule tables inside the big "4202 unparseable" section for cases that had only inline `→` arrow patterns (early/mid/late partial year/month, ordinal-century range, BCE on early/mid/late, junk-tail strip, single/double-bracket dotdot, Unicode dash normalization, multi-dot collapse, etc.)
+- 4243 boundary chronology has non-relation members
+- 4254 relation has no members
+
+File size: 1700 → 1992 lines.
+
+---
+
 # v0.8.2 — Ambiguity warning, more typo rewrites, rule polish
 
 Targeted improvements driven by hands-on review of real OHM data and the v0.8.1 release.
