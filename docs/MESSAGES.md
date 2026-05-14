@@ -177,17 +177,23 @@ When autofix is held back, code **4244** fires the unfixable variant whenever th
 
 Both 4-digit (`YYYY-MMDD`) and 3-digit (`YYYY-MDD`) suffixes get the same treatment. Inputs where the implied MM-DD is invalid AND the year is the smaller half (e.g. `0001-2024`) deliberately fall through — they're more plausibly some other shape entirely.
 
-**4202 example (packed-date autofix):**  
-Before: `end_date=1930-0630`.  
-After autofix: `end_date=1930-06-30`.
+**4202 example (packed-date autofix):**
 
-**4244 example:**  
-Trigger: `start_date=1875-1131` (Nov 31 doesn't exist).  
-Suggested manual fix: rewrite to a real `start_date=YYYY-MM-DD` or trim to `start_date=YYYY` if the day-precision was unintentional.
+| Input                  | Result                  |
+|------------------------|-------------------------|
+| **end_date=1930-0630** | end_date=1930-06-30     |
 
-**4241 example:**  
-Trigger: `start_date=c50`.  
-Suggested manual fix: rewrite as `~50` if "circa year 50" was intended, or as a century form if "century 50" was intended.
+**4244 example:**
+
+| Input                    | Result                                                                                |
+|--------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1875-1131** | (no autofix; rewrite to a real `start_date=YYYY-MM-DD` or trim to `start_date=YYYY` if the day-precision was unintentional) |
+
+**4241 example:**
+
+| Input              | Result                                                                                |
+|--------------------|---------------------------------------------------------------------------------------|
+| **start_date=c50** | (no autofix; rewrite as `~50` if "circa year 50" was intended, or as a century form if "century 50" was intended) |
 
 ---
 
@@ -208,13 +214,17 @@ Suggested manual fix: rewrite as `~50` if "circa year 50" was intended, or as a 
 **4214 fix:** None.  
 **4214 description:** _{key}={value}: end-of-year used as start_date / start-of-year used as end_date. If the exact day is unknown, manually change to {key}={year} (the year this date falls in) or {key}={shifted} (next/previous year, if a typo)._
 
-**4212/4213 example:**  
-Trigger: `start_date=1875-01-01`.  
-Suggested manual fix: if the start was genuinely on Jan 1, 1875 (e.g. a law taking effect that day), leave alone; otherwise change to `start_date=1875` (the year only, dropping the false-precision day).
+**4212/4213 example:**
 
-**4214 example:**  
-Trigger: `start_date=1875-12-31`.  
-Suggested manual fix: if the start was genuinely on Dec 31, 1875 (e.g. a treaty signed that day), leave alone; otherwise change to `start_date=1875` (the year this date falls in) or `start_date=1876` (the year the entity started, if the original was an off-by-one typo).
+| Input                     | Result                                                                                |
+|---------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1875-01-01** | (no autofix; if the start was genuinely Jan 1, 1875 (e.g. a law taking effect that day), leave alone; otherwise change to `start_date=1875` (year only, dropping the false-precision day)) |
+
+**4214 example:**
+
+| Input                     | Result                                                                                |
+|---------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1875-12-31** | (no autofix; if the start was genuinely Dec 31, 1875 (e.g. a treaty signed that day), leave alone; otherwise change to `start_date=1875` (the year this date falls in) or `start_date=1876` (next year, if an off-by-one typo)) |
 
 ---
 
@@ -238,17 +248,27 @@ Suggested manual fix: if the start was genuinely on Dec 31, 1875 (e.g. a treaty 
 **4225 fix:** Deletes `start_date:edtf`.  
 **4225 description:** _The start_date and end_date values are equal and should only be that way for an object that existed only for a day. Delete start_date:edtf?_
 
-**4215 example:**  
-Before: `start_date=1950`, `end_date=1900`  
-After autofix: `start_date=1900`, `end_date=1950`.
+**4215 example:**
 
-**4224 example:**  
-Trigger: `start_date=1969-07-20`, `end_date=1969-07-20`.  
-Suggested manual fix: if this is a single-day event (Apollo 11 landing) leave it; otherwise correct one side.
+| Input                | Result          |
+|----------------------|-----------------|
+| **start_date=1950**  | start_date=1900 |
+| **end_date=1900**    | end_date=1950   |
 
-**4225 example:**  
-Before: `start_date=1900`, `start_date:edtf=\1900`, `end_date=1900` (last editor was a human, not the bot)  
-After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` retained.
+**4224 example:**
+
+| Input                       | Result                                                                                |
+|-----------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1969-07-20**   | (no autofix; if this is a single-day event (Apollo 11 landing) leave it; otherwise correct one side) |
+| **end_date=1969-07-20**     | (no autofix; manual review) |
+
+**4225 example:** (last editor was a human, not the bot)
+
+| Input                    | Result          |
+|--------------------------|-----------------|
+| start_date=1900          | start_date=1900 |
+| **start_date:edtf=\1900** | start_date:edtf= |
+| end_date=1900            | end_date=1900   |
 
 ---
 
@@ -279,9 +299,12 @@ After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` 
 **Fix:** None — we can't tell whether the intent was `2025`, `12025`, or something else, so the editor must decide. When this rule fires, the rest of the per-key date checks are suppressed for that key (they would otherwise emit a generic "cannot be read" warning that obscures the specific typo diagnosis).  
 **Description:** _{key}={value} contains a run of 5 or more digits and is not valid EDTF. Review and correct manually._
 
-**Example:**  
-`start_date=20251` → flagged; editor decides whether the intent was `2025` or `12025`.  
-`end_date=Q1438579` → flagged; editor moves the QID to `wikidata=*`.
+**Example:**
+
+| Input                  | Result                                                                                |
+|------------------------|---------------------------------------------------------------------------------------|
+| **start_date=20251**   | (no autofix; editor decides whether the intent was `2025` or `12025`)                 |
+| **end_date=Q1438579**  | (no autofix; editor moves the QID to `wikidata=*`)                                    |
 
 ---
 
@@ -303,17 +326,23 @@ After autofix: `start_date:edtf` removed; `start_date=1900` and `end_date=1900` 
 **4222 fix:** None.  
 **4222 description:** _{key}={value}: {YYYY}-{MM}-{DD} is not a valid date (e.g. 2/30, 6/31, or 2/29 in non-leap year)._
 
-**4217 example:**  
-Before: `start_date=1900-13-15`  
-After autofix: `start_date=1900` (month 13 is invalid; trim to year).
+**4217 example:** (month 13 is invalid; trim to year)
 
-**4218 example:**  
-Before: `start_date=1900-06-32`  
-After autofix: `start_date=1900-06` (day 32 is invalid; trim to year-month).
+| Input                     | Result          |
+|---------------------------|-----------------|
+| **start_date=1900-13-15** | start_date=1900 |
 
-**4222 example:**  
-Trigger: `start_date=1900-02-29` (1900 was not a leap year).  
-Suggested manual fix: change to a real date such as `1900-02-28` or `1900-03-01`.
+**4218 example:** (day 32 is invalid; trim to year-month)
+
+| Input                     | Result             |
+|---------------------------|--------------------|
+| **start_date=1900-06-32** | start_date=1900-06 |
+
+**4222 example:** (1900 was not a leap year)
+
+| Input                     | Result                                                                                |
+|---------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1900-02-29** | (no autofix; change to a real date such as `1900-02-28` or `1900-03-01`)              |
 
 ---
 
@@ -329,9 +358,11 @@ Suggested manual fix: change to a real date such as `1900-02-28` or `1900-03-01`
 
 **Why only Apr/Jun/Sep/Nov?** February cases (Feb 30, Feb 29 on non-leap years) are deliberately not autofixed here — too many possible interpretations (28 vs 29 vs strip-to-month vs the month was wrong). Feb 29 already has its own `4247` strip-to-year autofix, and Feb 30 stays in `4222` for manual review.
 
-**Example:**  
-Before: `start_date=1900-06-31`  
-After autofix: `start_date=1900-06-30`.
+**Example:**
+
+| Input                     | Result              |
+|---------------------------|---------------------|
+| **start_date=1900-06-31** | start_date=1900-06-30 |
 
 ---
 
@@ -347,13 +378,17 @@ After autofix: `start_date=1900-06-30`.
 
 **Behavior alongside 4222:** This rule fires on every Feb 29. When the year is non-leap, **4222** also fires (calendar-invalid, no fix); both warnings appear and the editor can either accept this rule's autofix or hand-edit per 4222.
 
-**Example (leap year):**  
-Before: `start_date=2024-02-29`  
-After autofix: `start_date=2024`. Only 4247 fires (2024-02-29 is a real calendar date).
+**Example (leap year):** Only 4247 fires (2024-02-29 is a real calendar date).
 
-**Example (non-leap year):**  
-Before: `start_date=1900-02-29`  
-After autofix: `start_date=1900`. Both 4222 (calendar-invalid, no fix) and 4247 (suspicious, autofix) fire.
+| Input                     | Result          |
+|---------------------------|-----------------|
+| **start_date=2024-02-29** | start_date=2024 |
+
+**Example (non-leap year):** Both 4222 (calendar-invalid, no fix) and 4247 (suspicious, autofix) fire.
+
+| Input                     | Result          |
+|---------------------------|-----------------|
+| **start_date=1900-02-29** | start_date=1900 |
 
 ---
 
@@ -372,13 +407,21 @@ After autofix: `start_date=1900`. Both 4222 (calendar-invalid, no fix) and 4247 
 **4231 fix:** Deletes `start_date` and `start_date:edtf`.  
 **4231 description:** _{key}={value}: 'present' describes an ongoing state, not a start point. 'present' is only valid as end_date. Delete {key} and {key}:edtf?_
 
-**4221 example:**  
-Before: `end_date=present`  
-After autofix: `end_date` cleared, `end_date:edtf` cleared, `end_date:raw=present` (signals ongoing intent without breaking date consumers).
+**4221 example:** (signals ongoing intent without breaking date consumers)
 
-**4231 example:**  
-Before: `start_date=present`, `end_date=2010`  
-After autofix: `start_date` and `start_date:edtf` deleted; `end_date=2010` retained.
+| Input                | Result               |
+|----------------------|----------------------|
+| **end_date=present** | end_date=            |
+| end_date:edtf=       | end_date:edtf=       |
+| end_date:raw=        | end_date:raw=present |
+
+**4231 example:**
+
+| Input                  | Result            |
+|------------------------|-------------------|
+| **start_date=present** | start_date=       |
+| start_date:edtf=       | start_date:edtf=  |
+| end_date=2010          | end_date=2010     |
 
 ---
 
@@ -392,9 +435,13 @@ After autofix: `start_date` and `start_date:edtf` deleted; `end_date=2010` retai
 **Fix:** Moves value to `*_date:edtf`, derives plain ISO base, stores original in `*_date:raw`.  
 **Description:** _{key}={value} → {key}={normalized}, :edtf={edtf}, :raw={value}_
 
-**Example:**  
-Before: `start_date=2003-03/2016`  
-After autofix: `start_date=2003-03`, `start_date:edtf=2003-03/2016`, `start_date:raw=2003-03/2016`.
+**Example:**
+
+| Input                      | Result                       |
+|----------------------------|------------------------------|
+| **start_date=2003-03/2016** | start_date=2003-03           |
+| start_date:edtf=           | start_date:edtf=2003-03/2016 |
+| start_date:raw=            | start_date:raw=2003-03/2016  |
 
 ---
 
@@ -412,30 +459,45 @@ After autofix: `start_date=2003-03`, `start_date:edtf=2003-03/2016`, `start_date
 **4202 trigger:** Value can be normalized; see also "EDTF in base tag" above.  
 **4202 description:** _{key}={value} → {key}={normalized}, :edtf={edtf}, :raw={value}_
 
-**4201 example:**  
-Trigger: `start_date=romain` (unparseable text).  
-Suggested manual fix: replace with a real date or remove the tag.
+**4201 example:** (unparseable text)
 
-**4202 example:**  
-Before: `start_date=fall of 1814`  
-After autofix: `start_date=1814`, `start_date:edtf=1814-23` (EDTF season code 23 = fall), `start_date:raw=fall of 1814`.
+| Input                  | Result                                                                                |
+|------------------------|---------------------------------------------------------------------------------------|
+| **start_date=romain**  | (no autofix; replace with a real date or remove the tag)                              |
+
+**4202 example:** (EDTF season code 23 = fall)
+
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=fall of 1814** | start_date=1814              |
+| start_date:edtf=            | start_date:edtf=1814-23      |
+| start_date:raw=             | start_date:raw=fall of 1814  |
 
 **4202 — abbreviated-tail range (`YYYY/YY`):** OHM contributors sometimes write a short form for ranges that share a century-decade prefix, e.g. `start_date=1716/17` for "1716/1717" or `end_date=1850/52` for "1850/1852". The validator expands the 2-digit suffix and writes a full triple. For `start_date`, the base is the lower year; for `end_date`, the upper year. Pre-fix, edtf-java accepted the short form as valid EDTF and produced gibberish base values (e.g. `end_date=1850/52` came out as `end_date=5299`). Wrap cases like `1899/01` (where the suffix would resolve to a year less than the start) deliberately fall through and are not autofixed.
 
-Before: `end_date=1850/52`  
-After autofix: `end_date=1852`, `end_date:edtf=1850/1852`, `end_date:raw=1850/52`.
+| Input                | Result                  |
+|----------------------|-------------------------|
+| **end_date=1850/52** | end_date=1852           |
+| end_date:edtf=       | end_date:edtf=1850/1852 |
+| end_date:raw=        | end_date:raw=1850/52    |
 
 **4202 — abbreviated-tail range (`YYYY..YY`):** Same expansion as `YYYY/YY` above but using `..` as the separator (e.g. `start_date=1944..48` for "1944/1948"). The 2-digit suffix replaces the last two digits of the 4-digit start year to form the end year. Must be intercepted before the normalizer, which would otherwise misread the 2-digit tail as a year in its own right (e.g. "48" → year 48 CE, producing "1944/0048").
 
-Before: `start_date=1944..48`  
-After autofix: `start_date=1944`, `start_date:edtf=1944/1948`, `start_date:raw=1944..48`.
+| Input                   | Result                    |
+|-------------------------|---------------------------|
+| **start_date=1944..48** | start_date=1944           |
+| start_date:edtf=        | start_date:edtf=1944/1948 |
+| start_date:raw=         | start_date:raw=1944..48   |
 
 **4201 -- abbreviated-tail range (`YYYY..YY`) wraps a century boundary:** When the 2-digit suffix resolves to a year before the start (e.g. `start_date=1985..05` → naive end = 1905 < 1985), the intended century is ambiguous (1905? 2005?). Flagged unfixable; contributor must write the full form (`1985/2005`).
 
 **4202 — implausibly-ancient leading zeros (`0000..YYYY`):** Inputs like `start_date=0000..1850` or `end_date=00..1900` are common when a contributor wanted to express "no known start" but wrote a placeholder year zero. When the upper bound `YYYY > 400` (clearly post-classical), the validator collapses to the open-start EDTF form `/YYYY` and uses `YYYY` as the base for both `start_date` and `end_date`. Below the threshold the input could be a real ancient range; falls through.
 
-Before: `start_date=0000..1850`  
-After autofix: `start_date=1850`, `start_date:edtf=/1850`, `start_date:raw=0000..1850`.
+| Input                      | Result                     |
+|----------------------------|----------------------------|
+| **start_date=0000..1850**  | start_date=1850            |
+| start_date:edtf=           | start_date:edtf=/1850      |
+| start_date:raw=            | start_date:raw=0000..1850  |
 
 **4202 — `before:` / `by:` / `as of:` / `after:` / `during:` shorthand:** OHM contributors often write open-ended bounds with a natural-language prefix (also accepted with a space separator: `before 1900`, `by 1844`, etc.):
 
@@ -451,17 +513,31 @@ The inner value `X` is normalized in three steps:
 
 Inner values that match nothing (`before:gibberish`) fall through and fire 4201.
 
-Before: `start_date=before:01-01-1882`  
-After autofix: `start_date=1882`, `start_date:edtf=/1882`, `start_date:raw=before:01-01-1882`.
+| Input                              | Result                              |
+|------------------------------------|-------------------------------------|
+| **start_date=before:01-01-1882**   | start_date=1882                     |
+| start_date:edtf=                   | start_date:edtf=/1882               |
+| start_date:raw=                    | start_date:raw=before:01-01-1882    |
 
-Before: `end_date=after:1999-02-03`  
-After autofix: `end_date=1999-02-03`, `end_date:edtf=1999-02-03/`, `end_date:raw=after:1999-02-03`.
+| Input                            | Result                              |
+|----------------------------------|-------------------------------------|
+| **end_date=after:1999-02-03**    | end_date=1999-02-03                 |
+| end_date:edtf=                   | end_date:edtf=1999-02-03/           |
+| end_date:raw=                    | end_date:raw=after:1999-02-03       |
 
-Before: `start_date=before C12`  
-After autofix: `start_date=1100`, `start_date:edtf=/11XX`, `start_date:raw=before C12`.
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date=before C12**   | start_date=1100              |
+| start_date:edtf=            | start_date:edtf=/11XX        |
+| start_date:raw=             | start_date:raw=before C12    |
 
-Before: `end_date=during 1975`  
-After autofix: `end_date=1975` (no `:edtf`, no `:raw` — `during X` collapses to plain `X`).
+`during X` collapses to plain `X` (no `:edtf`, no `:raw`):
+
+| Input                      | Result          |
+|----------------------------|-----------------|
+| **end_date=during 1975**   | end_date=1975   |
+| end_date:edtf=             | end_date:edtf=  |
+| end_date:raw=              | end_date:raw=   |
 
 **4202 — qualifier on decade / century:** Decade and century shorthand accept a `~`, `?`, or `%` qualifier in either prefix or suffix position (`~1960s`, `670s~`, `~C3`, `C19~`). Plain (unqualified) inputs emit the EDTF unspecified-digit form (`196X`, `18XX`); qualified inputs emit an explicit slash range with the qualifier on each bound (`~1960s` → `1960~/1969~`, `C19~` → `1800~/1899~`). Qualifiers can't attach to X-form years in EDTF (`196X~` is rejected by the parser), so the explicit-bounds form is the only canonical option when a qualifier is present.
 
@@ -563,21 +639,32 @@ The same path runs from `checkAllEdtfKeys` for `*_date:edtf` siblings, so `end_d
 **4228 fixable trigger:** `*_date:edtf` is invalid EDTF but can be auto-corrected. Also covers the Rule D1 backslash-strip path: `*_date:edtf` starts with `\` and the remainder, after stripping the backslash, normalises (or is already valid EDTF).  
 **4228 unfixable trigger:** `*_date:edtf` is invalid EDTF and cannot be corrected automatically.
 
-**4208 example:**  
-Trigger: `start_date:edtf=garbage`, no `start_date` present.  
-Suggested manual fix: replace `:edtf` with valid EDTF, or delete the tag.
+**4208 example:** (no `start_date` present)
 
-**4228 example (fixable, normalization):**  
-Before: `start_date:edtf=199x` (lowercase X)  
-After autofix: `start_date:edtf=199X` (canonical form), `start_date:edtf:raw=199x` preserves the original.
+| Input                        | Result                                                                                |
+|------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=garbage**  | (no autofix; replace `:edtf` with valid EDTF, or delete the tag)                      |
+| start_date=                  | (no autofix)                                                                          |
 
-**4228 example (fixable, backslash-strip — Rule D1):**  
-Before: `start_date:edtf=\1900`, with `start_date=1900`  
-After autofix: `start_date:edtf=1900` (backslash prefix stripped, remainder is valid).
+**4228 example (fixable, normalization):** lowercase X canonicalized
 
-**4228 example (unfixable):**  
-Trigger: `start_date:edtf=2020-13-99` — invalid and not normalizable.  
-Suggested manual fix: replace with a valid EDTF expression.
+| Input                     | Result                       |
+|---------------------------|------------------------------|
+| **start_date:edtf=199x**  | start_date:edtf=199X         |
+| start_date:edtf:raw=      | start_date:edtf:raw=199x     |
+
+**4228 example (fixable, backslash-strip — Rule D1):**
+
+| Input                       | Result                |
+|-----------------------------|-----------------------|
+| start_date=1900             | start_date=1900       |
+| **start_date:edtf=\1900**   | start_date:edtf=1900  |
+
+**4228 example (unfixable):** invalid and not normalizable
+
+| Input                           | Result                                                                                |
+|---------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=2020-13-99**  | (no autofix; replace with a valid EDTF expression)                                    |
 
 ---
 
@@ -595,10 +682,20 @@ Suggested manual fix: replace with a valid EDTF expression.
 
 **Description:** _{key}={value} is valid EDTF but not canonical. Normalize to {newEdtf} and preserve original in {raw}?_
 
-**Examples:**  
-- `start_date:edtf=700~` → `start_date:edtf=0700~`, `start_date:edtf:raw=700~`  
-- `start_date:edtf=/787` → `start_date:edtf=/0787`  
-- `start_date:edtf=636/700` → `start_date:edtf=0636/0700`
+**Examples:**
+
+| Input                       | Result                       |
+|-----------------------------|------------------------------|
+| **start_date:edtf=700~**    | start_date:edtf=0700~        |
+| start_date:edtf:raw=        | start_date:edtf:raw=700~     |
+
+| Input                      | Result               |
+|----------------------------|----------------------|
+| **start_date:edtf=/787**   | start_date:edtf=/0787 |
+
+| Input                         | Result                    |
+|-------------------------------|---------------------------|
+| **start_date:edtf=636/700**   | start_date:edtf=0636/0700 |
 
 **Already-canonical values** (e.g. `0700~`, `1880/1891`, `185X`) silently pass — no warning.
 
@@ -619,10 +716,32 @@ Suggested manual fix: replace with a valid EDTF expression.
 **Description:** _{key}={value}: negative year with X digit(s). Bounds are {earlier} (earlier) to {later} (later). Replace with {range}?_
 
 **Examples:**
-- `start_date:edtf=-07XX` (4-digit padded, no base) → `start_date=-0799`, `start_date:edtf=-0799/-0700`
-- `start_date:edtf=-7XX` (3-digit unpadded, no base) → same: `start_date=-0799`, `start_date:edtf=-0799/-0700`
-- `end_date:edtf=-123X` → `end_date=-1230`, `end_date:edtf=-1239/-1230`
-- `end_date:edtf=-7X` (single-digit body, single X) → `end_date=-0070`, `end_date:edtf=-0079/-0070`
+
+4-digit padded, no base:
+
+| Input                         | Result                          |
+|-------------------------------|---------------------------------|
+| start_date=                   | start_date=-0799                |
+| **start_date:edtf=-07XX**     | start_date:edtf=-0799/-0700     |
+
+3-digit unpadded, no base — same result:
+
+| Input                        | Result                          |
+|------------------------------|---------------------------------|
+| start_date=                  | start_date=-0799                |
+| **start_date:edtf=-7XX**     | start_date:edtf=-0799/-0700     |
+
+| Input                       | Result                          |
+|-----------------------------|---------------------------------|
+| end_date=                   | end_date=-1230                  |
+| **end_date:edtf=-123X**     | end_date:edtf=-1239/-1230       |
+
+Single-digit body, single X:
+
+| Input                     | Result                        |
+|---------------------------|-------------------------------|
+| end_date=                 | end_date=-0070                |
+| **end_date:edtf=-7X**     | end_date:edtf=-0079/-0070     |
 
 **Why both padded and unpadded fire the same autofix (v0.7.3):** The leading zero on `-07XX` is just formatting, not semantic — the EDTF parser would accept `-0700/-0799` either way, and an editor typing `-7XX` almost certainly means the same as `-07XX`. The 4250 trigger pattern was originally limited to 2-3 digit body (`-NNX`, `-NNNX`, `-NNXX`, `-NNNXX`) which left short unpadded forms falling through to the generic 4228 unfixable. Broadened in v0.7.3 to also accept 1-digit body (`-NX`, `-NXX`).
 
@@ -643,12 +762,19 @@ Suggested manual fix: replace with a valid EDTF expression.
 
 **Description:** _{key}={value}: ? is not a valid EDTF interval endpoint. Strip ? to get open-ended form {fixed}_
 
-**Examples:**  
-Before: `start_date:edtf=?/1900` (no base)  
-After autofix: `start_date=1900`, `start_date:edtf=/1900`
+**Examples:**
 
-Before: `end_date=1850`, `end_date:edtf=1850/?`  
-After autofix: `end_date=1850`, `end_date:edtf=1850/`
+No base:
+
+| Input                       | Result                |
+|-----------------------------|-----------------------|
+| start_date=                 | start_date=1900       |
+| **start_date:edtf=?/1900**  | start_date:edtf=/1900 |
+
+| Input                       | Result                |
+|-----------------------------|-----------------------|
+| end_date=1850               | end_date=1850         |
+| **end_date:edtf=1850/?**    | end_date:edtf=1850/   |
 
 ---
 
@@ -664,9 +790,12 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 
 **Description:** _{key}={value}: interval spans {N} years._
 
-**Example:**  
-`start_date:edtf=1800/1950` → spans 150 years → WARNING fires.  
-`start_date:edtf=1850/1950` → spans 100 years → does not fire (threshold is strictly > 100).
+**Example:**
+
+| Input                            | Result                                                                                |
+|----------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=1800/1950**    | (no autofix; spans 150 years — WARNING fires)                                         |
+| **start_date:edtf=1850/1950**    | (no warning; spans 100 years, threshold is strictly > 100)                            |
 
 ---
 
@@ -683,7 +812,10 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 **Description:** _{key}={value}: interval start year ({start}) is later than end year ({end}). The validator can't tell which side you meant; fix by swapping the bounds or correcting whichever is wrong._
 
 **Example:**
-`start_date:edtf=2000/1900` → fires unfixable.
+
+| Input                          | Result                                                                                |
+|--------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=2000/1900**  | (no autofix; swap the bounds or correct whichever is wrong)                           |
 
 **Why this matters:** Without 4255, rule 4211 (the only rule that previously fired on a backwards interval) would silently derive `start_date=1900` from `:edtf=2000/1900` by extracting the upper bound — freezing the bad state in place. 4255 fires *before* that autofix would otherwise mask the problem.
 
@@ -724,20 +856,33 @@ After autofix: `end_date=1850`, `end_date:edtf=1850/`
 **4211 fix:** Derives and sets `*_date` from `*_date:edtf`. If `*_date:edtf` would equal the derived `*_date` (i.e. it carries no info beyond the base — no range, no qualifier), `*_date:edtf` is also deleted so the base alone holds the value.  
 **4211 description:** _{key}:edtf={edtf} implies {key}={derived}._
 
-**4210 example:**  
-Trigger: `start_date=2020`, `start_date:edtf=1900/1950` (base year is well outside the EDTF range).  
-Suggested manual fix: pick the authoritative value and update the other to match.
+**4210 example:** (base year is well outside the EDTF range)
 
-**4210 non-example (silent):**  
-`start_date=1890-03-15`, `start_date:edtf=1890~` — base is more precise than `:edtf` and falls within the implied bounds. Expected state, no warning.
+| Input                            | Result                                                                                |
+|----------------------------------|---------------------------------------------------------------------------------------|
+| **start_date=2020**              | (no autofix; pick the authoritative value and update the other to match)              |
+| **start_date:edtf=1900/1950**    | (no autofix; manual review)                                                           |
 
-**4211 example:**  
-Before: `start_date:edtf=1900/1950`, no `start_date`  
-After autofix: `start_date=1900` derived as the lower bound. (`:edtf` is preserved because the range carries info beyond the base.)
+**4210 non-example (silent):** base is more precise than `:edtf` and falls within the implied bounds. Expected state, no warning.
 
-**4211 example — redundant `:edtf` cleared:**  
-Before: `start_date:edtf=1850`, no `start_date`  
-After autofix: `start_date=1850`, `start_date:edtf` deleted.
+| Input                       | Result        |
+|-----------------------------|---------------|
+| start_date=1890-03-15       | (no warning)  |
+| start_date:edtf=1890~       | (no warning)  |
+
+**4211 example:** `:edtf` is preserved because the range carries info beyond the base.
+
+| Input                          | Result                       |
+|--------------------------------|------------------------------|
+| start_date=                    | start_date=1900              |
+| **start_date:edtf=1900/1950**  | start_date:edtf=1900/1950    |
+
+**4211 example — redundant `:edtf` cleared:**
+
+| Input                     | Result            |
+|---------------------------|-------------------|
+| start_date=               | start_date=1850   |
+| **start_date:edtf=1850**  | start_date:edtf=  |
 
 ---
 
@@ -758,21 +903,33 @@ After autofix: `start_date=1850`, `start_date:edtf` deleted.
 **4207 trigger:** `*_date:raw` is set but `*_date:edtf` and `*_date` are absent or unparseable.  
 **4207 fix:** None.
 
-**4206 example:**  
-Trigger: `start_date=early 1100` (decade-early), `start_date:raw=early C12` (century-early). Both human-authored, semantically different.  
-Suggested manual fix: decide which is canonical and correct the other; `:raw` stays.
+**4206 example:** Both human-authored, semantically different (decade-early vs. century-early).
 
-**4207 example:**  
-Trigger: `start_date:raw=garbage`, no valid `start_date` or `:edtf`.  
-Suggested manual fix: hand-correct the date based on whatever source produced the :raw value.
+| Input                          | Result                                                                                |
+|--------------------------------|---------------------------------------------------------------------------------------|
+| **start_date=early 1100**      | (no autofix; decide which is canonical and correct the other; `:raw` stays)           |
+| **start_date:raw=early C12**   | (no autofix; manual review)                                                           |
+
+**4207 example:**
+
+| Input                          | Result                                                                                |
+|--------------------------------|---------------------------------------------------------------------------------------|
+| **start_date:raw=garbage**     | (no autofix; hand-correct the date based on whatever source produced the :raw value)  |
+| start_date=                    | (no autofix)                                                                          |
+| start_date:edtf=               | (no autofix)                                                                          |
 
 **4242 trigger:** A normalization autofix would write `*_date:raw` with a value different from what the user already has there. Currently fires for the decade/century rule (4203/4204) and the `end_date=present` rule (4221) when their respective autofix path's intended `:raw` write would clobber a hand-authored or pre-existing machine-generated value.  
 **4242 fix:** None. Manual review required: delete or merge the existing `:raw` before re-running the validator.  
 **4242 description:** _{key}={value}: would normalize to {key}={newBase}, {key}:edtf={newEdtf}, {key}:raw={proposedRaw}, but {key}:raw={existingRaw} already holds a different value. Manual review needed: delete or merge the existing :raw before re-running the validator._
 
-**4242 example:**  
-Trigger: `start_date=1800s` AND `start_date:raw=around 1800 (hand-authored)`.  
-Suggested manual fix: decide whether the user's hand annotation is canonical (delete or pre-edit `:raw` to match what the autofix would produce, then re-run) or whether the user wanted the normalized form (delete the hand annotation and accept the autofix). Same shape applies to `end_date=present` overwriting a pre-existing `end_date:raw`.
+**4242 example:**
+
+| Input                                              | Result                                                                                |
+|----------------------------------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1800s**                               | (no autofix; manual review)                                                           |
+| **start_date:raw=around 1800 (hand-authored)**     | (no autofix; decide whether the hand annotation is canonical (pre-edit `:raw` to match the proposed autofix value, then re-run) or whether the normalized form is wanted (delete the hand annotation and accept the autofix)) |
+
+Same shape applies to `end_date=present` overwriting a pre-existing `end_date:raw`.
 
 ---
 
@@ -789,13 +946,20 @@ Rules B and C also relate to the `\<end_date>` pattern but live with the equalit
 
 **4226 trigger (Rule D1):** `start_date:edtf` starts with `\` and the remainder, after stripping the backslash, is a *prefix* of `end_date` but not the exact value. The implication: the bot's `\<end_date>` pattern was truncated by a subsequent human edit, leaving a partial match.
 
-**4223 example:**  
-Before: `start_date=1900`, `start_date:edtf=\1900`, `end_date=1900` (last editor `tagcleanupbot`)  
-After autofix: `start_date` and `start_date:edtf` deleted (bot-induced rollback).
+**4223 example:** (last editor `tagcleanupbot`; bot-induced rollback)
 
-**4226 example:**  
-Trigger: `start_date:edtf=\190`, `end_date=1900` — the backslash remainder `190` is a prefix of `1900` but not equal.  
-Suggested manual fix: confirm the intended start_date manually; the bot pattern is truncated and ambiguous.
+| Input                       | Result            |
+|-----------------------------|-------------------|
+| **start_date=1900**         | start_date=       |
+| **start_date:edtf=\1900**   | start_date:edtf=  |
+| end_date=1900               | end_date=1900     |
+
+**4226 example:** the backslash remainder `190` is a prefix of `1900` but not equal.
+
+| Input                       | Result                                                                                |
+|-----------------------------|---------------------------------------------------------------------------------------|
+| **start_date:edtf=\190**    | (no autofix; confirm the intended start_date manually; the bot pattern is truncated and ambiguous) |
+| end_date=1900               | end_date=1900                                                                         |
 
 ---
 
@@ -814,13 +978,19 @@ Suggested manual fix: confirm the intended start_date manually; the bot pattern 
 **4240 fix:** None. Manual review required: keep, merge, or replace the existing note before re-running the validator.  
 **4240 description:** _{key}={julian}: would convert to {gregorian} (Gregorian) and add a calendar-conversion :note, but {noteKey}={existingNote} already holds a value. Manual review needed: keep, merge, or replace the existing note before re-running the validator._
 
-**4233 example:**  
-Before: `start_date=j:1582-10-04` (Julian calendar), no `start_date:note`.  
-After autofix: `start_date=1582-10-14` (Gregorian equivalent), `start_date:note=Converted from j:1582-10-04`.
+**4233 example:** Julian calendar → Gregorian equivalent.
 
-**4240 example:**  
-Trigger: `start_date=j:1582-10-04` AND `start_date:note=From archival entry, see ledger p.42`.  
-Suggested manual fix: decide whether to merge the calendar-conversion note with the existing archival note, replace one with the other, or keep the original and switch to a manually-converted Gregorian date.
+| Input                          | Result                                          |
+|--------------------------------|-------------------------------------------------|
+| **start_date=j:1582-10-04**    | start_date=1582-10-14                           |
+| start_date:note=               | start_date:note=Converted from j:1582-10-04     |
+
+**4240 example:**
+
+| Input                                                       | Result                                                                                |
+|-------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| **start_date=j:1582-10-04**                                 | (no autofix; manual review)                                                           |
+| **start_date:note=From archival entry, see ledger p.42**    | (no autofix; decide whether to merge the calendar-conversion note with the existing archival note, replace one with the other, or keep the original and switch to a manually-converted Gregorian date) |
 
 ---
 
@@ -855,9 +1025,15 @@ The same autofix shape applies to all pairs: collapse to min/max bounds, preserv
 **4245 fix:** Collapses `start_date` to the minimum of the start values and `end_date` to the maximum of the end values; preserves the original semicolon strings in `start_date:raw` and `end_date:raw`; adds `fixme=split into multiple features` so the editor remembers to do the actual split manually after accepting the fix.  
 **4245 description:** _start_date={starts} and end_date={ends}: looks like {N} features merged into one. The autofix collapses to start_date={min} and end_date={max} (min/max), preserves the originals in start_date:raw={starts} and end_date:raw={ends}, and adds fixme=split into multiple features so the editor remembers the manual follow-up._
 
-**4245 example:**  
-Before: `start_date=1850;1900;1950`, `end_date=1899;1949;2000`.  
-After autofix: `start_date=1850`, `end_date=2000`, `start_date:raw=1850;1900;1950`, `end_date:raw=1899;1949;2000`, `fixme=split into multiple features`.
+**4245 example:**
+
+| Input                              | Result                                       |
+|------------------------------------|----------------------------------------------|
+| **start_date=1850;1900;1950**      | start_date=1850                              |
+| **end_date=1899;1949;2000**        | end_date=2000                                |
+| start_date:raw=                    | start_date:raw=1850;1900;1950                |
+| end_date:raw=                      | end_date:raw=1899;1949;2000                  |
+| fixme=                             | fixme=split into multiple features           |
 
 **4245 unfixable variant:** When the autofix would clobber an existing `start_date:raw` or `end_date:raw` (the same shape protection used by 4242), the warning fires under its unfixable title (`; unfixable, please review`) and the description explains the `:raw` conflict. The editor must clear or merge the conflicting `:raw` before re-running.
 
@@ -877,17 +1053,32 @@ These six rules apply only to `type=chronology` relations. Comparisons use only 
 
 **4237 (WARNING) trigger:** Any member is missing a strictly-parseable `start_date`, OR any non-youngest member is missing a strictly-parseable `end_date`. The youngest member (highest parseable `start_date`, ties broken by latest `end_date` then by absent `end_date`) may legitimately lack `end_date` — it is the still-current successor.
 
-**4234 example:**  
-Parent chronology has `start_date=1800`, `end_date=2000`. Member relation has `start_date=1750`. Fires: member's start before parent's start.
+**4234 example:** Parent chronology has `start_date=1800`, `end_date=2000`. Member relation has `start_date=1750`. Fires: member's start before parent's start.
 
-**4235 example:**  
-Member A: `start_date=1800`, `end_date=1850`. Member B: `start_date=1840`, `end_date=1900`. Fires: ranges overlap from 1840 to 1850.
+| Input (on member)        | Result                                                                                |
+|--------------------------|---------------------------------------------------------------------------------------|
+| **start_date=1750**      | (autofix recomputes parent chronology dates from member envelope; parent's start_date becomes 1750) |
 
-**4236 example:**  
-Sorted members: A `1800–1850`, B `1855–1900`. Five missing years between A's end and B's start. Fires.
+**4235 example:** Member A: `start_date=1800`, `end_date=1850`. Member B: `start_date=1840`, `end_date=1900`. Ranges overlap from 1840 to 1850.
 
-**4237 example:**  
-Chronology with three members. The youngest (start=1980) has no `end_date` (still in use — allowed). Another member has `start_date=1900` but no `end_date`. Fires for the second member.
+| Input (Member A)        | Input (Member B)        | Result                                                                                |
+|-------------------------|-------------------------|---------------------------------------------------------------------------------------|
+| start_date=1800         | **start_date=1840**     | (no autofix; ranges overlap from 1840 to 1850; manual review)                         |
+| **end_date=1850**       | end_date=1900           | (no autofix)                                                                          |
+
+**4236 example:** Sorted members A `1800–1850`, B `1855–1900`. Five missing years between A's end and B's start.
+
+| Input (Member A)        | Input (Member B)        | Result                                                                                |
+|-------------------------|-------------------------|---------------------------------------------------------------------------------------|
+| start_date=1800         | **start_date=1855**     | (no autofix; 5-year gap between A's end and B's start; manual review)                 |
+| **end_date=1850**       | end_date=1900           | (no autofix)                                                                          |
+
+**4237 example:** Chronology with three members. The youngest (start=1980) has no `end_date` (still in use — allowed). Another member has `start_date=1900` but no `end_date`. Fires for the second member.
+
+| Input (on member)        | Result                                                                                |
+|--------------------------|---------------------------------------------------------------------------------------|
+| start_date=1900          | (no autofix; non-youngest member is missing `end_date`; manual review)                |
+| **end_date=**            | (no autofix; add `end_date` or mark this as the youngest member)                      |
 
 **4238 (ERROR) trigger:** A chronology member's non-date tags (everything except keys matching the OHM `_date` family — so `start_date`, `end_date`, `*_date:edtf`, `*_date:raw`, `*_date:source`, `*_date:note`, etc. are excluded) are exactly equal to its predecessor's, **and** the two have identical geometry. Predecessor is the previous member after sorting by `start_date`. Applies to all member types — nodes, ways, and relations.
 
@@ -895,16 +1086,24 @@ Geometry comparison is coordinate-based and recursive: two nodes match only if t
 
 The implication: if the entity didn't change in any meaningful way between successive time periods — neither tags nor shape — it shouldn't be split into separate chronology members.
 
-**4238 example:**  
-Member A: `name=Town Hall`, `building=yes`, `wikidata=Q12345`, `start_date=1850`, `end_date=1900`.  
-Member B: `name=Town Hall`, `building=yes`, `wikidata=Q12345`, `start_date=1900`, `end_date=1950`.  
-Same name, building tag, and wikidata QID — the only differences are date fields. Fires.
+**4238 example:** Same name, building tag, and wikidata QID — only the date fields differ. Fires.
+
+| Input (Member A)            | Input (Member B)            | Result                                                                                |
+|-----------------------------|-----------------------------|---------------------------------------------------------------------------------------|
+| **name=Town Hall**          | **name=Town Hall**          | (no autofix; remove the duplicate member or alter its non-date tags / geometry)       |
+| **building=yes**            | **building=yes**            | (no autofix; manual review)                                                           |
+| **wikidata=Q12345**         | **wikidata=Q12345**         | (no autofix; manual review)                                                           |
+| start_date=1850             | start_date=1900             | (date-family keys are excluded from the comparison)                                   |
+| end_date=1900               | end_date=1950               | (date-family keys are excluded from the comparison)                                   |
 
 **4239 (WARNING) trigger:** A chronology member has neither a `start_date` tag nor an `end_date` tag (both completely absent — not just unparseable). Fires once per such member. Takes precedence over 4237 to avoid noisy double-reporting on members with no date info at all (the typical case being a member primitive that is referenced by the relation but hasn't been downloaded into the dataset yet — JOSM exposes it as an incomplete proxy with no tags). Members with at least one of the two date tags present, even if unparseable, still go through 4237.
 
-**4239 example:**  
-Trigger: chronology relation references member ways that haven't been downloaded; each appears as an incomplete proxy with no tags. Fires once per missing member.  
-Suggested manual fix: download the missing members (Ctrl+Alt+Down on the chronology relation) and re-run the validator.
+**4239 example:** chronology relation references member ways that haven't been downloaded; each appears as an incomplete proxy with no tags. Fires once per missing member.
+
+| Input (on member)   | Result                                                                                |
+|---------------------|---------------------------------------------------------------------------------------|
+| **start_date=**     | (no autofix; download the missing members (Ctrl+Alt+Down on the chronology relation) and re-run the validator) |
+| **end_date=**       | (no autofix; manual review)                                                           |
 
 ---
 
@@ -946,42 +1145,70 @@ table at the bottom).
 
 Detection order: parens-with-clean-shape, then inline-clean-range, then parens-with-year-like-but-not-clean. At most one warning fires per name value.
 
-**4300 example (fires):**  
-Trigger: way with `name:en=Empire State Building`, `name:fr=Empire State Building`, no plain `name`.  
-Suggested manual fix: add `name=Empire State Building` (or whichever language is canonical for the location).
+**4300 example (fires):** way with name-family keys but no plain `name`.
 
-**4300 example (does not fire):**  
-A relation with `type=route`, `route=bus`, `name:en=Pacific Coast Highway`, `ref=1`. Routes can rely on `ref` for canonical identity.
+| Input                              | Result                                                                                |
+|------------------------------------|---------------------------------------------------------------------------------------|
+| **name:en=Empire State Building**  | (no autofix; add `name=Empire State Building` (or whichever language is canonical))   |
+| **name:fr=Empire State Building**  | (no autofix; manual review)                                                           |
+| name=                              | (no autofix)                                                                          |
 
-**4301 example (fixable, parens):**  
-Before: `name=Wild West (1880-1922)`  
-After autofix: `name=Wild West`. Encode dates in `start_date` / `end_date` instead.
+**4300 example (does not fire):** relation with `type=route`. Routes can rely on `ref` for canonical identity.
 
-**4301 example (fixable, parens with open-end):**  
-Before: `name=Wild West (1950-)`  
-After autofix: `name=Wild West`.
+| Input                              | Result        |
+|------------------------------------|---------------|
+| type=route                         | (no warning)  |
+| route=bus                          | (no warning)  |
+| name:en=Pacific Coast Highway      | (no warning)  |
+| ref=1                              | (no warning)  |
 
-**4301 example (fixable, parens with circa prefix):**  
-Before: `name=Wild West (c. 1900)`  
-After autofix: `name=Wild West`.
+**4301 example (fixable, parens):** Encode dates in `start_date` / `end_date` instead.
 
-**4301 example (fixable, inline two-bound range):**  
-Before: `name=Wild West 1942-04-1948-09`  
-After autofix: `name=Wild West`. Move the date range to `start_date=1942-04`, `end_date=1948-09`.
+| Input                            | Result            |
+|----------------------------------|-------------------|
+| **name=Wild West (1880-1922)**   | name=Wild West    |
 
-**4301 example (unfixable, parens with mixed content):**  
-Trigger: `name=Wild West (Springfield 1950)`. The parens have a year-like token but also non-date text, so the autofix can't safely strip the whole parens; manual review required.
+**4301 example (fixable, parens with open-end):**
 
-**4301 example (does not fire):**  
-`name=City Park (Springfield)` — parenthesised disambiguator with no year-like content; left alone.
+| Input                      | Result            |
+|----------------------------|-------------------|
+| **name=Wild West (1950-)** | name=Wild West    |
 
-`name=Building 1950` — single 4-digit number inline; could be a year but also a building / model / route number, so the rule does not fire.
+**4301 example (fixable, parens with circa prefix):**
+
+| Input                        | Result            |
+|------------------------------|-------------------|
+| **name=Wild West (c. 1900)** | name=Wild West    |
+
+**4301 example (fixable, inline two-bound range):** Move the date range to `start_date=1942-04`, `end_date=1948-09`.
+
+| Input                                | Result            |
+|--------------------------------------|-------------------|
+| **name=Wild West 1942-04-1948-09**   | name=Wild West    |
+
+**4301 example (unfixable, parens with mixed content):** parens have a year-like token but also non-date text, so the autofix can't safely strip the whole parens.
+
+| Input                                  | Result                                                                                |
+|----------------------------------------|---------------------------------------------------------------------------------------|
+| **name=Wild West (Springfield 1950)**  | (no autofix; manual review required)                                                  |
+
+**4301 example (does not fire):** parenthesised disambiguator with no year-like content; single 4-digit number inline could be a year but also a building / model / route number.
+
+| Input                          | Result        |
+|--------------------------------|---------------|
+| name=City Park (Springfield)   | (no warning)  |
+| name=Building 1950             | (no warning)  |
 
 **4320 trigger:** Any name-family value contains the substring "historic" (case-insensitive). Matches `Historic`, `historical`, `Prehistoric`, `Ahistorical`, etc. — any historicizing frame, however constructed. The reasoning: "historic" framing reflects a present-day vantage; in OHM's time-aware data model, the entity at the time it existed wouldn't have called itself "historic". The Forum in Rome was just a Forum, not "historic", in 50 BCE.  
 **4320 description:** _{key}={value}: "historic" in a name often reflects a present-day perspective. In OHM, confirm the entity was actually called this at the time it existed._
 
-**4320 example (fires):**  
-`name=Historic Town Hall`, `name=Historical Society`, `name=Prehistoric Cave` — all trip the rule. Confirm whether the actual entity at its time was so named, or whether the qualifier is being added retrospectively.
+**4320 example (fires):** Confirm whether the actual entity at its time was so named, or whether the qualifier is being added retrospectively.
+
+| Input                          | Result                                                                                |
+|--------------------------------|---------------------------------------------------------------------------------------|
+| **name=Historic Town Hall**    | (no autofix; manual review)                                                           |
+| **name=Historical Society**    | (no autofix; manual review)                                                           |
+| **name=Prehistoric Cave**      | (no autofix; manual review)                                                           |
 
 ---
 
@@ -1003,20 +1230,37 @@ Trigger: `name=Wild West (Springfield 1950)`. The parens have a year-like token 
 **4303 trigger:** Named feature has no `source*` tag of any kind. As of v0.4.0, `type=chronology` relations are exempt — they're aggregator wrappers around member relations (each of which carries its own provenance), so requiring a top-level source on the chronology itself adds noise without signal.  
 **4303 description:** _other mappers are lost without it._
 
-**4302 example (no autofix):**  
-Trigger: `name=Eiffel Tower`, `tourism=attraction`, no `wikidata`, no `wikipedia`.  
-Suggested manual fix: add `wikidata=Q243`.
+**4302 example (no autofix):**
 
-**4302 example (with autofix):**  
-Trigger: `name=Eiffel Tower`, `wikipedia=en:Eiffel Tower`, no `wikidata`.  
-Click Fix → plugin queries `https://www.wikidata.org/w/api.php?action=wbgetentities&sites=enwiki&titles=Eiffel%20Tower&props=info&format=json`, extracts `Q243`, adds `wikidata=Q243`.
+| Input                       | Result                                                                                |
+|-----------------------------|---------------------------------------------------------------------------------------|
+| name=Eiffel Tower           | (no autofix)                                                                          |
+| tourism=attraction          | (no autofix)                                                                          |
+| **wikidata=**               | (no autofix; add `wikidata=Q243`)                                                     |
+| wikipedia=                  | (no autofix)                                                                          |
 
-**4302 example (does not fire):**  
-`name=Ordinary Building`, `building=residential`, no `wikidata`. No notability signal; rule is silent.
+**4302 example (with autofix):** Click Fix → plugin queries the Wikidata API, extracts `Q243`, adds `wikidata=Q243`.
 
-**4303 example:**  
-Trigger: `name=Old Mill` with no `source*` tags.  
-Suggested manual fix: add `source=https://www.usgs.gov/...` or `source:name=USGS topo 1925`.
+| Input                            | Result               |
+|----------------------------------|----------------------|
+| name=Eiffel Tower                | name=Eiffel Tower    |
+| wikipedia=en:Eiffel Tower        | wikipedia=en:Eiffel Tower |
+| **wikidata=**                    | wikidata=Q243        |
+
+**4302 example (does not fire):** No notability signal; rule is silent.
+
+| Input                       | Result        |
+|-----------------------------|---------------|
+| name=Ordinary Building      | (no warning)  |
+| building=residential        | (no warning)  |
+| wikidata=                   | (no warning)  |
+
+**4303 example:**
+
+| Input                       | Result                                                                                |
+|-----------------------------|---------------------------------------------------------------------------------------|
+| name=Old Mill               | (no autofix)                                                                          |
+| **source=**                 | (no autofix; add `source=https://www.usgs.gov/...` or `source:name=USGS topo 1925`)   |
 
 ---
 
@@ -1030,9 +1274,12 @@ Suggested manual fix: add `source=https://www.usgs.gov/...` or `source:name=USGS
 **4304/4305 trigger:** `source` (or numbered variant) is set to `wikipedia` or `wikidata` — not valid sources for geometry.  
 **Description:** _{key}={value}: Wikipedia/Wikidata is not a reasonable source for geometry claims. Please link to an actual map, image, or survey._
 
-**4304/4305 example:**  
-Trigger: `source=wikipedia` (or `source=wikidata`).  
-Suggested manual fix: replace with a primary source — a map URL, aerial imagery, or survey reference. Use `:source` keys (e.g. `name:source=wikipedia`) for *attribute* sourcing, not geometry.
+**4304/4305 example:**
+
+| Input                  | Result                                                                                |
+|------------------------|---------------------------------------------------------------------------------------|
+| **source=wikipedia**   | (no autofix; replace with a primary source — a map URL, aerial imagery, or survey reference. Use `:source` keys (e.g. `name:source=wikipedia`) for *attribute* sourcing, not geometry) |
+| **source=wikidata**    | (no autofix; same guidance as above)                                                  |
 
 ---
 
@@ -1062,35 +1309,64 @@ Suggested manual fix: replace with a primary source — a map URL, aerial imager
 **4325 description (fixable):** _{key}={value} is not a URL. Move to {target}?_  
 **4325 description (unfixable):** _{key}={value} is not a URL but {source}, {source:name}, and {source:note} all hold values. Manual review needed._
 
-**4307 example (source):**  
-Before: `source=usgs.gov/maps/topo1925`  
-After autofix: `source=https://usgs.gov/maps/topo1925`.
+**4307 example (source):**
 
-**4307 example (source:url):**  
-Before: `source:url=example.org/secondary`  
-After autofix: `source:url=https://example.org/secondary`.
+| Input                              | Result                                  |
+|------------------------------------|-----------------------------------------|
+| **source=usgs.gov/maps/topo1925**  | source=https://usgs.gov/maps/topo1925   |
 
-**4324 example (autofix):**  
-Before: `source:name=https://example.org/scan`, `source:url=` (blank)  
-After autofix: `source:name=` (blank), `source:url=https://example.org/scan`.
+**4307 example (source:url):**
 
-**4324 example (unfixable):**  
-Trigger: `source:1:name=https://example.org/foo`, `source:1:url=https://example.org/different`. Two different URLs occupy the URL slot and the name slot — manual review required.
+| Input                                  | Result                                       |
+|----------------------------------------|----------------------------------------------|
+| **source:url=example.org/secondary**   | source:url=https://example.org/secondary     |
 
-**4325 example (fallback to source):**  
-Before: `source=` (blank), `source:url=Sketch in archive box 12`  
-After autofix: `source=Sketch in archive box 12`, `source:url=` (blank).
+**4324 example (autofix):**
 
-**4325 example (fallback to source:name):**  
-Before: `source=https://example.org/primary`, `source:name=` (blank), `source:url=Field notes 1923`  
-After autofix: `source:name=Field notes 1923`, `source:url=` (blank).
+| Input                                       | Result                                       |
+|---------------------------------------------|----------------------------------------------|
+| **source:name=https://example.org/scan**    | source:name=                                 |
+| source:url=                                 | source:url=https://example.org/scan          |
 
-**4325 example (fallback to source:note):**  
-Before: `source=https://example.org/primary`, `source:name=Existing label`, `source:note=` (blank), `source:url=Note about provenance`  
-After autofix: `source:note=Note about provenance`, `source:url=` (blank).
+**4324 example (unfixable):** Two different URLs occupy the URL slot and the name slot.
 
-**4325 example (unfixable):**  
-Trigger: `source`, `source:name`, and `source:note` all hold values, and `source:url` holds non-URL text. No empty fallback slot — manual review.
+| Input                                              | Result                                                                                |
+|----------------------------------------------------|---------------------------------------------------------------------------------------|
+| **source:1:name=https://example.org/foo**          | (no autofix; manual review required)                                                  |
+| source:1:url=https://example.org/different         | (no autofix; manual review)                                                           |
+
+**4325 example (fallback to source):**
+
+| Input                                         | Result                                       |
+|-----------------------------------------------|----------------------------------------------|
+| source=                                       | source=Sketch in archive box 12              |
+| **source:url=Sketch in archive box 12**       | source:url=                                  |
+
+**4325 example (fallback to source:name):**
+
+| Input                                  | Result                                  |
+|----------------------------------------|-----------------------------------------|
+| source=https://example.org/primary     | source=https://example.org/primary      |
+| source:name=                           | source:name=Field notes 1923            |
+| **source:url=Field notes 1923**        | source:url=                             |
+
+**4325 example (fallback to source:note):**
+
+| Input                                  | Result                                  |
+|----------------------------------------|-----------------------------------------|
+| source=https://example.org/primary     | source=https://example.org/primary      |
+| source:name=Existing label             | source:name=Existing label              |
+| source:note=                           | source:note=Note about provenance       |
+| **source:url=Note about provenance**   | source:url=                             |
+
+**4325 example (unfixable):** No empty fallback slot.
+
+| Input                                  | Result                                                                                |
+|----------------------------------------|---------------------------------------------------------------------------------------|
+| source=https://example.org/primary     | (no autofix; manual review)                                                           |
+| source:name=Existing label             | (no autofix; manual review)                                                           |
+| source:note=Existing note              | (no autofix; manual review)                                                           |
+| **source:url=Non-URL text**            | (no autofix; manual review required)                                                  |
 
 ---
 
@@ -1106,9 +1382,13 @@ The pair iteration is generalized to every `source[:N]?:url` key on a primitive 
 **4312 fix:** Moves the `:url` value to `source:M+1` where M is the highest existing `source:N` index on the primitive (the shared enumeration convention; see Semicolon-separated rules below).  
 **4312 description:** _{companion}={url1} and {url_key}={url2} are different URLs. Move {url_key} to the next numbered source key?_
 
-**4312 example:**  
-Before: `source=https://a.example/map`, `source:url=https://b.example/map`  
-After autofix: `source=https://a.example/map` (unchanged), `source:1=https://b.example/map`, `source:url` deleted.
+**4312 example:**
+
+| Input                                  | Result                                  |
+|----------------------------------------|-----------------------------------------|
+| source=https://a.example/map           | source=https://a.example/map            |
+| **source:url=https://b.example/map**   | source:url=                             |
+| source:1=                              | source:1=https://b.example/map          |
 
 **Note on retired companion rules:** Under the v0.5 contract, identical URLs in both slots (formerly 4311) and text-in-`source` + URL-in-`source:url` (formerly 4313) and bare `source:url` with empty `source` (formerly 4312 case 1) are all valid layouts and no longer warned. See Retired codes table.
 
@@ -1144,25 +1424,41 @@ After autofix: `source=https://a.example/map` (unchanged), `source:1=https://b.e
 **4317 fix:** None — too ambiguous to autofix.  
 **4317 description:** _{key}={value}: 3 or more items mixing URLs and text. Manual review needed — split into source, source:N, source:url, source:N:url as appropriate._
 
-**4314 example (fixable):**  
-Before: `source=https://usgs.gov/topo1925; USGS topo 1925`  
-After autofix: `source=USGS topo 1925`, `source:url=https://usgs.gov/topo1925`.
+**4314 example (fixable):**
 
-**4315 example:**  
-Before: `source=https://a.example; https://b.example`  
-After autofix: `source=https://a.example`, `source:1=https://b.example`.
+| Input                                                  | Result                                  |
+|--------------------------------------------------------|-----------------------------------------|
+| **source=https://usgs.gov/topo1925; USGS topo 1925**   | source=USGS topo 1925                   |
+| source:url=                                            | source:url=https://usgs.gov/topo1925    |
 
-**4315 example (with existing source:1):**  
-Before: `source=https://a.example;https://b.example;https://c.example`, `source:1=https://existing.example/preserved`  
-After autofix: `source` cleared; `source:1=https://existing.example/preserved` (unchanged), `source:2=https://a.example`, `source:3=https://b.example`, `source:4=https://c.example`.
+**4315 example:**
 
-**4316 example (warn only):**  
-Trigger: `source=Archive folder 12; Field notes 1923`. Two semicolon-separated text strings.  
-Suggested manual fix: if these are two distinct sources, split into `source=Archive folder 12`, `source:1=Field notes 1923`. If the semicolon is punctuation inside a single citation, leave alone.
+| Input                                          | Result                          |
+|------------------------------------------------|---------------------------------|
+| **source=https://a.example; https://b.example** | source=https://a.example       |
+| source:1=                                      | source:1=https://b.example      |
 
-**4317 example:**  
-Trigger: `source=https://a.example; USGS topo; https://b.example` (mixed types, 3+ items).  
-Suggested manual fix: split by hand into `source`, `source:1`, `source:url`, `source:N:url` slots as appropriate.
+**4315 example (with existing source:1):**
+
+| Input                                                                | Result                                              |
+|----------------------------------------------------------------------|-----------------------------------------------------|
+| **source=https://a.example;https://b.example;https://c.example**     | source=                                             |
+| source:1=https://existing.example/preserved                          | source:1=https://existing.example/preserved         |
+| source:2=                                                            | source:2=https://a.example                          |
+| source:3=                                                            | source:3=https://b.example                          |
+| source:4=                                                            | source:4=https://c.example                          |
+
+**4316 example (warn only):** two semicolon-separated text strings.
+
+| Input                                            | Result                                                                                |
+|--------------------------------------------------|---------------------------------------------------------------------------------------|
+| **source=Archive folder 12; Field notes 1923**   | (no autofix; if two distinct sources, split into `source=Archive folder 12`, `source:1=Field notes 1923`; if the semicolon is punctuation inside a single citation, leave alone) |
+
+**4317 example:** mixed types, 3+ items.
+
+| Input                                                              | Result                                                                                |
+|--------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| **source=https://a.example; USGS topo; https://b.example**         | (no autofix; split by hand into `source`, `source:1`, `source:url`, `source:N:url` slots as appropriate) |
 
 ---
 
@@ -1185,17 +1481,30 @@ Suggested manual fix: split by hand into `source`, `source:1`, `source:url`, `so
 **4309 unfixable trigger:** A `*:source` tag references Wikidata and either (a) multiple `wikipedia*` tags exist (ambiguous which is canonical) or (b) no `wikipedia=*` exists at all.  
 **4309 unfixable description:** _{key}={value}: please add an appropriate 'wikidata' tag._
 
-**4308 example:**  
-Trigger: `name:source=wikipedia` but no `wikipedia=*` or `wikidata=*` on the feature.  
-Suggested manual fix: add `wikipedia=en:Some Article Title` (preferred — the source mentioned Wikipedia) or `wikidata=Q…`.
+**4308 example:**
 
-**4309 example (fixable):**  
-Trigger: `start_date:source=wikidata` with `wikipedia=en:Eiffel Tower`, no `wikidata=*`.  
-Click Fix → plugin queries Wikidata API, extracts `Q243`, writes `wikidata=Q243`.
+| Input                          | Result                                                                                |
+|--------------------------------|---------------------------------------------------------------------------------------|
+| **name:source=wikipedia**      | (no autofix; add `wikipedia=en:Some Article Title` (preferred — the source mentioned Wikipedia) or `wikidata=Q…`) |
+| wikipedia=                     | (no autofix)                                                                          |
+| wikidata=                      | (no autofix)                                                                          |
 
-**4309 example (unfixable, multiple wikipedia):**  
-Trigger: `start_date:source=wikidata` with `wikipedia:en=Eiffel Tower` AND `wikipedia:fr=Tour Eiffel`, no `wikidata=*`.  
-Suggested manual fix: add `wikidata=Q243` (or whichever QID is canonical).
+**4309 example (fixable):** Click Fix → plugin queries Wikidata API, extracts `Q243`, writes `wikidata=Q243`.
+
+| Input                              | Result                       |
+|------------------------------------|------------------------------|
+| start_date:source=wikidata         | start_date:source=wikidata   |
+| wikipedia=en:Eiffel Tower          | wikipedia=en:Eiffel Tower    |
+| **wikidata=**                      | wikidata=Q243                |
+
+**4309 example (unfixable, multiple wikipedia):**
+
+| Input                              | Result                                                                                |
+|------------------------------------|---------------------------------------------------------------------------------------|
+| start_date:source=wikidata         | (no autofix)                                                                          |
+| wikipedia:en=Eiffel Tower          | (no autofix)                                                                          |
+| wikipedia:fr=Tour Eiffel           | (no autofix)                                                                          |
+| **wikidata=**                      | (no autofix; add `wikidata=Q243` (or whichever QID is canonical))                     |
 
 ### Attribute-source content rules (v0.7)
 
@@ -1224,8 +1533,11 @@ The autofix enumeration scheme (4312, 4315) always lands at `<attr>:source:N+1` 
 
 **4319 description:** _historic={value}: confirm the entity has actually passed into history before applying this tag._
 
-**4319 example:**  
-Trigger: a node tagged `historic=castle` representing a castle that is still standing as a tourist attraction. The warning prompts the editor to consider whether the tag is appropriate or whether it should be removed (or paired with an `end_date` indicating the historical scope).
+**4319 example:** a node tagged `historic=castle` representing a castle that is still standing as a tourist attraction.
+
+| Input                  | Result                                                                                |
+|------------------------|---------------------------------------------------------------------------------------|
+| **historic=castle**    | (no autofix; consider whether the tag is appropriate, or whether it should be removed (or paired with an `end_date` indicating the historical scope)) |
 
 ---
 
@@ -1239,9 +1551,12 @@ Trigger: a node tagged `historic=castle` representing a castle that is still sta
 
 **4318 description:** _OHM servers automatically generate label points; only use these when necessary. To verify, download all parent relations of this label object (File ▸ Download parent relations / ways). role=label members on this relation: {ids}._
 
-**4318 example:**  
-Trigger: a `boundary=administrative` relation contains `<member type="node" role="label" ref="123"/>`.  
-Suggested manual fix: confirm the label object is genuinely needed; if it is shared across multiple parent relations, download those parents (Ctrl+Alt+Down in JOSM) before editing.
+**4318 example:** a `boundary=administrative` relation contains a `<member type="node" role="label" ref="123"/>`.
+
+| Input (on relation)           | Result                                                                                |
+|-------------------------------|---------------------------------------------------------------------------------------|
+| boundary=administrative       | (no autofix)                                                                          |
+| **member role=label**         | (no autofix; confirm the label object is genuinely needed; if it is shared across multiple parent relations, download those parents (Ctrl+Alt+Down in JOSM) before editing) |
 
 ---
 
@@ -1259,9 +1574,11 @@ Suggested manual fix: confirm the label object is genuinely needed; if it is sha
 **Fix:** Removes every tag from the node.  
 **Description:** _All {N} tag(s) on this node are duplicated on parent way w/{way_id}; remove the node tags?_
 
-**Example:**  
-Trigger: a building way (`building=yes`, `start_date=1924`) with corner nodes each carrying `start_date=1924`.  
-After autofix: corner nodes have no tags. The building way is unchanged.
+**Example:** a building way (`building=yes`, `start_date=1924`) with corner nodes each carrying `start_date=1924`. After autofix, corner nodes have no tags; the building way is unchanged.
+
+| Input (on node)         | Result                                  |
+|-------------------------|-----------------------------------------|
+| **start_date=1924**     | start_date=  (all node tags removed)    |
 
 ---
 
@@ -1284,7 +1601,11 @@ Three sub-paths, checked in priority order:
 - _{key}="{value}": value is only whitespace. Restore content or remove the tag._
 - _{key}="{value}" has leading or trailing whitespace. Trim to "{trimmed}"?_
 
-**Example:** `name=" Old Town Hall "` → autofix to `name="Old Town Hall"`.
+**Example:**
+
+| Input                       | Result                |
+|-----------------------------|-----------------------|
+| **name=" Old Town Hall "**  | name=Old Town Hall    |
 
 **Fixture-coverage limitation:** Control characters like NUL (`U+0000`) and vertical tab (`U+000B`) are invalid in XML 1.0 and can't be embedded in `test_data.osm`. The control-char detection has no regression fixture but is exercised whenever a user pastes a control character through JOSM's tag editor.
 
