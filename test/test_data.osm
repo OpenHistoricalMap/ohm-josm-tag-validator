@@ -39522,4 +39522,52 @@
     <tag k='boundary' v='administrative' />
     <tag k='name' v='Boundary - sorted ring' />
   </relation>
+  <node id='9101400' visible='true' version='1' lat='50.0' lon='70.0' />
+  <node id='9101401' visible='true' version='1' lat='51.0' lon='70.0' />
+  <node id='9101402' visible='true' version='1' lat='51.0' lon='71.0' />
+  <node id='9101403' visible='true' version='1' lat='50.0' lon='71.0' />
+  <node id='9101410' visible='true' version='1' lat='50.5' lon='70.5' />
+  <node id='9101411' visible='true' version='1' lat='51.5' lon='70.5' />
+  <node id='9101412' visible='true' version='1' lat='51.5' lon='71.5' />
+  <node id='9101413' visible='true' version='1' lat='50.5' lon='71.5' />
+  <node id='9101430' visible='true' version='1' lat='50.0' lon='70.0' />
+  <node id='9101431' visible='true' version='1' lat='51.0' lon='70.0' />
+  <node id='9101432' visible='true' version='1' lat='51.0' lon='71.0' />
+  <node id='9101433' visible='true' version='1' lat='50.0' lon='71.0' />
+  <way id='9101420' visible='true' version='1'>
+    <nd ref='9101400' />
+    <nd ref='9101401' />
+    <nd ref='9101402' />
+    <nd ref='9101403' />
+    <nd ref='9101400' />
+    <tag k='building' v='yes' />
+    <tag k='name' v='Building A' />
+    <tag k='start_date' v='1900' />
+    <tag k='end_date' v='2000' />
+    <tag k='source' v='https://example.org/building-a' />
+  </way>
+  <way id='9101421' visible='true' version='1'>
+    <nd ref='9101410' />
+    <nd ref='9101411' />
+    <nd ref='9101412' />
+    <nd ref='9101413' />
+    <nd ref='9101410' />
+    <tag k='building' v='yes' />
+    <tag k='name' v='Building B - overlaps A in time and space' />
+    <tag k='start_date' v='1950' />
+    <tag k='end_date' v='2020' />
+    <tag k='source' v='https://example.org/building-b' />
+  </way>
+  <way id='9101422' visible='true' version='1'>
+    <nd ref='9101430' />
+    <nd ref='9101431' />
+    <nd ref='9101432' />
+    <nd ref='9101433' />
+    <nd ref='9101430' />
+    <tag k='building' v='yes' />
+    <tag k='name' v='Building C - same square as A but time-disjoint' />
+    <tag k='start_date' v='1700' />
+    <tag k='end_date' v='1800' />
+    <tag k='source' v='https://example.org/building-c' />
+  </way>
 </osm>

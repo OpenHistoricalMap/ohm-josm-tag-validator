@@ -27,6 +27,8 @@ public final class MessageApiAuditor {
     private static final String[] SOURCES = {
         "src/org/openstreetmap/josm/plugins/ohmtags/validation/TagConsistencyTest.java",
         "src/org/openstreetmap/josm/plugins/ohmtags/validation/DateTagTest.java",
+        "src/org/openstreetmap/josm/plugins/ohmtags/validation/ChronologyTest.java",
+        "src/org/openstreetmap/josm/plugins/ohmtags/validation/BoundaryTest.java",
     };
 
     public static void main(String[] args) throws Exception {

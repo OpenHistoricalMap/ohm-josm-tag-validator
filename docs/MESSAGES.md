@@ -14,7 +14,9 @@ References to "rules" below are defined in the javadoc in DateTagTest.java.
 
 ---
 
-## DateTagTest (codes 4200–4258)
+## DateTagTest (codes 4200–4260) and ChronologyTest (codes 4234–4239, 4243, 4254)
+
+As of v0.9.0 the chronology rules are owned by a separate `ChronologyTest` validator — toggleable as "OHM chronologies" in JOSM → Preferences → Data Validator → Tests, distinct from the "OHM date tags" checkbox that controls the rest of DateTagTest.
 
 **`*_date:edtf` is never written equal to `*_date`.** When an autofix
 would set `start_date=1900` and `start_date:edtf=1900`, the validator
@@ -1054,9 +1056,13 @@ No base:
 |------|-------|
 | 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` |
 | 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf` |
+| 4260 | `[ohm] Date mismatch - *_date and :edtf are off by 1; unfixable, please review` |
 
-**4210 trigger:** `*_date` is present and valid, but disagrees with the bound implied by `*_date:edtf` — specifically, it falls **outside** the bounds. A `*_date` that is *more precise within bounds* is the expected OHM convention (the high-precision authoritative value lives on `*_date`, the wider/qualified context on `:edtf`) and is not flagged.  
+**4210 trigger:** `*_date` is present and valid, but falls **outside** the bounds implied by `*_date:edtf`. A `*_date` that sits anywhere **within** the `:edtf` bounds is the expected OHM convention (whether at the exact low/high bound, at a finer precision somewhere inside the range, or at the same precision but in the middle of a range — e.g. `start_date=1905` with `start_date:edtf=190X`). Only out-of-bounds values fire.  
 **4210 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}. Manual review needed._
+
+**4260 trigger (v0.8.2+):** `*_date` and the base implied by `*_date:edtf` are at the SAME precision (both year, both year-month, or both year-month-day) and differ by exactly 1 unit at that precision. Common transcription typo (e.g. `start_date=1989` with `:edtf=1990` — off by 1 year). Mutually exclusive with 4210: when 4260 fires, 4210 does not.  
+**4260 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}, off by 1 {unit}. Manual review needed._
 
 **4211 trigger:** `*_date:edtf` is valid but no `*_date` base tag exists.  
 **4211 fix:** Derives and sets `*_date` from `*_date:edtf`. If `*_date:edtf` would equal the derived `*_date` (i.e. it carries no info beyond the base — no range, no qualifier), `*_date:edtf` is also deleted so the base alone holds the value.  
@@ -1327,7 +1333,9 @@ The implication: if the entity didn't change in any meaningful way between succe
 
 ---
 
-## TagConsistencyTest (codes 4300–4333)
+## TagConsistencyTest (codes 4300–4333) and BoundaryTest (codes 4330–4332, 4334, 4335)
+
+As of v0.9.0 the boundary-geometry rules are owned by a separate `BoundaryTest` validator — toggleable as "OHM boundaries" in JOSM → Preferences → Data Validator → Tests, distinct from "OHM tag consistency".
 
 **Source slot contract (v0.5).** Three keys, three roles:
 
@@ -1884,15 +1892,17 @@ Neither rule is autofixable — the validator can't guess the user's intent (typ
 
 ---
 
-### Boundary geometry hygiene (4330, 4331, 4332)
+### Boundary geometry hygiene (4330, 4331, 4332, 4334, 4335)
 
-Three rules introduced in v0.8 that target ways and nodes participating in `type=boundary` relations. The common theme: boundary geometry should be a clean substrate; identity, names, and dual-purpose tagging belong on separate nodes/ways at the same location.
+Five rules in the `BoundaryTest` validator that target ways and nodes participating in `type=boundary` relations. The common theme: boundary geometry should be a clean substrate; identity, names, and dual-purpose tagging belong on separate nodes/ways at the same location.
 
 | Code | Title |
 |------|-------|
 | 4330 | `[ohm] Boundary geometry - node has non-date/non-source tags; autofix by moving tags to a new node` |
 | 4331 | `[ohm] Boundary geometry - waterway way is a boundary member; autofix by creating a coincident boundary way` |
 | 4332 | `[ohm] Boundary geometry - members not in topological order; autofix by sorting` |
+| 4334 | `[ohm] Boundary geometry - node joined to both boundary and non-boundary ways; autofix by cloning` |
+| 4335 | `[ohm] Suspicious polygon - same-class polygons overlap in time AND space; unfixable, please review` |
 
 **4330 trigger:** a node that participates in a boundary way (a way that's a member of any `type=boundary` relation) has tags other than `start_date` / `end_date` / `*_date:*` / `source` / `source:*` / `attribute:source` / `attribute:source:*`. Non-date/non-source tags (name, place, historic, wikidata, etc.) trigger the warning.  
 **4330 fix:** clones the node into a new node at the same coordinates carrying ALL of the original's tags (full duplicate); strips the non-date/non-source tags from the original. The original keeps its relation memberships and roles, and stays in the boundary way. The new node has no relation memberships — it's a fresh standalone POI.
@@ -1902,6 +1912,12 @@ Three rules introduced in v0.8 that target ways and nodes participating in `type
 
 **4332 trigger:** a `type=boundary` relation's way members form one or more closed rings (every endpoint Node appears exactly twice across each role-group) but are not listed in topological order — consecutive members don't share an endpoint, or a ring doesn't close. Direction-agnostic; each role is evaluated as its own group. Open chains and other geometry problems are left for the core JOSM validator.  
 **4332 fix:** reorders the way members within each unsorted role-group so consecutive members share an endpoint and each ring closes. Non-way members keep their positions in the member list; way-members of already-sorted role-groups keep their positions too.
+
+**4334 trigger (v0.9.0):** a node is a member of at least one way that's in a `type=boundary` relation AND at least one way that is NOT in any boundary relation. Boundary geometry should be separate from whatever other feature (waterway, highway, building edge, etc.) happens to pass through the same coordinate.  
+**4334 fix:** clones the node onto the boundary side. The clone takes the boundary-way memberships; the original keeps its non-boundary memberships. Mirrors rule 4331's endpoint-reroute approach.
+
+**4335 trigger (v0.9.0):** two polygons of the SAME CLASS overlap in BOTH time AND space. Class is narrow: both `building=*`, or both `boundary=administrative` at the same `admin_level=N`. Excludes `natural=*` on either side. Time overlap uses each polygon's own date precision; touching at the matching boundary year is treated as adjacency (canonical successor pattern). Open-ended end_date (missing or `:edtf=YYYY/`) is treated as still-extant. Geometric overlap includes containment (one polygon entirely inside another).  
+**4335 fix:** None. The user must reconcile dates (e.g. one polygon should have ended before the other started), correct geometry (the polygons shouldn't actually overlap), or split into distinct features. Cross-class overlaps (a building inside a campus, a building inside `landuse=education`, an admin_level=4 inside admin_level=2) are expected nesting and intentionally don't fire.
 
 **4330 example:** a node sitting on a boundary way carries a place name. The fix clones the node so the boundary geometry stays clean while the identity-bearing tags move to a new standalone node.
 

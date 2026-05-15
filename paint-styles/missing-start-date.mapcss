@@ -1,0 +1,137 @@
+/* ohm-tags-missing-start-date.mapcss
+ *
+ * Companion MapCSS paint style for the OHM Tag Validator plugin.
+ *
+ * Visually highlights features that the plugin's rule 4200 would flag as
+ * "missing start_date on a man-made object" — features that carry at least
+ * one tag from the man-made allowlist (building, highway, railway, amenity,
+ * shop, ...) but have no `start_date` set. Natural and certain waterway
+ * features are excluded, matching the rule's denylist.
+ *
+ * Installation: in JOSM, open Edit > Preferences > Map Settings > Map Paint
+ * Styles, click "+", and either point to this file directly or paste its URL
+ * (raw.githubusercontent.com link). The style activates on top of whatever
+ * base style you have selected.
+ *
+ * The plugin itself does not depend on this style — it's a separate
+ * visualization aid. Validator findings still appear in the validator panel
+ * regardless of whether this style is installed.
+ *
+ * Author: Jeff Meyer, OHM advisor.
+ * License: same as the plugin (Apache 2.0).
+ */
+
+meta {
+    title: "OHM: missing start_date";
+    description: "Highlights features that should carry start_date but don't.";
+    author: "OpenHistoricalMap / ohm-tags plugin team";
+    version: "0.9.0";
+    icon: "logo.svg";
+}
+
+/* ---- Allowlist core: "always trigger if no start_date" ---- */
+
+way[building]              [!start_date],
+way[building:part]         [!start_date],
+way[highway]               [!start_date],
+way[railway]               [!start_date],
+way[aeroway]               [!start_date],
+way[aerialway]             [!start_date],
+way[bridge]                [!start_date],
+way[tunnel]                [!start_date],
+way[man_made]              [!start_date],
+way[power]                 [!start_date],
+way[pipeline]              [!start_date],
+way[amenity]               [!start_date],
+way[shop]                  [!start_date],
+way[office]                [!start_date],
+way[craft]                 [!start_date],
+way[tourism]               [!start_date],
+way[historic]              [!start_date],
+way[military]              [!start_date],
+way[emergency]             [!start_date],
+way[public_transport]      [!start_date],
+way[telecom]               [!start_date],
+way[leisure]               [!start_date],
+way[barrier]               [!start_date],
+node[building]             [!start_date],
+node[amenity]              [!start_date],
+node[shop]                 [!start_date],
+node[office]               [!start_date],
+node[craft]                [!start_date],
+node[tourism]              [!start_date],
+node[historic]             [!start_date],
+node[military]             [!start_date],
+node[emergency]            [!start_date],
+node[public_transport]     [!start_date],
+node[telecom]              [!start_date],
+node[man_made]             [!start_date]
+{
+    color: #c66;
+    casing-color: #c66;
+    casing-width: 2;
+    z-index: 200;
+}
+
+/* ---- Conditional allowlist with denylist exclusions ---- */
+
+/* landuse: trigger unless value is in {forest, meadow, grass, wood, scrub, heath} */
+way[landuse]
+    [landuse!=forest][landuse!=meadow][landuse!=grass]
+    [landuse!=wood][landuse!=scrub][landuse!=heath]
+    [!start_date]
+{
+    color: #c66;
+    casing-color: #c66;
+    casing-width: 2;
+    z-index: 200;
+}
+
+/* waterway: trigger unless value is in the natural-waterway denylist */
+way[waterway]
+    [waterway!=river][waterway!=stream][waterway!=brook]
+    [waterway!=riverbank][waterway!=tidal_channel][waterway!=wadi]
+    [waterway!=creek][waterway!=spring][waterway!=waterfall][waterway!=rapids]
+    [!start_date]
+{
+    color: #c66;
+    casing-color: #c66;
+    casing-width: 2;
+    z-index: 200;
+}
+
+/* place: trigger unless value is in {island, islet, archipelago, peninsula, cape} */
+node[place]
+    [place!=island][place!=islet][place!=archipelago]
+    [place!=peninsula][place!=cape]
+    [!start_date],
+way[place]
+    [place!=island][place!=islet][place!=archipelago]
+    [place!=peninsula][place!=cape]
+    [!start_date]
+{
+    color: #c66;
+    casing-color: #c66;
+    casing-width: 2;
+    z-index: 200;
+}
+
+/* Boundary relations don't render as ways on the map directly, but their
+ * member ways get a softer highlight if the relation is missing start_date.
+ * (Style readers may extend this; the validator rule itself fires on the
+ * relation, not the way.) */
+relation[type=boundary][!start_date] > way
+{
+    color: #d99;
+    casing-color: #d99;
+    casing-width: 1;
+    z-index: 150;
+}
+
+relation[type=route][!start_date] > way
+{
+    color: #d99;
+    casing-color: #d99;
+    casing-width: 1;
+    z-index: 150;
+}

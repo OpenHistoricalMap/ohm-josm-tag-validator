@@ -21,6 +21,8 @@ import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.spi.preferences.MemoryPreferences;
 import org.openstreetmap.josm.tools.I18n;
 
+import org.openstreetmap.josm.plugins.ohmtags.validation.BoundaryTest;
+import org.openstreetmap.josm.plugins.ohmtags.validation.ChronologyTest;
 import org.openstreetmap.josm.plugins.ohmtags.validation.DateTagTest;
 import org.openstreetmap.josm.plugins.ohmtags.validation.TagConsistencyTest;
 
@@ -61,7 +63,11 @@ public class RunTests {
 
             // Fresh test instances per fixture so error state doesn't leak
             // across files.
-            List<Test> tests = Arrays.asList(new DateTagTest(), new TagConsistencyTest());
+            List<Test> tests = Arrays.asList(
+                new DateTagTest(),
+                new ChronologyTest(),
+                new TagConsistencyTest(),
+                new BoundaryTest());
 
             for (Test test : tests) {
                 test.startTest(NullProgressMonitor.INSTANCE);

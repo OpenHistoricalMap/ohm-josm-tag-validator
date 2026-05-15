@@ -7,9 +7,20 @@ Validates and normalizes OHM-style date tags and source/name consistency for [Op
 <img width="778" height="320" alt="Monosnap Java OpenStreetMap Editor 2026-04-25 19-37-13" src="https://github.com/user-attachments/assets/3b5029f9-8325-4c71-a705-45af67e1976d" />
 
 
-**Date validation (`DateTagTest`)** checks `start_date`, `end_date`, and their `:edtf` and `:raw` siblings. It normalizes values to EDTF (ISO 8601-2), detects ambiguous inputs (decades vs. centuries, negative years, trailing hyphens), flags suspicious dates (year-boundary padding, far-future values, inverted start/end), handles Julian-calendar conversion, and reconciles mismatches between base tags and their `:edtf` counterparts. It also validates the structural consistency of `type=chronology` relations: members must lie within the parent's date range, must have the date tags they need (`start_date` always, `end_date` for every member except the youngest), must not have overlapping or gappy successor ranges, and must not duplicate their predecessor in both tags and geometry. Most checks offer an autofix; a few require manual review.
+The plugin exposes four independently-toggleable tests in JOSM → Preferences → Data Validator → Tests:
 
-**Tag consistency (`TagConsistencyTest`)** checks names, source tags, and external-identifier references. It warns on named features missing a plain `name` or `wikidata` tag, enforces the OHM source-slot contract (`source` is URL or text, `source:name` is text only, `source:url` is URL only), consolidates conflicting URL/text values across those slots, splits multi-URL `source` values into enumerated `source:N` slots, and checks that `wikipedia` and `wikidata` tags are present when referenced by attribute-source keys. It also flags relations carrying a `role=label` member, since OHM renderers generate label points server-side and editor-supplied labels are usually unnecessary.
+**Date validation (`DateTagTest`)** checks `start_date`, `end_date`, and their `:edtf` and `:raw` siblings. It normalizes values to EDTF (ISO 8601-2), detects ambiguous inputs (decades vs. centuries, negative years, trailing hyphens), flags suspicious dates (year-boundary padding, far-future values, inverted start/end), handles Julian-calendar conversion, and reconciles mismatches between base tags and their `:edtf` counterparts (including an off-by-one flag for the common transcription typo). It catches calendar-invalid dates (Feb 30, June 31), packed-date typos (`YYYY-MMDD` missing the hyphen), and a wide vocabulary of casual shorthand — `mid-1930s`, `early C19`, `between 1880 and 1922`, `circa 1900`, `cYYYY`, dash- and dot-separated MDY/DMY date forms, etc. Most checks offer an autofix; a few require manual review.
+
+**Chronology validation (`ChronologyTest`)** validates the structural consistency of `type=chronology` relations: members must lie within the parent's date range, must have the date tags they need (`start_date` always, `end_date` for every member except the youngest), must not have overlapping or gappy successor ranges, and must not duplicate their predecessor in both tags and geometry. Parent-vs-member range mismatches and gaps offer a recompute-from-envelope autofix (oldest member's start, latest member's end). The check also enforces that `type=boundary` chronology relations carry only relation members (not nodes or ways directly).
+
+**Tag consistency (`TagConsistencyTest`)** checks names, source tags, and external-identifier references. It warns on named features missing a plain `name` or `wikidata` tag, enforces the OHM source-slot contract (`source` is URL or text, `source:name` is text only, `source:url` is URL only), consolidates conflicting URL/text values across those slots, splits multi-URL `source` values into enumerated `source:N` slots, and checks that `wikipedia` and `wikidata` tags are present when referenced by attribute-source keys. It also flags relations carrying a `role=label` member, since OHM renderers generate label points server-side and editor-supplied labels are usually unnecessary. The dates-in-names rule (`Wild West (1880-1922)`) cross-checks the name's date(s) against `start_date` / `end_date`, populating tags when they're absent and the name has a clean range. The plugin recognizes a Mapwarper source URL and splits it into `source:url` + `source:tiles` + an API-fetched `source:name`.
+
+**Boundary geometry (`BoundaryTest`)** checks the structural cleanliness of features participating in `type=boundary` relations:
+- Nodes carrying POI-style tags (`name`, `place`, `historic`, `wikidata`, etc.) on a boundary way → autofix moves the tags onto a new co-located standalone POI node.
+- A `waterway=*` way that is also a boundary member → autofix creates a coincident clone with its own nodes to carry the boundary role, leaving the waterway untouched.
+- Boundary relation members not in topological order → autofix sorts each role-group into ring order.
+- A node shared between a boundary way and a non-boundary way → autofix clones the node onto the boundary side, detaching the boundary ways from the original.
+- Same-class polygons (two `building=*` features, or two `boundary=administrative` features at the same `admin_level`) overlapping in BOTH time and space → unfixable warning; user reconciles.
 
 **Autofix safety.** When the plugin offers an autofix, it never silently overwrites a populated user-authored tag. If a fix would clobber a populated companion (an existing `source:name`, an enumerated `source:N` / `source:N:name` slot, an existing `*_date:note`, etc.), the validator emits an unfixable warning instead, naming the conflicting tag so the editor can decide whether to merge, replace, or shift the new value to a different slot.
 
@@ -99,4 +110,10 @@ This copies the jar into the JOSM plugins directory (`~/.josm/plugins/` on Linux
 
 After install: Validation → Validate (shortcut **V**) runs all enabled tests. Findings appear in the Validation Results panel. Select one or more and click "Fix" (or "Fix selected errors" for batch apply) to apply any available autofix.
 
-Both tests can be individually enabled or disabled in Preferences → Validator Tests.
+All four tests (OHM date tags, OHM chronologies, OHM tag consistency, OHM boundaries) can be individually enabled or disabled in Preferences → Validator Tests.
+
+### Companion paint style (optional)
+
+The plugin ships a MapCSS paint style at `paint-styles/missing-start-date.mapcss` that visually highlights features which rule 4200 would flag — features that should carry a `start_date` but don't. Install it via Preferences → Map Settings → Map Paint Styles → "+", pointing at the file (locally, or by raw GitHub URL). It runs alongside whatever base style you have selected.
+
+The plugin itself does not depend on this style. Validator findings still appear in the validator panel regardless of whether this style is installed.

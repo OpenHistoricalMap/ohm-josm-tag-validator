@@ -988,4 +988,46 @@
     <tag k='start_date' v='2000-02-29' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000301' visible='true' version='1' lat='0.0' lon='25.0'>
+    <tag k='name' v='off-by-1 year' />
+    <tag k='start_date' v='1989' />
+    <tag k='start_date:edtf' v='1990' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000302' visible='true' version='1' lat='0.0' lon='25.1'>
+    <tag k='name' v='off-by-1 month same year' />
+    <tag k='start_date' v='1903-05' />
+    <tag k='start_date:edtf' v='1903-04' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000303' visible='true' version='1' lat='0.0' lon='25.2'>
+    <tag k='name' v='off-by-1 day' />
+    <tag k='start_date' v='1845-06-17' />
+    <tag k='start_date:edtf' v='1845-06-18' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000304' visible='true' version='1' lat='0.0' lon='25.3'>
+    <tag k='name' v='regular mismatch 3 years' />
+    <tag k='start_date' v='1989' />
+    <tag k='start_date:edtf' v='1992' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000305' visible='true' version='1' lat='0.0' lon='25.4'>
+    <tag k='name' v='off-by-1 month cross-year boundary' />
+    <tag k='start_date' v='1989-12' />
+    <tag k='start_date:edtf' v='1990-01' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000311' visible='true' version='1' lat='0.0' lon='30.0'>
+    <tag k='name' v='refinement-within-bounds X-form decade' />
+    <tag k='start_date' v='1955-07-03' />
+    <tag k='start_date:edtf' v='195X' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000312' visible='true' version='1' lat='0.0' lon='31.0'>
+    <tag k='name' v='base in middle of X-form range no warning' />
+    <tag k='start_date' v='1905' />
+    <tag k='start_date:edtf' v='190X' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>
