@@ -113,6 +113,7 @@ to an existing josm-custom.jar.
     <target name="dist" depends="compile">
         <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
             <arg value="describe"/>
+            <arg value="--tags"/>
             <arg value="--always"/>
             <arg value="--dirty"/>
         </exec>
