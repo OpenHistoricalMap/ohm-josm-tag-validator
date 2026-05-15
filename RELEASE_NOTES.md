@@ -1,3 +1,63 @@
+# v0.9.0 — Test split, three new rules, MapCSS paint style, false-positive fix
+
+Minor bump. New user-facing functionality: chronology and boundary rules now have their own JOSM validator checkboxes; three new rule codes (off-by-1 mismatch, boundary node joined to non-boundary, same-class polygon overlap); a companion MapCSS style for the missing-`start_date` rule; and a significant relaxation of the base-vs-`:edtf` consistency check.
+
+## New test classes
+
+The plugin previously exposed two tests in JOSM → Preferences → Data Validator → Tests:
+"OHM date tags" and "OHM tag consistency". v0.9.0 splits these into FOUR independently-toggleable tests:
+
+- **"OHM date tags"** (`DateTagTest`) — date-tag normalization, EDTF, calendar validity, ambiguity, mismatches. Codes 4200–4233, 4240–4242, 4244–4260 (minus the chronology codes).
+- **"OHM chronologies"** (`ChronologyTest`, NEW) — `type=chronology` relation structural rules. Codes 4234–4239, 4243, 4254.
+- **"OHM tag consistency"** (`TagConsistencyTest`) — names, source, wikidata/wikipedia, attribute-source. Codes 4300–4329, 4333.
+- **"OHM boundaries"** (`BoundaryTest`, NEW) — boundary geometry hygiene. Codes 4330–4332, 4334, 4335.
+
+Each test runs independently; behavior is bit-for-bit identical to v0.8.3 for the rules that already existed.
+
+## New rules
+
+**Rule 4260 (off-by-1 base vs. `:edtf`).** When `*_date` and the base implied by `*_date:edtf` differ by exactly 1 unit at their shared precision (one year, one month, or one day), fire a specific "off by 1" warning rather than the generic 4210 mismatch. Common transcription typo: `start_date=1989` with `start_date:edtf=1990`. Mutually exclusive with 4210; only one fires per primitive.
+
+**Rule 4334 (boundary node joined to non-boundary ways).** When a node is a member of at least one way in a `type=boundary` relation AND at least one way NOT in any boundary relation, fire a warning. Autofix clones the node onto the boundary side, leaving the non-boundary ways on the original. Sibling of the v0.8.0 boundary geometry rules (4330–4332).
+
+**Rule 4335 (same-class polygon overlap in time AND space).** When two polygons of the same class overlap geometrically AND have intersecting date ranges, fire an unfixable warning. "Same class" is narrow: both `building=*`, or both `boundary=administrative` at the same `admin_level=N`. Excludes `natural=*`. Cross-class overlaps (building inside `amenity=university`, `admin_level=4` inside `admin_level=2`) are expected nesting and intentionally don't fire. Time overlap respects each polygon's own date precision; touching at the matching boundary year is treated as adjacency (canonical successor pattern). Open-ended end_date is treated as still-extant. Containment counts as overlap.
+
+## Rule 4210 — base-vs-`:edtf` within-bounds relaxation
+
+The base-vs-`:edtf` consistency check (`isBaseMoreSpecificWithinBounds`) previously required the base to be at a FINER precision than `:edtf` to be considered consistent. This was too strict and produced false-positive 4210 mismatches whenever a contributor put a specific value inside a same-precision range — `start_date=1905` with `start_date:edtf=190X`, or `end_date=1924` with `end_date:edtf=1912/1935`. Both should be accepted as valid OHM patterns ("authoritative specific value inside a wider qualified range") but instead fired unfixable warnings.
+
+v0.9.0 renames the helper to `isBaseWithinEdtfBounds` and drops the precision-comparison constraint. ANY `*_date` value within the `:edtf` interval's lower/upper bounds is now considered consistent. The change also fixed a parallel bug in `edtfPrecision` that didn't recognize X-form decade/century shapes (`195X`, `19XX`, etc.) — those couldn't classify as having any precision, so the bounds check bailed out before running. The fix substitutes X → 0 before classifying.
+
+On a real-world 75 MB OHM dataset this took the 4210 fire count from ~hundreds to 48, and sampling confirms the 48 remaining are all legitimate out-of-bounds mismatches.
+
+## MapCSS paint style
+
+`paint-styles/missing-start-date.mapcss` — companion MapCSS style that highlights features rule 4200 would flag (missing `start_date` on man-made objects). Install via JOSM → Preferences → Map Settings → Map Paint Styles → "+", pointing at the file. The plugin itself doesn't depend on the style; validator findings still appear in the validator panel regardless.
+
+Color: red casing on `building`, `highway`, `railway`, `amenity`, `landuse` (with denylist), `waterway` (with denylist matching rule 4200), `place` (with denylist), and other tags from the man-made allowlist. Softer red on boundary / route relation members.
+
+## Build / packaging
+
+`build.xml`: `git describe` now runs with `--tags` so lightweight tags resolve. The v0.8.0–v0.8.3 tags have been re-created as annotated tags. Prior to this fix the plugin's Plugin-Version manifest entry reported v0.7.9 (the last annotated tag) plus a commit count, even when the latest tag was v0.8.3.
+
+## Files touched
+
+- `src/.../OhmTagsPlugin.java` — register all four tests.
+- `src/.../validation/DateTagTest.java` — remove chronology dispatch; promote `ParsedDate` / `parseStrictBaseDate` to package-visible; new rule 4260; relaxed `isBaseWithinEdtfBounds`; X-form precision detection fix.
+- `src/.../validation/ChronologyTest.java` — NEW (chronology rules moved here).
+- `src/.../validation/TagConsistencyTest.java` — remove boundary dispatch.
+- `src/.../validation/BoundaryTest.java` — NEW (boundary rules moved here, plus new 4334 and 4335).
+- `paint-styles/missing-start-date.mapcss` — NEW (companion paint style).
+- `build.xml` — `git describe --tags`.
+- `README.md` — describe all four tests.
+- `docs/MESSAGES.md` — new rules, updated 4210 description.
+- `test/test_data.osm`, `test/crasher_braces.osm`, `test/expected.txt` — fixtures for the new rules; five real-world fixtures dropped (`w/199967452`, `w/200160746/747/751`, `w/201800179`) that previously fired 4210 as false positives now silently pass.
+- `test/RunTests.java`, `test/MessageApiAuditor.java` — instantiate / scan the four test classes.
+
+Emission sites scanned: 114.
+
+---
+
 # v0.8.3 — MESSAGES.md every rule now has an example table
 
 Docs-only patch. No source or test changes; plugin behavior identical to v0.8.2.
