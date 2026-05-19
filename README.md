@@ -4,8 +4,7 @@ Validates and normalizes OHM-style date tags and source/name consistency for [Op
 
 ## What it does
 
-<img width="778" height="320" alt="Monosnap Java OpenStreetMap Editor 2026-04-25 19-37-13" src="https://github.com/user-attachments/assets/3b5029f9-8325-4c71-a705-45af67e1976d" />
-
+<img width="778" height="320" alt="Screenshot of OHM Tag Validator panel in JOSM" src="https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/blob/main/docs/josm_sshot.png" />
 
 The plugin exposes four independently-toggleable tests in JOSM → Preferences → Data Validator → Tests:
 
@@ -25,6 +24,12 @@ The plugin exposes four independently-toggleable tests in JOSM → Preferences �
 **Autofix safety.** When the plugin offers an autofix, it never silently overwrites a populated user-authored tag. If a fix would clobber a populated companion (an existing `source:name`, an enumerated `source:N` / `source:N:name` slot, an existing `*_date:note`, etc.), the validator emits an unfixable warning instead, naming the conflicting tag so the editor can decide whether to merge, replace, or shift the new value to a different slot.
 
 See [`docs/MESSAGES.md`](docs/MESSAGES.md) for the full list of validator messages, triggers, and autofixes.
+
+## Validator Preferences
+
+Users can select which sets of OHM validation rules to run from the JOSM Data Validator Preferences/Settings panel.
+
+<img alt="JOSM Data Validator panel displaying OHM validation rules" src="https://github.com/OpenHistoricalMap/ohm-josm-tag-validator/blob/main/docs/ohm_validator_preferences.png" />
 
 ## Installation
 
