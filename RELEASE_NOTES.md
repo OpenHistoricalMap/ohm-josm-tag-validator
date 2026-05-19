@@ -1,3 +1,41 @@
+# v0.9.1 — Rule 4210 fixable variant + rule 4335 year-touching counts as overlap
+
+Patch bump. Two targeted behavior changes driven by real-world OHM data review against v0.9.0.
+
+## Rule 4210 — fixable variant added
+
+The base-vs-`:edtf` mismatch rule previously fired as a single unfixable warning for any disagreement. v0.9.1 splits it into two variants sharing the 4210 code:
+
+- **Fixable (NEW):** `*_date` is NOT plain ISO — it holds an EDTF expression (`19XX`, `1900~`, `1920/1929`), a malformed value with a typo (`1953-10=15`, `1906-05/`), or a non-ISO date format (`15/11/1997`) — AND `*_date:edtf` is valid and yields a derivable ISO bound. The autofix promotes `*_date` to that ISO bound (lower bound for `start_date`, upper bound for `end_date`). When `:edtf` is itself plain ISO and would equal the new base value, the redundant `:edtf` is also cleared, honoring the redundancy-suppression philosophy codified in rule 4211. Otherwise `:edtf` is left intact because it carries information the new base cannot (range, qualifier, X-form).
+- **Unfixable (existing):** `*_date` is plain ISO (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`) but falls outside the bounds implied by `*_date:edtf`. No clear winner; manual review needed.
+
+Fires before the existing off-by-1 check (which assumes ISO-vs-ISO comparison).
+
+The OHM convention is that `*_date` carries plain ISO; EDTF expressions, malformed user input, and non-ISO formats belong on `:edtf` or `:raw`. Many real-world fixtures previously surfaced 4210-unfixable warnings the editor had to address manually — these now autofix.
+
+Example: `start_date=19XX` with `start_date:edtf=19XX` → `start_date=1900`, `:edtf` preserved (carries the century-range info). `start_date=1953-10=15` (shift-state typo) with `start_date:edtf=1953-10-15` → `start_date=1953-10-15`, `:edtf` cleared as redundant.
+
+## Rule 4335 — year-touching now counts as overlap
+
+The same-class polygon overlap rule's time-overlap helper was previously written with the chronology adjacency convention (touching at the same boundary year = adjacent, not overlapping). That convention is correct for rule 4230 (chronology successor relationships between distinct legal entities) but wrong for rule 4335 (physical polygons occupying coordinate space).
+
+v0.9.1 simplifies `polygonTimeOverlap` to inclusive on both ends. A year-only date like `1920` covers the entire year 1920-01-01..1920-12-31, so `A.end_date=1920` and `B.start_date=1920` means both polygons occupied the same physical space at some moment within 1920. This deliberately diverges from rule 4230 — same physical space can't host two same-class objects simultaneously, even briefly within one year.
+
+The user silences by adding month/day precision (distinguishing "demolished in March, built in November" from the reverse), fixing geometry, or splitting into distinct features.
+
+## Files touched
+
+- `src/.../validation/DateTagTest.java` — new case 3a (non-ISO base + derivable `:edtf` bound) added before off-by-1 check; existing 3a → 3b, 3b → 3c. New emission site for the fixable variant.
+- `src/.../validation/BoundaryTest.java` — `polygonTimeOverlap` simplified to inclusive both ends; javadoc explains the divergence from rule 4230.
+- `docs/MESSAGES.md` — rule 4210 entry split into fixable/unfixable variants with separate triggers, descriptions, and example tables. Rule 4335 entry documents the year-touching divergence with an example.
+- `test/crasher_braces.osm` — three new nodes (`9000320`, `9000321`, `9000322`) covering the three fixable-4210 shapes (`:edtf` preserved, `:edtf` cleared, DD/MM/YYYY base).
+- `test/test_data.osm` — buildings D (`9101460`, 1850..1920) and E (`9101461`, 1920..present) on overlapping footprints, year-touching at 1920.
+- `test/expected.txt` — prior 4210-unfixable rows flip to 4210-fixable where the base is non-ISO; new D/E overlap rows added.
+
+Emission sites scanned: 115 (was 114).
+
+---
+
 # v0.9.0 — Test split, three new rules, MapCSS paint style, false-positive fix
 
 Minor bump. New user-facing functionality: chronology and boundary rules now have their own JOSM validator checkboxes; three new rule codes (off-by-1 mismatch, boundary node joined to non-boundary, same-class polygon overlap); a companion MapCSS style for the missing-`start_date` rule; and a significant relaxation of the base-vs-`:edtf` consistency check.
