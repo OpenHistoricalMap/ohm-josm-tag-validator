@@ -1030,4 +1030,22 @@
     <tag k='start_date:edtf' v='190X' />
     <tag k='source' v='https://example.org/source' />
   </node>
+  <node id='9000320' visible='true' version='1' lat='0.0' lon='32.0'>
+    <tag k='name' v='base holds EDTF century X-form same as edtf' />
+    <tag k='start_date' v='19XX' />
+    <tag k='start_date:edtf' v='19XX' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000321' visible='true' version='1' lat='0.0' lon='32.1'>
+    <tag k='name' v='base has = typo, edtf is plain ISO' />
+    <tag k='start_date' v='1953-10=15' />
+    <tag k='start_date:edtf' v='1953-10-15' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
+  <node id='9000322' visible='true' version='1' lat='0.0' lon='32.2'>
+    <tag k='name' v='base is DD/MM/YYYY, edtf is open range with ISO upper' />
+    <tag k='end_date' v='15/11/1997' />
+    <tag k='end_date:edtf' v='/1997-11-15' />
+    <tag k='source' v='https://example.org/source' />
+  </node>
 </osm>

@@ -39570,4 +39570,35 @@
     <tag k='end_date' v='1800' />
     <tag k='source' v='https://example.org/building-c' />
   </way>
+  <node id='9101440' visible='true' version='1' lat='52.0' lon='80.0' />
+  <node id='9101441' visible='true' version='1' lat='53.0' lon='80.0' />
+  <node id='9101442' visible='true' version='1' lat='53.0' lon='81.0' />
+  <node id='9101443' visible='true' version='1' lat='52.0' lon='81.0' />
+  <node id='9101450' visible='true' version='1' lat='52.0' lon='80.0' />
+  <node id='9101451' visible='true' version='1' lat='53.0' lon='80.0' />
+  <node id='9101452' visible='true' version='1' lat='53.0' lon='81.0' />
+  <node id='9101453' visible='true' version='1' lat='52.0' lon='81.0' />
+  <way id='9101460' visible='true' version='1'>
+    <nd ref='9101440' />
+    <nd ref='9101441' />
+    <nd ref='9101442' />
+    <nd ref='9101443' />
+    <nd ref='9101440' />
+    <tag k='building' v='yes' />
+    <tag k='name' v='Building D - ends in 1920, year-touching with E' />
+    <tag k='start_date' v='1850' />
+    <tag k='end_date' v='1920' />
+    <tag k='source' v='https://example.org/building-d' />
+  </way>
+  <way id='9101461' visible='true' version='1'>
+    <nd ref='9101450' />
+    <nd ref='9101451' />
+    <nd ref='9101452' />
+    <nd ref='9101453' />
+    <nd ref='9101450' />
+    <tag k='building' v='yes' />
+    <tag k='name' v='Building E - starts in 1920, year-touching with D' />
+    <tag k='start_date' v='1920' />
+    <tag k='source' v='https://example.org/building-e' />
+  </way>
 </osm>

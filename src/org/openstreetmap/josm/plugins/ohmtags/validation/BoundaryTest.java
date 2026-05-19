@@ -725,23 +725,19 @@ public class BoundaryTest extends Test {
     }
 
     /**
-     * True if {@code a} and {@code b} overlap in time. Year-only precision
-     * with the chronology convention: touching at the same boundary year
-     * (when one range strictly precedes the other) is treated as adjacency,
-     * not overlap. Open-ended end ({@code MAX_VALUE}) is treated as "still
-     * extant" per Jeff's spec.
+     * True if {@code a} and {@code b} overlap in time at year precision.
+     * Inclusive on both ends: year-touching counts as overlap because the
+     * two features are physical objects, not legal entities. A year-only
+     * date like {@code 1920} covers all of 1920-01-01..1920-12-31, so
+     * {@code A.end_date=1920} and {@code B.start_date=1920} means both
+     * occupied the same physical space at some moment within 1920. This
+     * deliberately diverges from the chronology convention (rule 4230),
+     * where year-touching is read as a clean handoff between successive
+     * legal entities. Open-ended end ({@code MAX_VALUE}) is treated as
+     * "still extant" per the polygon-overlap spec.
      */
     private static boolean polygonTimeOverlap(PolygonCandidate a, PolygonCandidate b) {
-        boolean aInstant = (a.startYear == a.endYear);
-        boolean bInstant = (b.startYear == b.endYear);
-        if (aInstant && bInstant) return a.startYear == b.startYear;
-        if (aInstant) return b.startYear < a.startYear && a.startYear < b.endYear;
-        if (bInstant) return a.startYear < b.startYear && b.startYear < a.endYear;
-        if (a.endYear < b.startYear || b.endYear < a.startYear) return false;
-        // Touching at matching boundary with strict ordering = adjacent.
-        if (a.endYear == b.startYear && a.startYear < b.startYear) return false;
-        if (b.endYear == a.startYear && b.startYear < a.startYear) return false;
-        return true;
+        return a.startYear <= b.endYear && b.startYear <= a.endYear;
     }
 
     /**

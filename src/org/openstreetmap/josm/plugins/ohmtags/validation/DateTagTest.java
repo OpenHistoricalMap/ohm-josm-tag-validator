@@ -2227,10 +2227,42 @@ public class DateTagTest extends Test {
             return;
         }
 
-        // Case 3a: base and :edtf disagree by EXACTLY 1 unit at their
+        // Case 3a: base is not plain ISO and :edtf gives us a usable bound —
+        // autofix base to that ISO value. The OHM convention is that
+        // *_date carries plain ISO; EDTF expressions ("19XX", "1900~",
+        // ranges) and malformed user input ("1953-10=15", "15/11/1997")
+        // belong on :edtf or :raw. When :edtf is itself plain ISO (so it
+        // would equal the new base value), also clear :edtf to honor the
+        // redundancy-suppression philosophy (rule 4211). Otherwise leave
+        // :edtf intact — it carries information the new base cannot.
+        // Fires before off-by-1 because off-by-1 is an ISO-vs-ISO check.
+        if (expectedBase != null && !DateNormalizer.isIsoCalendarDate(base)) {
+            boolean clearEdtf = expectedBase.equals(edtf);
+            Command fix;
+            if (clearEdtf) {
+                List<Command> cmds = new ArrayList<>(2);
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey, expectedBase));
+                cmds.add(new ChangePropertyCommand(Arrays.asList(p), baseKey + ":edtf", null));
+                fix = new SequenceCommand(tr("[ohm] Autofix {0} and clear redundant :edtf", baseKey), cmds);
+            } else {
+                fix = new ChangePropertyCommand(Arrays.asList(p), baseKey, expectedBase);
+            }
+            String hint = clearEdtf
+                ? marktr("{0}={1} is not plain ISO. Set {0}={2} and clear redundant {0}:edtf (was {3})?")
+                : marktr("{0}={1} is not plain ISO. Set {0}={2} ({0}:edtf={3} unchanged)?");
+            errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_BASE_MISMATCH)
+                .message(tr("[ohm] Date mismatch - *_date is not plain ISO; autofix by deriving from *_date:edtf"),
+                         hint, baseKey, base, expectedBase, edtf)
+                .primitives(p)
+                .fix(() -> fix)
+                .build());
+            return;
+        }
+
+        // Case 3b: base and :edtf disagree by EXACTLY 1 unit at their
         // shared precision (year/month/day). Common transcription error,
         // worth flagging separately so the editor can spot the obvious
-        // off-by-one typo. Mutually exclusive with case 3b below.
+        // off-by-one typo. Mutually exclusive with case 3c below.
         String offByOneUnit = offByOneUnitAtSamePrecision(base, expectedBase);
         if (offByOneUnit != null) {
             errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_BASE_OFF_BY_ONE)
@@ -2242,7 +2274,8 @@ public class DateTagTest extends Test {
             return;
         }
 
-        // Case 3b: base and :edtf disagree, no :raw to reconcile against.
+        // Case 3c: base and :edtf disagree (base is plain ISO but out of
+        // bounds), no :raw to reconcile against.
         errors.add(TestError.builder(this, Severity.WARNING, CODE_EDTF_BASE_MISMATCH)
             .message(tr("[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review"),
                      marktr("{0}={1} but {0}:edtf={2} implies {0}={3}. "

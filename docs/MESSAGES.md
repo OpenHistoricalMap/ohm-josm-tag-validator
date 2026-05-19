@@ -1054,12 +1054,17 @@ No base:
 
 | Code | Title |
 |------|-------|
-| 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` |
+| 4210 | `[ohm] Date mismatch - *_date does not match *_date:edtf; unfixable, please review` _(base is plain ISO, out of bounds)_ |
+| 4210 | `[ohm] Date mismatch - *_date is not plain ISO; autofix by deriving from *_date:edtf` _(base is non-ISO; v0.9.1+)_ |
 | 4211 | `[ohm] Date mismatch - *_date:edtf & no *_date tag; autofix by deriving *_date from *_date:edtf` |
 | 4260 | `[ohm] Date mismatch - *_date and :edtf are off by 1; unfixable, please review` |
 
-**4210 trigger:** `*_date` is present and valid, but falls **outside** the bounds implied by `*_date:edtf`. A `*_date` that sits anywhere **within** the `:edtf` bounds is the expected OHM convention (whether at the exact low/high bound, at a finer precision somewhere inside the range, or at the same precision but in the middle of a range — e.g. `start_date=1905` with `start_date:edtf=190X`). Only out-of-bounds values fire.  
-**4210 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}. Manual review needed._
+**4210 trigger (unfixable variant):** `*_date` is a plain ISO calendar date (`YYYY`, `YYYY-MM`, or `YYYY-MM-DD`) but falls **outside** the bounds implied by `*_date:edtf`. A `*_date` that sits anywhere **within** the `:edtf` bounds is the expected OHM convention (whether at the exact low/high bound, at a finer precision somewhere inside the range, or at the same precision but in the middle of a range — e.g. `start_date=1905` with `start_date:edtf=190X`). Only out-of-bounds ISO values fire as unfixable.  
+**4210 description (unfixable):** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}. Manual review needed._
+
+**4210 trigger (fixable variant, v0.9.1+):** `*_date` is **not** a plain ISO calendar date — it holds an EDTF expression (`19XX`, `1900~`, `1920/1929`), a malformed value with a typo (`1953-10=15`, `1906-05/`), or a non-ISO date format (`15/11/1997`) — AND `*_date:edtf` is valid and yields a derivable ISO bound. The autofix promotes `*_date` to that ISO bound (lower bound for `start_date`, upper bound for `end_date`). When `:edtf` is itself plain ISO and would equal the new base, the redundant `:edtf` is also cleared (per the redundancy-suppression philosophy). Otherwise `:edtf` is left intact because it carries info the new base cannot (range, qualifier, X-form).  
+**4210 description (fixable, :edtf preserved):** _{key}={value} is not plain ISO. Set {key}={expected} ({key}:edtf={edtf} unchanged)?_  
+**4210 description (fixable, :edtf cleared):** _{key}={value} is not plain ISO. Set {key}={expected} and clear redundant {key}:edtf (was {edtf})?_
 
 **4260 trigger (v0.8.2+):** `*_date` and the base implied by `*_date:edtf` are at the SAME precision (both year, both year-month, or both year-month-day) and differ by exactly 1 unit at that precision. Common transcription typo (e.g. `start_date=1989` with `:edtf=1990` — off by 1 year). Mutually exclusive with 4210: when 4260 fires, 4210 does not.  
 **4260 description:** _{key}={value} but {key}:edtf={edtf} implies {key}={expected}, off by 1 {unit}. Manual review needed._
@@ -1068,12 +1073,33 @@ No base:
 **4211 fix:** Derives and sets `*_date` from `*_date:edtf`. If `*_date:edtf` would equal the derived `*_date` (i.e. it carries no info beyond the base — no range, no qualifier), `*_date:edtf` is also deleted so the base alone holds the value.  
 **4211 description:** _{key}:edtf={edtf} implies {key}={derived}._
 
-**4210 example:** (base year is well outside the EDTF range)
+**4210 unfixable example:** (base year is well outside the EDTF range; base is plain ISO so we can't pick a side)
 
 | Input                            | Result                                                                                |
 |----------------------------------|---------------------------------------------------------------------------------------|
 | **start_date=2020**              | (no autofix; pick the authoritative value and update the other to match)              |
 | **start_date:edtf=1900/1950**    | (no autofix; manual review)                                                           |
+
+**4210 fixable example — `:edtf` preserved:** (base holds an EDTF range, `:edtf` carries a range or qualifier and stays)
+
+| Input                          | Result                                                            |
+|--------------------------------|-------------------------------------------------------------------|
+| **start_date=19XX**            | start_date=1900                                                   |
+| **start_date:edtf=19XX**       | start_date:edtf=19XX _(unchanged; carries the century-range info)_|
+
+**4210 fixable example — `:edtf` cleared:** (the typo'd base resolves to exactly what `:edtf` already says, so `:edtf` becomes redundant)
+
+| Input                              | Result                |
+|------------------------------------|-----------------------|
+| **start_date=1953-10=15**          | start_date=1953-10-15 |
+| **start_date:edtf=1953-10-15**     | start_date:edtf=      |
+
+**4210 fixable example — DD/MM/YYYY in base, ISO bound from `:edtf`:**
+
+| Input                              | Result                                                                |
+|------------------------------------|-----------------------------------------------------------------------|
+| **end_date=15/11/1997**            | end_date=1997-11-15                                                   |
+| **end_date:edtf=/1997-11-15**      | end_date:edtf=/1997-11-15 _(unchanged; open-start range carries info)_|
 
 **4210 non-example (silent):** base is more precise than `:edtf` and falls within the implied bounds. Expected state, no warning.
 
@@ -1916,8 +1942,16 @@ Five rules in the `BoundaryTest` validator that target ways and nodes participat
 **4334 trigger (v0.9.0):** a node is a member of at least one way that's in a `type=boundary` relation AND at least one way that is NOT in any boundary relation. Boundary geometry should be separate from whatever other feature (waterway, highway, building edge, etc.) happens to pass through the same coordinate.  
 **4334 fix:** clones the node onto the boundary side. The clone takes the boundary-way memberships; the original keeps its non-boundary memberships. Mirrors rule 4331's endpoint-reroute approach.
 
-**4335 trigger (v0.9.0):** two polygons of the SAME CLASS overlap in BOTH time AND space. Class is narrow: both `building=*`, or both `boundary=administrative` at the same `admin_level=N`. Excludes `natural=*` on either side. Time overlap uses each polygon's own date precision; touching at the matching boundary year is treated as adjacency (canonical successor pattern). Open-ended end_date (missing or `:edtf=YYYY/`) is treated as still-extant. Geometric overlap includes containment (one polygon entirely inside another).  
-**4335 fix:** None. The user must reconcile dates (e.g. one polygon should have ended before the other started), correct geometry (the polygons shouldn't actually overlap), or split into distinct features. Cross-class overlaps (a building inside a campus, a building inside `landuse=education`, an admin_level=4 inside admin_level=2) are expected nesting and intentionally don't fire.
+**4335 trigger (v0.9.0):** two polygons of the SAME CLASS overlap in BOTH time AND space. Class is narrow: both `building=*`, or both `boundary=administrative` at the same `admin_level=N`. Excludes `natural=*` on either side. Time overlap uses year precision and is **inclusive on both ends**: `A.end_date=1920` and `B.start_date=1920` counts as overlap, because a year-only date covers the whole year and both polygons were physical objects present in 1920. This deliberately diverges from the chronology convention (rule 4230, where year-touching is read as a clean legal-entity handoff) — same physical space can't host two same-class objects simultaneously, even briefly within one year. Open-ended end_date (missing or `:edtf=YYYY/`) is treated as still-extant. Geometric overlap includes containment (one polygon entirely inside another).  
+**4335 fix:** None. The user must reconcile dates (e.g. add month/day precision so one polygon strictly ends before the other starts, or correct a year that's wrong), fix geometry (the polygons shouldn't actually overlap), or split into distinct features. Cross-class overlaps (a building inside a campus, a building inside `landuse=education`, an admin_level=4 inside admin_level=2) are expected nesting and intentionally don't fire.
+
+**4335 example — year-precision touching:** two buildings on overlapping footprints, year-touching dates. Adding month or day precision to distinguish "demolished in March, built in November" from "demolished in November, built in March" silences the warning.
+
+| Input (Building A)            | Input (Building B)            | Result                                                                                |
+|-------------------------------|-------------------------------|---------------------------------------------------------------------------------------|
+| **building=yes**              | **building=yes**              |                                                                                       |
+| start_date=1850               | **start_date=1920**           | (no autofix; tighten precision or split into distinct features)                       |
+| **end_date=1920**             | _(open-ended; still extant)_  |                                                                                       |
 
 **4330 example:** a node sitting on a boundary way carries a place name. The fix clones the node so the boundary geometry stays clean while the identity-bearing tags move to a new standalone node.
 
